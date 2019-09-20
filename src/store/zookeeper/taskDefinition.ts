@@ -35,12 +35,12 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
   create = async (
     taskDefinition: ITaskDefinition,
   ): Promise<ITaskDefinition> => {
-    const isWorkflowExists = await this.isExists(
+    const isTaskExists = await this.isExists(
       `${this.root}/${taskDefinition.name}`,
     );
 
-    if (isWorkflowExists)
-      throw new BadRequest(`Workflow: ${taskDefinition.name} already exists`);
+    if (isTaskExists)
+      throw new BadRequest(`Task: ${taskDefinition.name} already exists`);
 
     return new Promise((resolve: Function, reject: Function) =>
       this.client.create(

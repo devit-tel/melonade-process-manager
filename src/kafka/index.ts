@@ -58,7 +58,7 @@ export const createTopic = (topicName: string): Promise<any> =>
   new Promise((resolve: Function, reject: Function) => {
     adminClient.createTopic(
       {
-        topic: topicName,
+        topic: `${config.kafkaTopicName.task}.${topicName}`,
         num_partitions: 10,
         replication_factor: 1,
         config: {

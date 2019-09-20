@@ -7,7 +7,7 @@ export const createTaskDefinition = async (
 ): Promise<any> => {
   const taskDefinition = new TaskDefinition(taskDefinitionData);
   await taskDefinitionStore.create(taskDefinition.toObject());
-  await createTopic(`TASK_${taskDefinition.name}`);
+  await createTopic(taskDefinition.name);
   return taskDefinition.toObject();
 };
 export const updateTaskDefinition = async (
