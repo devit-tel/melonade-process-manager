@@ -62,7 +62,7 @@ export class ZookeeperStore implements IStore {
       // This can make sure it's never overwrite old data
       this.client.setData(
         `${this.root}/${key.replace(/\./, '/')}`,
-        new Buffer(value),
+        Buffer.from(value),
         null,
         (error: Error, path: string) => {
           if (error) return reject(error);

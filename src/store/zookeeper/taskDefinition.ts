@@ -45,7 +45,7 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
     return new Promise((resolve: Function, reject: Function) =>
       this.client.create(
         `${this.root}/${taskDefinition.name}`,
-        new Buffer(JSON.stringify(taskDefinition)),
+        Buffer.from(JSON.stringify(taskDefinition)),
         'PERSISTENT',
         (error: Error) => {
           if (error) return reject(error);
@@ -59,7 +59,7 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
     return new Promise((resolve: Function, reject: Function) =>
       this.client.setData(
         `${this.root}/${taskDefinition.name}`,
-        new Buffer(JSON.stringify(taskDefinition)),
+        Buffer.from(JSON.stringify(taskDefinition)),
         -1,
         (error: Error) => {
           if (error) return reject(error);

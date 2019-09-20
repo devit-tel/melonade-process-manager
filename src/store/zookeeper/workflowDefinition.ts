@@ -48,7 +48,7 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     return new Promise((resolve: Function, reject: Function) =>
       this.client.mkdirp(
         `${this.root}/${workflowDefinition.name}/${workflowDefinition.rev}`,
-        new Buffer(JSON.stringify(workflowDefinition)),
+        Buffer.from(JSON.stringify(workflowDefinition)),
         null,
         'PERSISTENT',
         (error: Error) => {

@@ -103,7 +103,7 @@ export const dispatch = (
       ? config.kafkaTopicName.systemTask
       : `${config.kafkaTopicName.task}.${task.taskName}`,
     null,
-    new Buffer(JSON.stringify(task)),
+    Buffer.from(JSON.stringify(task)),
     transactionId,
     Date.now(),
   );
@@ -113,7 +113,7 @@ export const sendEvent = (event: IEvent) =>
   producerClient.produce(
     config.kafkaTopicName.store,
     null,
-    new Buffer(JSON.stringify(event)),
+    Buffer.from(JSON.stringify(event)),
     event.transactionId,
     Date.now(),
   );
