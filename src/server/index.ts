@@ -4,7 +4,8 @@ import koaCompress = require('koa-compress');
 import koaRouter = require('koa-router');
 import responseFormatter from './middlewares/responseFormatter';
 import errorHandler from './middlewares/errorHandler';
-import * as v1Router from './routers/v1';
+import { router as v1Router } from './routers/v1';
+import { router as systemRouter } from './routers/system';
 import { NotFound } from '../errors';
 
 export class Server {
@@ -29,10 +30,12 @@ export class Server {
     const mainRouter = new koaRouter();
 
     mainRouter.use(
-      '/v1',
-      v1Router.router.routes(),
-      v1Router.router.allowedMethods(),
+      '/system',
+      systemRouter.routes(),
+      systemRouter.allowedMethods(),
     );
+
+    mainRouter.use('/v1', v1Router.routes(), v1Router.allowedMethods());
 
     mainRouter.all('*', () => {
       throw new NotFound('Route not found');
