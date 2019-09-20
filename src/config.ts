@@ -14,6 +14,10 @@ const pickAndReplaceFromENV = (template: string) =>
     return result;
   }, {});
 
+export const saga = {
+  namespace: process.env['saga.namespace'] || 'node',
+};
+
 export const server = {
   enabled: process.env['server.enabled'] === 'true',
   port: +process.env['server.port'] || 8080,
@@ -22,21 +26,13 @@ export const server = {
 
 export const kafkaTopicName = {
   // Publish to specified task
-  task: `${process.env['kafka.prefix'] || 'node'}.${kafkaConstant.PREFIX}.${
-    kafkaConstant.TASK_TOPIC_NAME
-  }`,
+  task: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.TASK_TOPIC_NAME}`,
   // Publish to system task
-  systemTask: `${process.env['kafka.prefix'] || 'node'}.${
-    kafkaConstant.PREFIX
-  }.${kafkaConstant.SYSTEM_TASK_TOPIC_NAME}`,
+  systemTask: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.SYSTEM_TASK_TOPIC_NAME}`,
   // Publish to store event
-  store: `${process.env['kafka.prefix'] || 'node'}.${kafkaConstant.PREFIX}.${
-    kafkaConstant.STORE_TOPIC_NAME
-  }`,
+  store: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.STORE_TOPIC_NAME}`,
   // Subscriptions to update event
-  event: `${process.env['kafka.prefix'] || 'node'}.${kafkaConstant.PREFIX}.${
-    kafkaConstant.EVENT_TOPIC
-  }`,
+  event: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.EVENT_TOPIC}`,
 };
 
 export const kafkaAdmin = {
@@ -77,7 +73,7 @@ export const kafkaProducer = {
 export const taskDefinitionStore = {
   type: StoreType.ZooKeeper,
   zookeeperConfig: {
-    root: '/saga-pm/task-definition',
+    root: `/saga-pm-${saga.namespace}/task-definition`,
     connectionString: process.env['task-definition.zookeeper.connections'],
     options: {
       sessionTimeout: 30000,
@@ -90,7 +86,7 @@ export const taskDefinitionStore = {
 export const workflowDefinitionStore = {
   type: StoreType.ZooKeeper,
   zookeeperConfig: {
-    root: '/saga-pm/workflow-definition',
+    root: `/saga-pm-${saga.namespace}/workflow-definition`,
     connectionString: process.env['workflow-definition.zookeeper.connections'],
     options: {
       sessionTimeout: 30000,
@@ -105,6 +101,7 @@ export const taskInstanceStore = {
   mongoDBConfig: {
     uri: process.env['task-instance.mongodb.uri'],
     options: {
+      dbName: `saga-pm-${saga.namespace}`,
       useNewUrlParser: true,
       reconnectTries: Number.MAX_SAFE_INTEGER,
       poolSize: 100,
@@ -118,6 +115,7 @@ export const workflowInstanceStore = {
   mongoDBConfig: {
     uri: process.env['workflow-instance.mongodb.uri'],
     options: {
+      dbName: `saga-pm-${saga.namespace}`,
       useNewUrlParser: true,
       reconnectTries: Number.MAX_SAFE_INTEGER,
       poolSize: 100,
@@ -131,6 +129,7 @@ export const transactionInstanceStore = {
   mongoDBConfig: {
     uri: process.env['transaction-instance.mongodb.uri'],
     options: {
+      dbName: `saga-pm-${saga.namespace}`,
       useNewUrlParser: true,
       reconnectTries: Number.MAX_SAFE_INTEGER,
       poolSize: 100,
