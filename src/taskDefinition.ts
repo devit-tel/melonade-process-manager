@@ -2,11 +2,10 @@ import * as R from 'ramda';
 import { isValidName, isNumber } from './utils/common';
 
 interface IDocIO {
-  [key: string]: {
-    type: 'string' | 'number' | 'mixed';
-    description: string;
-    required?: boolean;
-  };
+  field: string;
+  type: 'string' | 'number' | 'mixed';
+  description: string;
+  required?: boolean;
 }
 
 export interface ITaskDefinition {
