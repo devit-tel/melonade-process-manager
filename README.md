@@ -37,3 +37,4 @@ This is prototype of saga implementation, written in Node.
 - [ ] parallel tasks can be empty
 - [ ] Sub workflow won't get compensate
 - [x] Task/Workflow data send as string's ISO time format instead of number
+- [ ] Workflow Definition can have random task name
