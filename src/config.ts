@@ -103,6 +103,7 @@ export const taskInstanceStore = {
     options: {
       dbName: `saga-pm-${saga.namespace}`,
       useNewUrlParser: true,
+      useCreateIndex: true,
       reconnectTries: Number.MAX_SAFE_INTEGER,
       poolSize: 100,
       useFindAndModify: false,
@@ -117,6 +118,7 @@ export const workflowInstanceStore = {
     options: {
       dbName: `saga-pm-${saga.namespace}`,
       useNewUrlParser: true,
+      useCreateIndex: true,
       reconnectTries: Number.MAX_SAFE_INTEGER,
       poolSize: 100,
       useFindAndModify: false,
@@ -131,6 +133,7 @@ export const transactionInstanceStore = {
     options: {
       dbName: `saga-pm-${saga.namespace}`,
       useNewUrlParser: true,
+      useCreateIndex: true,
       reconnectTries: Number.MAX_SAFE_INTEGER,
       poolSize: 100,
       useFindAndModify: false,
