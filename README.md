@@ -30,6 +30,7 @@ This is prototype of saga implementation, written in Node.
 - [ ] Refactor redundant action in "STATE"
 - [ ] Watch for taskDefinition changed
 - [ ] Rewrite all the test XD
+- [ ] Instance delete retention
 
 ## Known issues
 
