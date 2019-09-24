@@ -1,5 +1,4 @@
 import * as dotenv from 'dotenv';
-import { StoreType } from './constants/store';
 import * as kafkaConstant from './constants/kafka';
 
 dotenv.config();
@@ -35,40 +34,40 @@ export const kafkaTopicName = {
   event: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.EVENT_TOPIC}`,
 };
 
-export const kafkaAdmin = {
+export const kafkaAdminConfig = {
   ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
   ...pickAndReplaceFromENV('^admin\\.kafka\\.conf\\.'),
 };
 
-export const kafkaState = {
+export const kafkaTaskConfig = {
   config: {
     'enable.auto.commit': 'false',
     'group.id': `saga-${saga.namespace}-state`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
-    ...pickAndReplaceFromENV('^state\\.kafka\\.conf\\.'),
+    ...pickAndReplaceFromENV('^task\\.kafka\\.conf\\.'),
   },
   topic: {
     'auto.offset.reset': 'earliest',
     ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
-    ...pickAndReplaceFromENV('^state\\.kafka\\.topic-conf\\.'),
+    ...pickAndReplaceFromENV('^task\\.kafka\\.topic-conf\\.'),
   },
 };
 
-export const kafkaSystemConsumer = {
+export const kafkaSystemTaskConfig = {
   config: {
     'enable.auto.commit': 'false',
     'group.id': `saga-${saga.namespace}-system`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
-    ...pickAndReplaceFromENV('^state\\.kafka\\.conf\\.'),
+    ...pickAndReplaceFromENV('^system-task\\.kafka\\.conf\\.'),
   },
   topic: {
     'auto.offset.reset': 'earliest',
     ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
-    ...pickAndReplaceFromENV('^state\\.kafka\\.topic-conf\\.'),
+    ...pickAndReplaceFromENV('^system-task\\.kafka\\.topic-conf\\.'),
   },
 };
 
-export const kafkaProducer = {
+export const kafkaProducerConfig = {
   config: {
     'compression.type': 'snappy',
     'enable.idempotence': 'true',
@@ -86,8 +85,8 @@ export const kafkaProducer = {
   },
 };
 
-export const taskDefinitionStore = {
-  type: StoreType.ZooKeeper,
+export const taskDefinitionStoreConfig = {
+  type: process.env['task-definition.type'],
   zookeeperConfig: {
     root: `/saga-pm-${saga.namespace}/task-definition`,
     connectionString: process.env['task-definition.zookeeper.connections'],
@@ -99,8 +98,8 @@ export const taskDefinitionStore = {
   },
 };
 
-export const workflowDefinitionStore = {
-  type: StoreType.ZooKeeper,
+export const workflowDefinitionStoreConfig = {
+  type: process.env['task-definition.type'],
   zookeeperConfig: {
     root: `/saga-pm-${saga.namespace}/workflow-definition`,
     connectionString: process.env['workflow-definition.zookeeper.connections'],
@@ -112,8 +111,8 @@ export const workflowDefinitionStore = {
   },
 };
 
-export const taskInstanceStore = {
-  type: StoreType.MongoDB,
+export const taskInstanceStoreConfig = {
+  type: process.env['task-instance.type'],
   mongoDBConfig: {
     uri: process.env['task-instance.mongodb.uri'],
     options: {
@@ -127,8 +126,8 @@ export const taskInstanceStore = {
   },
 };
 
-export const workflowInstanceStore = {
-  type: StoreType.MongoDB,
+export const workflowInstanceStoreConfig = {
+  type: process.env['workflow-instance.type'],
   mongoDBConfig: {
     uri: process.env['workflow-instance.mongodb.uri'],
     options: {
@@ -142,8 +141,8 @@ export const workflowInstanceStore = {
   },
 };
 
-export const transactionInstanceStore = {
-  type: StoreType.MongoDB,
+export const transactionInstanceStoreConfig = {
+  type: process.env['transaction-instance.type'],
   mongoDBConfig: {
     uri: process.env['transaction-instance.mongodb.uri'],
     options: {

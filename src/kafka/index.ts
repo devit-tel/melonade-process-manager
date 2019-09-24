@@ -30,18 +30,18 @@ export interface IEvent {
   error?: string;
 }
 
-export const adminClient = AdminClient.create(config.kafkaAdmin);
+export const adminClient = AdminClient.create(config.kafkaAdminConfig);
 export const stateConsumerClient = new KafkaConsumer(
-  config.kafkaState.config,
-  config.kafkaState.topic,
+  config.kafkaTaskConfig.config,
+  config.kafkaTaskConfig.topic,
 );
 export const systemConsumerClient = new KafkaConsumer(
-  config.kafkaSystemConsumer.config,
-  config.kafkaSystemConsumer.topic,
+  config.kafkaSystemTaskConfig.config,
+  config.kafkaSystemTaskConfig.topic,
 );
 export const producerClient = new Producer(
-  config.kafkaProducer.config,
-  config.kafkaProducer.topic,
+  config.kafkaProducerConfig.config,
+  config.kafkaProducerConfig.topic,
 );
 
 stateConsumerClient.setDefaultConsumeTimeout(1);

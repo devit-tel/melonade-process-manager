@@ -12,89 +12,89 @@ import { StoreType } from './constants/store';
 import './kafka';
 import { TransactionInstanceMongoseStore } from './store/mongoose/transactionInstance';
 
-switch (config.workflowDefinitionStore.type) {
+switch (config.workflowDefinitionStoreConfig.type) {
   case StoreType.ZooKeeper:
     store.workflowDefinitionStore.setClient(
       new WorkflowDefinitionZookeeperStore(
-        config.workflowDefinitionStore.zookeeperConfig.root,
-        config.workflowDefinitionStore.zookeeperConfig.connectionString,
-        config.workflowDefinitionStore.zookeeperConfig.options,
+        config.workflowDefinitionStoreConfig.zookeeperConfig.root,
+        config.workflowDefinitionStoreConfig.zookeeperConfig.connectionString,
+        config.workflowDefinitionStoreConfig.zookeeperConfig.options,
       ),
     );
     break;
   default:
     throw new Error(
-      `WorkflowDefinition Store: ${config.workflowDefinitionStore.type} is invalid`,
+      `WorkflowDefinition Store: ${config.workflowDefinitionStoreConfig.type} is invalid`,
     );
 }
 
-switch (config.taskDefinitionStore.type) {
+switch (config.taskDefinitionStoreConfig.type) {
   case StoreType.ZooKeeper:
     store.taskDefinitionStore.setClient(
       new TaskDefinitionZookeeperStore(
-        config.taskDefinitionStore.zookeeperConfig.root,
-        config.taskDefinitionStore.zookeeperConfig.connectionString,
-        config.taskDefinitionStore.zookeeperConfig.options,
+        config.taskDefinitionStoreConfig.zookeeperConfig.root,
+        config.taskDefinitionStoreConfig.zookeeperConfig.connectionString,
+        config.taskDefinitionStoreConfig.zookeeperConfig.options,
       ),
     );
     break;
   default:
     throw new Error(
-      `TaskDefinition Store: ${config.taskDefinitionStore.type} is invalid`,
+      `TaskDefinition Store: ${config.taskDefinitionStoreConfig.type} is invalid`,
     );
 }
 
-switch (config.transactionInstanceStore.type) {
+switch (config.transactionInstanceStoreConfig.type) {
   // case StoreType.Memory:
   //   store.transactionInstanceStore.setClient(new MemoryStore());
   //   break;
   case StoreType.MongoDB:
     store.transactionInstanceStore.setClient(
       new TransactionInstanceMongoseStore(
-        config.transactionInstanceStore.mongoDBConfig.uri,
-        config.transactionInstanceStore.mongoDBConfig.options,
+        config.transactionInstanceStoreConfig.mongoDBConfig.uri,
+        config.transactionInstanceStoreConfig.mongoDBConfig.options,
       ),
     );
     break;
   default:
     throw new Error(
-      `TranscationInstance Store: ${config.transactionInstanceStore.type} is invalid`,
+      `TranscationInstance Store: ${config.transactionInstanceStoreConfig.type} is invalid`,
     );
 }
 
-switch (config.workflowInstanceStore.type) {
+switch (config.workflowInstanceStoreConfig.type) {
   // case StoreType.Memory:
   //   store.workflowInstanceStore.setClient(new MemoryStore());
   //   break;
   case StoreType.MongoDB:
     store.workflowInstanceStore.setClient(
       new WorkflowInstanceMongoseStore(
-        config.workflowInstanceStore.mongoDBConfig.uri,
-        config.workflowInstanceStore.mongoDBConfig.options,
+        config.workflowInstanceStoreConfig.mongoDBConfig.uri,
+        config.workflowInstanceStoreConfig.mongoDBConfig.options,
       ),
     );
     break;
   default:
     throw new Error(
-      `WorkflowInstance Store: ${config.workflowInstanceStore.type} is invalid`,
+      `WorkflowInstance Store: ${config.workflowInstanceStoreConfig.type} is invalid`,
     );
 }
 
-switch (config.taskInstanceStore.type) {
+switch (config.taskInstanceStoreConfig.type) {
   // case StoreType.Memory:
   //   store.taskInstanceStore.setClient(new MemoryStore());
   //   break;
   case StoreType.MongoDB:
     store.taskInstanceStore.setClient(
       new TaskInstanceMongooseStore(
-        config.taskInstanceStore.mongoDBConfig.uri,
-        config.taskInstanceStore.mongoDBConfig.options,
+        config.taskInstanceStoreConfig.mongoDBConfig.uri,
+        config.taskInstanceStoreConfig.mongoDBConfig.options,
       ),
     );
     break;
   default:
     throw new Error(
-      `WorkflowInstance Store: ${config.taskInstanceStore.type} is invalid`,
+      `WorkflowInstance Store: ${config.taskInstanceStoreConfig.type} is invalid`,
     );
 }
 
