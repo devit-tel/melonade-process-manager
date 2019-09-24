@@ -43,7 +43,7 @@ export const kafkaAdmin = {
 export const kafkaState = {
   config: {
     'enable.auto.commit': 'false',
-    'group.id': `saga-${saga.namespace}-event-state`,
+    'group.id': `saga-${saga.namespace}-state`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^state\\.kafka\\.conf\\.'),
   },
@@ -57,7 +57,7 @@ export const kafkaState = {
 export const kafkaSystemConsumer = {
   config: {
     'enable.auto.commit': 'false',
-    'group.id': `saga-${saga.namespace}-event-system`,
+    'group.id': `saga-${saga.namespace}-system`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^state\\.kafka\\.conf\\.'),
   },
