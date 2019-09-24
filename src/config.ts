@@ -80,8 +80,8 @@ export const kafkaProducerConfig = {
     ...pickAndReplaceFromENV('^producer\\.kafka\\.conf\\.'),
   },
   topic: {
-    ...pickAndReplaceFromENV('^kafka\\.topic\\.'),
-    ...pickAndReplaceFromENV('^producer\\.kafka\\.topic\\.'),
+    ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
+    ...pickAndReplaceFromENV('^producer\\.kafka\\.topic-conf\\.'),
   },
 };
 
