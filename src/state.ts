@@ -5,7 +5,7 @@ import {
   WorkflowStates,
   WorkflowTypes,
 } from './constants/workflow';
-import { poll, consumerClient, sendEvent } from './kafka';
+import { poll, stateConsumerClient, sendEvent } from './kafka';
 import {
   taskInstanceStore,
   workflowInstanceStore,
@@ -486,7 +486,7 @@ const processTasksOfWorkflow = async (
 
 export const executor = async () => {
   try {
-    const tasksUpdate: ITaskUpdate[] = await poll(consumerClient, 200);
+    const tasksUpdate: ITaskUpdate[] = await poll(stateConsumerClient, 200);
     if (tasksUpdate.length) {
       const groupedTasks = R.toPairs(
         R.groupBy(R.path(['workflowId']), tasksUpdate),
@@ -499,7 +499,7 @@ export const executor = async () => {
         ),
       );
 
-      consumerClient.commit();
+      stateConsumerClient.commit();
     }
   } catch (error) {
     // Handle error here

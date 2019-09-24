@@ -40,34 +40,50 @@ export const kafkaAdmin = {
   ...pickAndReplaceFromENV('^admin\\.kafka\\.conf\\.'),
 };
 
-export const kafkaConsumer = {
-  'enable.auto.commit': 'false',
-  'group.id': 'saga-pm-consumer',
-  ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
-  ...pickAndReplaceFromENV('^consumer\\.kafka\\.conf\\.'),
+export const kafkaState = {
+  config: {
+    'enable.auto.commit': 'false',
+    'group.id': `saga-${saga.namespace}-event-state`,
+    ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
+    ...pickAndReplaceFromENV('^state\\.kafka\\.conf\\.'),
+  },
+  topic: {
+    'auto.offset.reset': 'earliest',
+    ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
+    ...pickAndReplaceFromENV('^state\\.kafka\\.topic-conf\\.'),
+  },
 };
 
 export const kafkaSystemConsumer = {
-  'enable.auto.commit': 'false',
-  'group.id': 'saga-pm-system-consumer',
-  ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
-  ...pickAndReplaceFromENV('^system-consumer\\.kafka\\.conf\\.'),
+  config: {
+    'enable.auto.commit': 'false',
+    'group.id': `saga-${saga.namespace}-event-system`,
+    ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
+    ...pickAndReplaceFromENV('^state\\.kafka\\.conf\\.'),
+  },
+  topic: {
+    'auto.offset.reset': 'earliest',
+    ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
+    ...pickAndReplaceFromENV('^state\\.kafka\\.topic-conf\\.'),
+  },
 };
 
 export const kafkaProducer = {
-  'client.id': 'saga-pm',
-  'compression.type': 'snappy',
-  'retry.backoff.ms': '100',
-  'enable.idempotence': 'true',
-  'message.send.max.retries': '100000',
-  'socket.keepalive.enable': 'true',
-  'queue.buffering.max.messages': '10000',
-  'queue.buffering.max.ms': '1',
-  'batch.num.messages': '100',
-  'delivery.report.only.error': 'true',
-  dr_cb: 'true',
-  ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
-  ...pickAndReplaceFromENV('^producer\\.kafka\\.conf\\.'),
+  config: {
+    'compression.type': 'snappy',
+    'enable.idempotence': 'true',
+    'message.send.max.retries': '100000',
+    'socket.keepalive.enable': 'true',
+    'queue.buffering.max.messages': '10000',
+    'queue.buffering.max.ms': '1',
+    'batch.num.messages': '100',
+    ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
+    ...pickAndReplaceFromENV('^producer\\.kafka\\.conf\\.'),
+  },
+  topic: {
+    ...pickAndReplaceFromENV('^kafka\\.topic\\.'),
+    ...pickAndReplaceFromENV('^producer\\.kafka\\.topic\\.'),
+  },
 };
 
 export const taskDefinitionStore = {

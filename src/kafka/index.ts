@@ -31,27 +31,36 @@ export interface IEvent {
 }
 
 export const adminClient = AdminClient.create(config.kafkaAdmin);
-export const consumerClient = new KafkaConsumer(config.kafkaConsumer, {});
-export const systemConsumerClient = new KafkaConsumer(config.kafkaConsumer, {});
-export const producerClient = new Producer(config.kafkaProducer, {});
+export const stateConsumerClient = new KafkaConsumer(
+  config.kafkaState.config,
+  config.kafkaState.topic,
+);
+export const systemConsumerClient = new KafkaConsumer(
+  config.kafkaSystemConsumer.config,
+  config.kafkaSystemConsumer.topic,
+);
+export const producerClient = new Producer(
+  config.kafkaProducer.config,
+  config.kafkaProducer.topic,
+);
 
-consumerClient.setDefaultConsumeTimeout(1);
-consumerClient.connect();
-consumerClient.on('ready', () => {
-  console.log('Consumer kafka are ready');
-  consumerClient.subscribe([config.kafkaTopicName.event]);
+stateConsumerClient.setDefaultConsumeTimeout(1);
+stateConsumerClient.connect();
+stateConsumerClient.on('ready', () => {
+  console.log('State consumer kafka is ready');
+  stateConsumerClient.subscribe([config.kafkaTopicName.event]);
 });
 
-consumerClient.setDefaultConsumeTimeout(1);
+stateConsumerClient.setDefaultConsumeTimeout(1);
 systemConsumerClient.connect();
 systemConsumerClient.on('ready', () => {
-  console.log('System consumer kafka are ready');
+  console.log('System consumer kafka is ready');
   systemConsumerClient.subscribe([config.kafkaTopicName.systemTask]);
 });
 
 producerClient.connect();
 producerClient.on('ready', () => {
-  console.log('Producer kafka are ready');
+  console.log('Producer kafka is ready');
 });
 
 export const createTopic = (topicName: string): Promise<any> =>

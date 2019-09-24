@@ -110,48 +110,22 @@ export class WorkflowInstanceMongoseStore extends MongooseStore
   };
 
   update = async (workflowUpdate: IWorkflowUpdate): Promise<IWorkflow> => {
-    if (
-      [
-        WorkflowStates.Failed,
-        WorkflowStates.Completed,
-        WorkflowStates.Timeout,
-      ].includes(workflowUpdate.status)
-    ) {
-      // Final state just remove them from cache state
-      const deletedWorkflow = await this.model
-        .findOneAndDelete({
+    return this.model
+      .findOneAndUpdate(
+        {
           _id: workflowUpdate.workflowId,
           status: WorkflowPrevStates[workflowUpdate.status],
-        })
-        .lean({ virtuals: true })
-        .exec();
-
-      if (deletedWorkflow)
-        await taskInstanceStore.deleteAll(workflowUpdate.workflowId);
-
-      return {
-        ...deletedWorkflow,
-        status: workflowUpdate.status,
-        output: workflowUpdate.output,
-      };
-    } else {
-      return this.model
-        .findOneAndUpdate(
-          {
-            _id: workflowUpdate.workflowId,
-            status: WorkflowPrevStates[workflowUpdate.status],
-          },
-          {
-            status: workflowUpdate.status,
-            output: workflowUpdate.output,
-          },
-          {
-            new: true,
-          },
-        )
-        .lean({ virtuals: true })
-        .exec();
-    }
+        },
+        {
+          status: workflowUpdate.status,
+          output: workflowUpdate.output,
+        },
+        {
+          new: true,
+        },
+      )
+      .lean({ virtuals: true })
+      .exec();
   };
 
   delete = (workflowId: string): Promise<any> =>
