@@ -9,6 +9,6 @@ RUN npm install
 
 COPY . .
 RUN npm run build
-RUN apk del .gyp
+RUN apk del .gyp make g++ bash
 
 CMD [ "node", "./build/index.js" ]
