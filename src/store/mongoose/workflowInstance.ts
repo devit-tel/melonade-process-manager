@@ -3,10 +3,9 @@ import * as mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 import { MongooseStore } from '../mongoose';
 import { IWorkflow } from '../../workflow';
 import { IWorkflowInstanceStore } from '../../store';
-import { WorkflowPrevStates, WorkflowStates } from '../../constants/workflow';
+import { WorkflowPrevStates } from '../../constants/workflow';
 import { IWorkflowUpdate } from '../../state';
 import { TaskTypesList } from '../../constants/task';
-import { taskInstanceStore } from '../../store';
 
 const workflowSchema = new mongoose.Schema(
   {
