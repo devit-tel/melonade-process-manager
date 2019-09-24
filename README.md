@@ -17,7 +17,7 @@ This is prototype of saga implementation, written in Node.
 - [ ] Logger
 - [ ] Use custom error
 - [x] Clean up completed workflows/tasks
-- [ ] Delay dispatcher
+- [x] Delay dispatcher
 - [ ] Cron job
 - [x] Failed workflow handling
 - [x] Timeout workflow handling
