@@ -124,8 +124,14 @@ const getNextTaskPath = (
     case isTaskOfParallelTask(tasks, currentPath):
       return getNextParallelTask(tasks, currentPath, taskData);
     case isChildOfDecisionDefault(tasks, currentPath):
+      if (R.path(getNextPath(currentPath), tasks)) {
+        return { isCompleted: false, taskPath: getNextPath(currentPath) };
+      }
       return getNextTaskPath(tasks, R.dropLast(2, currentPath), taskData);
     case isChildOfDecisionCase(tasks, currentPath):
+      if (R.path(getNextPath(currentPath), tasks)) {
+        return { isCompleted: false, taskPath: getNextPath(currentPath) };
+      }
       return getNextTaskPath(tasks, R.dropLast(3, currentPath), taskData);
     case isTaskOfActivityTask(tasks, currentPath):
       return { isCompleted: false, taskPath: getNextPath(currentPath) };
