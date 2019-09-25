@@ -66,6 +66,9 @@ export interface IWorkflowDefinition {
     name: string;
     rev: string;
   };
+  outputParameters: {
+    [key: string]: string | any;
+  };
 }
 
 const isNumber = R.is(Number);
@@ -245,6 +248,7 @@ export class WorkflowDefinition implements IWorkflowDefinition {
     name: string;
     rev: string;
   };
+  outputParameters: {};
 
   constructor(workflowDefinitionData: IWorkflowDefinition) {
     const workflowValidationErrors = workflowValidation(workflowDefinitionData);
@@ -274,6 +278,7 @@ export class WorkflowDefinition implements IWorkflowDefinition {
         'failureStrategy',
         'retry',
         'recoveryWorkflow',
+        'outputParameters',
       ],
       this,
     );

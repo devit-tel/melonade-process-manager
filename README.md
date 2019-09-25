@@ -22,7 +22,7 @@ This is prototype of saga implementation, written in Node.
 - [x] Failed workflow handling
 - [x] Timeout workflow handling
 - [ ] Cancle workflow
-- [ ] Event store
+- [x] Event store
 - [x] Compensate workflow
 - [x] Publish event to kafka
 - [x] Update Workflow/Transaction's output

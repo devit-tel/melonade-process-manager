@@ -10,7 +10,9 @@ export interface IWorkflow {
   input: {
     [key: string]: any;
   };
-  output: any;
+  output: {
+    [key: string]: any;
+  };
   createTime: number;
   startTime: number;
   endTime: number;

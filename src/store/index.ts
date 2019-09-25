@@ -5,7 +5,7 @@ import { IWorkflow } from '../workflow';
 import { ITask } from '../task';
 import { WorkflowStates, WorkflowTypes } from '../constants/workflow';
 import { TaskStates, TaskTypes } from '../constants/task';
-import { mapInputFromTaskData } from '../utils/task';
+import { mapParametersToValue } from '../utils/task';
 import { dispatch, sendEvent } from '../kafka';
 import { ITaskUpdate, IWorkflowUpdate, ITransactionUpdate } from '../state';
 import { ITransaction } from '../transaction';
@@ -309,7 +309,7 @@ export class TaskInstanceStore {
       type: workflowTask.type,
       status: TaskStates.Scheduled,
       isRetried: false,
-      input: mapInputFromTaskData(workflowTask.inputParameters, {
+      input: mapParametersToValue(workflowTask.inputParameters, {
         ...tasksData,
         workflow,
       }),

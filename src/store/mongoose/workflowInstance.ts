@@ -3,7 +3,7 @@ import * as mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 import { MongooseStore } from '../mongoose';
 import { IWorkflow } from '../../workflow';
 import { IWorkflowInstanceStore } from '../../store';
-import { WorkflowPrevStates } from '../../constants/workflow';
+import { WorkflowPrevStates, WorkflowStates } from '../../constants/workflow';
 import { IWorkflowUpdate } from '../../state';
 import { TaskTypesList } from '../../constants/task';
 
@@ -61,6 +61,7 @@ const workflowSchema = new mongoose.Schema(
         name: String,
         rev: String,
       },
+      outputParameters: mongoose.Schema.Types.Mixed,
     },
     childOf: {
       type: String,
@@ -118,6 +119,14 @@ export class WorkflowInstanceMongoseStore extends MongooseStore
         {
           status: workflowUpdate.status,
           output: workflowUpdate.output,
+          endTime: [
+            WorkflowStates.Completed,
+            WorkflowStates.Failed,
+            WorkflowStates.Timeout,
+            WorkflowStates.Cancelled,
+          ].includes(workflowUpdate.status)
+            ? Date.now()
+            : null,
         },
         {
           new: true,

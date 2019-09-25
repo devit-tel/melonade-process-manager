@@ -38,11 +38,11 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     workflowDefinition: IWorkflowDefinition,
   ): Promise<IWorkflowDefinition> => {
     const isWorkflowExists = await this.isExists(
-      `${this.root}/${workflowDefinition.name}`,
+      `${this.root}/${workflowDefinition.name}/${workflowDefinition.rev}`,
     );
     if (isWorkflowExists)
       throw new BadRequest(
-        `Workflow: ${workflowDefinition.name} already exists`,
+        `Workflow: ${workflowDefinition.name}${workflowDefinition.rev} already exists`,
       );
 
     return new Promise((resolve: Function, reject: Function) =>

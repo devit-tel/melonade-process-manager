@@ -3,12 +3,12 @@ import { isString } from './common';
 import { IWorkflow } from '../workflow';
 import { ITask } from '../task';
 
-export const mapInputFromTaskData = (
-  inputParameters: { [key: string]: any },
+export const mapParametersToValue = (
+  parameters: { [key: string]: any },
   tasksData: { [taskReferenceName: string]: ITask | IWorkflow },
 ): { [key: string]: any } => {
-  const inputParametersPairs = R.toPairs(inputParameters);
-  const inputPairs = inputParametersPairs.map(
+  const parametersPairs = R.toPairs(parameters);
+  const valuePairs = parametersPairs.map(
     ([key, value]: [string, string | any]): [string, any] => {
       if (
         isString(value) &&
@@ -22,5 +22,5 @@ export const mapInputFromTaskData = (
       return [key, value];
     },
   );
-  return R.fromPairs(inputPairs);
+  return R.fromPairs(valuePairs);
 };
