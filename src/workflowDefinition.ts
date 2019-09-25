@@ -60,7 +60,6 @@ export interface IWorkflowDefinition {
   failureStrategy: FailureStrategies;
   retry?: {
     limit: number;
-    delay: number;
   };
   recoveryWorkflow?: {
     name: string;
@@ -242,7 +241,6 @@ export class WorkflowDefinition implements IWorkflowDefinition {
   failureStrategy: FailureStrategies;
   retry?: {
     limit: number;
-    delay: number;
   };
   recoveryWorkflow?: {
     name: string;

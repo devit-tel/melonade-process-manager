@@ -18,7 +18,7 @@ const workflowSchema = new mongoose.Schema(
       type: String,
     },
     type: String,
-    retryCount: Number,
+    retries: Number,
     input: mongoose.Schema.Types.Mixed,
     output: mongoose.Schema.Types.Mixed,
     createTime: Number,
