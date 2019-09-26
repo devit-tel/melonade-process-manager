@@ -7,3 +7,5 @@ export const STORE_TOPIC_NAME = 'store';
 export const SYSTEM_TASK_TOPIC_NAME = 'system-task';
 
 export const TASK_TOPIC_NAME = 'task';
+
+export const COMMAND_TOPIC_NAME = 'command';

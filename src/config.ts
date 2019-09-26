@@ -32,6 +32,8 @@ export const kafkaTopicName = {
   store: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.STORE_TOPIC_NAME}`,
   // Subscriptions to update event
   event: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.EVENT_TOPIC}`,
+  // Subscriptions to command
+  command: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.COMMAND_TOPIC_NAME}`,
 };
 
 export const kafkaAdminConfig = {
@@ -59,6 +61,20 @@ export const kafkaSystemTaskConfig = {
     'group.id': `saga-${saga.namespace}-system`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^system-task\\.kafka\\.conf\\.'),
+  },
+  topic: {
+    'auto.offset.reset': 'earliest',
+    ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
+    ...pickAndReplaceFromENV('^system-task\\.kafka\\.topic-conf\\.'),
+  },
+};
+
+export const kafkaCommandConfig = {
+  config: {
+    'enable.auto.commit': 'false',
+    'group.id': `saga-${saga.namespace}-command`,
+    ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
+    ...pickAndReplaceFromENV('^command\\.kafka\\.conf\\.'),
   },
   topic: {
     'auto.offset.reset': 'earliest',
