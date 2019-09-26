@@ -91,7 +91,7 @@ export const kafkaProducerConfig = {
     'socket.keepalive.enable': 'true',
     'queue.buffering.max.messages': '100000',
     'queue.buffering.max.ms': '10',
-    'batch.num.messages': '100',
+    'batch.num.messages': '1000',
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^producer\\.kafka\\.conf\\.'),
   },

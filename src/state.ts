@@ -470,6 +470,7 @@ const processTasksOfWorkflow = async (
   workflowTasksUpdate: ITaskUpdate[],
 ): Promise<any> => {
   for (const taskUpdate of workflowTasksUpdate) {
+    // console.time(`${taskUpdate.taskId}-${taskUpdate.status}`);
     try {
       const task = await taskInstanceStore.update({
         ...taskUpdate,
@@ -500,6 +501,7 @@ const processTasksOfWorkflow = async (
         timestamp: Date.now(),
       });
     }
+    // console.timeEnd(`${taskUpdate.taskId}-${taskUpdate.status}`);
   }
 };
 
