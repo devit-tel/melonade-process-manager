@@ -77,51 +77,63 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
       },
       (error: Error, workflows: string[]) => {
         if (!error) {
-          workflows.map(this.getAndWatchRefs);
+          workflows.map(this.getAndWatchRevs);
         }
       },
     );
   };
 
-  private getAndWatchRefs = (workflow: string) => {
+  private getAndWatchRevs = (workflow: string) => {
     this.client.getChildren(
       `${this.root}/${workflow}`,
       (event: IZookeeperEvent) => {
         switch (event.name) {
           case ZookeeperEvents.NODE_CHILDREN_CHANGED:
             // When add new ref, this is also fire when ref are deleted, but did not work at this time
-            this.getAndWatchRefs(workflow);
+            this.getAndWatchRevs(workflow);
             break;
           default:
             break;
         }
         return true;
       },
-      (workflowError: Error, refs: string[]) => {
+      (workflowError: Error, revs: string[]) => {
         if (!workflowError) {
-          for (const ref of refs) {
-            if (R.isNil(R.path([workflow, ref], this.localStore))) {
-              this.client.getData(
-                `${this.root}/${workflow}/${ref}`,
-                null,
-                (dataError: Error, data: Buffer) => {
-                  if (!dataError) {
-                    try {
-                      const workflowDefinition = new WorkflowDefinition(
-                        jsonTryParse(data.toString()),
-                      );
-                      this.localStore = R.set(
-                        R.lensPath([workflow, ref]),
-                        workflowDefinition.toObject(),
-                        this.localStore,
-                      );
-                    } catch (error) {
-                      console.error(error);
-                    }
-                  }
-                },
-              );
-            }
+          for (const rev of revs) {
+            this.getAndWatchRef(workflow, rev);
+          }
+        }
+      },
+    );
+  };
+
+  private getAndWatchRef = (workflow: string, rev: string) => {
+    this.client.getData(
+      `${this.root}/${workflow}/${rev}`,
+      (event: IZookeeperEvent) => {
+        switch (event.name) {
+          case ZookeeperEvents.NODE_DATA_CHANGED:
+            // When rev's data change
+            this.getAndWatchRef(workflow, rev);
+            break;
+          default:
+            break;
+        }
+        return true;
+      },
+      (dataError: Error, data: Buffer) => {
+        if (!dataError) {
+          try {
+            const workflowDefinition = new WorkflowDefinition(
+              jsonTryParse(data.toString()),
+            );
+            this.localStore = R.set(
+              R.lensPath([workflow, rev]),
+              workflowDefinition.toObject(),
+              this.localStore,
+            );
+          } catch (error) {
+            console.error(error);
           }
         }
       },

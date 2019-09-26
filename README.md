@@ -28,7 +28,7 @@ This is prototype of saga implementation, written in Node.
 - [x] Update Workflow/Transaction's output
 - [x] Time keeper
 - [ ] Refactor redundant action in "STATE"
-- [ ] Watch for taskDefinition changed
+- [x] Watch for workflowDefinition changed
 - [ ] Rewrite all the test XD
 - [ ] Instance delete retention
 - [ ] Graceful shutdown
