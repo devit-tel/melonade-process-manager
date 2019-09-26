@@ -21,3 +21,10 @@ export const getWorkflowDefinition = async (
 export const listWorkflowDefinition = async (): Promise<any[]> => {
   return workflowDefinitionStore.list();
 };
+
+export const updateWorkflowDefinition = (
+  workflowDefinitionData: WorkflowDefinition,
+): Promise<any> => {
+  const workflowDefinition = new WorkflowDefinition(workflowDefinitionData);
+  return workflowDefinitionStore.update(workflowDefinition.toObject());
+};

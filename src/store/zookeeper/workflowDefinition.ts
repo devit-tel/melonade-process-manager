@@ -63,6 +63,22 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     return Promise.resolve(super.listValue(undefined, 0));
   }
 
+  update(
+    workflowDefinition: IWorkflowDefinition,
+  ): Promise<IWorkflowDefinition> {
+    return new Promise((resolve: Function, reject: Function) =>
+      this.client.setData(
+        `${this.root}/${workflowDefinition.name}/${workflowDefinition.rev}`,
+        Buffer.from(JSON.stringify(workflowDefinition)),
+        -1,
+        (error: Error) => {
+          if (error) return reject(error);
+          resolve(workflowDefinition);
+        },
+      ),
+    );
+  }
+
   private getAndWatchWorkflows = () => {
     this.client.getChildren(
       this.root,

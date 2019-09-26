@@ -3,6 +3,7 @@ import {
   createWorkflowDefinition,
   getWorkflowDefinition,
   listWorkflowDefinition,
+  updateWorkflowDefinition,
 } from '../../../../domains/definitions/workflow';
 
 export const router = new koaRouter();
@@ -18,4 +19,8 @@ router.get('/:name/:rev', (ctx: koaRouter.IRouterContext) => {
 
 router.get('/', () => {
   return listWorkflowDefinition();
+});
+
+router.put('/', (ctx: koaRouter.IRouterContext | any) => {
+  return updateWorkflowDefinition(ctx.request.body);
 });

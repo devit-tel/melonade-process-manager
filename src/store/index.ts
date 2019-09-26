@@ -18,6 +18,7 @@ export interface IStore {
 export interface IWorkflowDefinitionStore extends IStore {
   get(name: string, rev: string): Promise<IWorkflowDefinition>;
   create(workflowDefinition: IWorkflowDefinition): Promise<IWorkflowDefinition>;
+  update(workflowDefinition: IWorkflowDefinition): Promise<IWorkflowDefinition>;
   list(): Promise<IWorkflowDefinition[]>;
 }
 
@@ -69,6 +70,12 @@ export class WorkflowDefinitionStore {
     workflowDefinition: IWorkflowDefinition,
   ): Promise<IWorkflowDefinition> {
     return this.client.create(workflowDefinition);
+  }
+
+  update(
+    workflowDefinition: IWorkflowDefinition,
+  ): Promise<IWorkflowDefinition> {
+    return this.client.update(workflowDefinition);
   }
 }
 
