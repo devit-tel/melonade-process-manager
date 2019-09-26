@@ -8,6 +8,7 @@ import { WorkflowInstanceMongoseStore } from './store/mongoose/workflowInstance'
 import { Server } from './server';
 import { executor as stateExecutor } from './state';
 import { executor as systemTaskExecutor } from './systemTask';
+import { executor as commandExecutor } from './command';
 import { StoreType } from './constants/store';
 import './kafka';
 import { TransactionInstanceMongoseStore } from './store/mongoose/transactionInstance';
@@ -104,3 +105,4 @@ if (config.server.enabled) {
 
 stateExecutor();
 systemTaskExecutor();
+commandExecutor();

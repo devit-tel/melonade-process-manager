@@ -65,7 +65,8 @@ const processCommands = async (commands: AllCommand[]): Promise<void> => {
       if (!command.transactionId) throw new Error('TransactionId is required');
       switch (command.type) {
         case CommandTypes.StartTransaction:
-          return processStartTransactionCommand(command);
+          await processStartTransactionCommand(command);
+          break;
 
         default:
           throw new Error(`Command type "${command.type}" is invalid`);
