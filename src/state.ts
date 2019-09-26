@@ -385,41 +385,52 @@ const handleRetryWorkflow = (workflow: IWorkflow, tasksData: ITask[]) => {
   return handleFailedWorkflow(workflow);
 };
 
-const handleCompenstateWorkflow = (workflow: IWorkflow, tasksData: ITask[]) =>
-  workflowInstanceStore.create(
-    workflow.transactionId,
-    WorkflowTypes.CompensateWorkflow,
-    {
-      name: workflow.workflowDefinition.name,
-      rev: `${workflow.workflowDefinition.rev}_compensate`,
-      tasks: getCompenstateTasks(tasksData),
-      failureStrategy: WorkfloFailureStrategies.Failed,
-      outputParameters: {},
-    },
-    toObjectByKey(tasksData, 'taskReferenceName'),
-  );
+const handleCompenstateWorkflow = (workflow: IWorkflow, tasksData: ITask[]) => {
+  const compenstateTasks = getCompenstateTasks(tasksData);
+  if (compenstateTasks.length) {
+    return workflowInstanceStore.create(
+      workflow.transactionId,
+      WorkflowTypes.CompensateWorkflow,
+      {
+        name: workflow.workflowDefinition.name,
+        rev: `${workflow.workflowDefinition.rev}_compensate`,
+        tasks: compenstateTasks,
+        failureStrategy: WorkfloFailureStrategies.Failed,
+        outputParameters: {},
+      },
+      toObjectByKey(tasksData, 'taskReferenceName'),
+    );
+  } else {
+    return handleCompletedCompensateWorkflow(workflow);
+  }
+};
 
 const handleCompenstateThenRetryWorkflow = (
   workflow: IWorkflow,
   tasksData: ITask[],
-) =>
-  workflowInstanceStore.create(
-    workflow.transactionId,
-    WorkflowTypes.CompensateThenRetryWorkflow,
-    {
-      name: workflow.workflowDefinition.name,
-      rev: `${workflow.workflowDefinition.rev}_compensate`,
-      tasks: getCompenstateTasks(tasksData),
-      failureStrategy: WorkfloFailureStrategies.Failed,
-      outputParameters: {},
-    },
-    toObjectByKey(tasksData, 'taskReferenceName'),
-    undefined,
-    {
-      retries: workflow.retries,
-    },
-  );
-
+) => {
+  const compenstateTasks = getCompenstateTasks(tasksData);
+  if (compenstateTasks.length) {
+    return workflowInstanceStore.create(
+      workflow.transactionId,
+      WorkflowTypes.CompensateThenRetryWorkflow,
+      {
+        name: workflow.workflowDefinition.name,
+        rev: `${workflow.workflowDefinition.rev}_compensate`,
+        tasks: getCompenstateTasks(tasksData),
+        failureStrategy: WorkfloFailureStrategies.Failed,
+        outputParameters: {},
+      },
+      toObjectByKey(tasksData, 'taskReferenceName'),
+      undefined,
+      {
+        retries: workflow.retries,
+      },
+    );
+  } else {
+    return handleCompletedCompensateThenRetryWorkflow(workflow);
+  }
+};
 const handleFailedWorkflow = (workflow: IWorkflow) =>
   transactionInstanceStore.update({
     transactionId: workflow.transactionId,
