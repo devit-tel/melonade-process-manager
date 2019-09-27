@@ -70,12 +70,9 @@ commandConsumerClient.on('ready', () => {
 });
 
 producerClient.connect();
+producerClient.setPollInterval(100);
 producerClient.on('ready', () => {
   console.log('Producer kafka is ready');
-  // node-rdkafka need to manual periodically poll, lol
-  setInterval(() => {
-    producerClient.poll();
-  }, 100);
 });
 
 export const createTopic = (topicName: string): Promise<any> =>
