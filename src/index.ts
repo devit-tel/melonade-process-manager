@@ -9,13 +9,13 @@ const maxRunnerNumber = Number.isNaN(+process.env['runners.max'])
   : +process.env['runners.max'];
 
 if (cluster.isMaster) {
-  cluster.on('exit', worker => {
-    console.log(`Workker: ${worker.id} are dead`);
+  cluster.on('exit', (worker: cluster.Worker) => {
+    console.log(`Worker: ${worker.id} are dead`);
     cluster.fork();
-    console.log(`Starting new workker`);
+    console.log(`Starting new worker`);
   });
 
-  cluster.on('fork', worker => {
+  cluster.on('fork', (worker: cluster.Worker) => {
     console.log(`Worker ${worker.process.pid} started`);
   });
 
