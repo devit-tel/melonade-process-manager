@@ -37,14 +37,8 @@ const taskSchema = new mongoose.Schema(
     type: String,
     parallelTasks: mongoose.Schema.Types.Mixed,
     workflow: {
-      name: {
-        type: String,
-        index: true,
-      },
-      rev: {
-        type: String,
-        index: true,
-      },
+      name: String,
+      rev: String,
     },
     decisions: mongoose.Schema.Types.Mixed,
     defaultDecision: [mongoose.Schema.Types.Mixed],
