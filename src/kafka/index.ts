@@ -48,21 +48,21 @@ export const producerClient = new Producer(
   config.kafkaProducerConfig.topic,
 );
 
-stateConsumerClient.setDefaultConsumeTimeout(1);
+stateConsumerClient.setDefaultConsumeTimeout(5);
 stateConsumerClient.connect();
 stateConsumerClient.on('ready', () => {
   console.log('State consumer kafka is ready');
   stateConsumerClient.subscribe([config.kafkaTopicName.event]);
 });
 
-systemConsumerClient.setDefaultConsumeTimeout(1);
+systemConsumerClient.setDefaultConsumeTimeout(5);
 systemConsumerClient.connect();
 systemConsumerClient.on('ready', () => {
   console.log('System consumer kafka is ready');
   systemConsumerClient.subscribe([config.kafkaTopicName.systemTask]);
 });
 
-commandConsumerClient.setDefaultConsumeTimeout(1);
+commandConsumerClient.setDefaultConsumeTimeout(5);
 commandConsumerClient.connect();
 commandConsumerClient.on('ready', () => {
   console.log('Command consumer kafka is ready');
