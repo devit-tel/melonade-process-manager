@@ -1,4 +1,4 @@
-import { AdminClient, KafkaConsumer, Producer } from 'node-rdkafka';
+import { AdminClient, KafkaConsumer, Producer } from '@nv4re/node-rdkafka';
 import * as config from '../config';
 import { jsonTryParse } from '../utils/common';
 import { ITask } from '../task';
