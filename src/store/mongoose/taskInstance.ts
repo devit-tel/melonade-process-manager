@@ -1,14 +1,8 @@
 import * as mongoose from 'mongoose';
+import { Task, Event, State } from '@melonade/melonade-declaration';
 import * as mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 import { MongooseStore } from '../mongoose';
 import { ITaskInstanceStore } from '../../store';
-import { ITask } from '../../task';
-import { ITaskUpdate } from '../../state';
-import {
-  TaskPrevStates,
-  SystemTaskPrevStates,
-  TaskStates,
-} from '../../constants/task';
 
 const taskSchema = new mongoose.Schema(
   {
@@ -73,21 +67,21 @@ export class TaskInstanceMongooseStore extends MongooseStore
     super(uri, mongoOption, 'task-instance', taskSchema);
   }
 
-  create = async (taskData: ITask): Promise<ITask> => {
+  create = async (taskData: Task.ITask): Promise<Task.ITask> => {
     const task = (await this.model.create(taskData)).toObject();
     return {
       ...taskData,
       ...task,
     };
   };
-  update = async (taskUpdate: ITaskUpdate): Promise<ITask> => {
+  update = async (taskUpdate: Event.ITaskUpdate): Promise<Task.ITask> => {
     const task = await this.model
       .findOneAndUpdate(
         {
           _id: taskUpdate.taskId,
           status: taskUpdate.isSystem
-            ? SystemTaskPrevStates[taskUpdate.status]
-            : TaskPrevStates[taskUpdate.status],
+            ? State.SystemTaskPrevStates[taskUpdate.status]
+            : State.TaskPrevStates[taskUpdate.status],
         },
         {
           output: taskUpdate.output,
@@ -100,9 +94,9 @@ export class TaskInstanceMongooseStore extends MongooseStore
               }
             : {}),
           endTime: [
-            TaskStates.Completed,
-            TaskStates.Failed,
-            TaskStates.Timeout,
+            State.TaskStates.Completed,
+            State.TaskStates.Failed,
+            State.TaskStates.Timeout,
           ].includes(taskUpdate.status)
             ? Date.now()
             : null,
@@ -117,12 +111,12 @@ export class TaskInstanceMongooseStore extends MongooseStore
     if (task) return task;
     throw new Error(
       `Task not match: ${taskUpdate.taskId} with status: ${
-        TaskPrevStates[taskUpdate.status]
+        State.TaskPrevStates[taskUpdate.status]
       }`,
     );
   };
 
-  get = async (taskId: string): Promise<ITask> => {
+  get = async (taskId: string): Promise<Task.ITask> => {
     const taskData = await this.model
       .findOne({ _id: taskId })
       .lean({ virtuals: true })
@@ -132,7 +126,7 @@ export class TaskInstanceMongooseStore extends MongooseStore
     return null;
   };
 
-  getAll = (workflowId: string): Promise<ITask[]> => {
+  getAll = (workflowId: string): Promise<Task.ITask[]> => {
     return this.model
       .find({ workflowId })
       .lean({ virtuals: true })

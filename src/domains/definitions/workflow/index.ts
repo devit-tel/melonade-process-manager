@@ -1,20 +1,18 @@
-import {
-  WorkflowDefinition,
-  IWorkflowDefinition,
-} from '../../../workflowDefinition';
+import { WorkflowDefinition } from '@melonade/melonade-declaration';
 import { workflowDefinitionStore } from '../../../store';
 
 export const createWorkflowDefinition = (
-  workflowDefinitionData: WorkflowDefinition,
+  workflowDefinitionData: WorkflowDefinition.WorkflowDefinition,
 ): Promise<any> => {
-  const workflowDefinition = new WorkflowDefinition(workflowDefinitionData);
-  return workflowDefinitionStore.create(workflowDefinition.toObject());
+  return workflowDefinitionStore.create(
+    new WorkflowDefinition.WorkflowDefinition(workflowDefinitionData),
+  );
 };
 
 export const getWorkflowDefinition = async (
   workflowName: string,
   workflowRev: string,
-): Promise<IWorkflowDefinition> => {
+): Promise<WorkflowDefinition.IWorkflowDefinition> => {
   return workflowDefinitionStore.get(workflowName, workflowRev);
 };
 
@@ -23,8 +21,9 @@ export const listWorkflowDefinition = async (): Promise<any[]> => {
 };
 
 export const updateWorkflowDefinition = (
-  workflowDefinitionData: WorkflowDefinition,
+  workflowDefinitionData: WorkflowDefinition.WorkflowDefinition,
 ): Promise<any> => {
-  const workflowDefinition = new WorkflowDefinition(workflowDefinitionData);
-  return workflowDefinitionStore.update(workflowDefinition.toObject());
+  return workflowDefinitionStore.update(
+    new WorkflowDefinition.WorkflowDefinition(workflowDefinitionData),
+  );
 };

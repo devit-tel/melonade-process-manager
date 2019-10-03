@@ -1,16 +1,18 @@
 import { systemConsumerClient, poll, sendEvent } from './kafka';
-import { ITask } from './task';
-import { AllTaskType } from './workflowDefinition';
-import { TaskTypes, TaskStates } from './constants/task';
+import {
+  WorkflowDefinition,
+  Task,
+  State,
+  Workflow,
+} from '@melonade/melonade-declaration';
 import { getTaskData } from './state';
 import {
   workflowInstanceStore,
   taskInstanceStore,
   workflowDefinitionStore,
 } from './store';
-import { WorkflowTypes } from './constants/workflow';
 
-const processDecisionTask = async (systemTask: ITask) => {
+const processDecisionTask = async (systemTask: Task.ITask) => {
   const workflow = await workflowInstanceStore.get(systemTask.workflowId);
   const taskData = await getTaskData(workflow);
 
@@ -24,17 +26,17 @@ const processDecisionTask = async (systemTask: ITask) => {
   );
 };
 
-const processParallelTask = async (systemTask: ITask) => {
+const processParallelTask = async (systemTask: Task.ITask) => {
   const workflow = await workflowInstanceStore.get(systemTask.workflowId);
   const taskData = await getTaskData(workflow);
   await Promise.all(
-    systemTask.parallelTasks.map((tasks: AllTaskType[]) =>
+    systemTask.parallelTasks.map((tasks: WorkflowDefinition.AllTaskType[]) =>
       taskInstanceStore.create(workflow, tasks[0], taskData, true),
     ),
   );
 };
 
-const processSubWorkflowTask = async (systemTask: ITask) => {
+const processSubWorkflowTask = async (systemTask: Task.ITask) => {
   const workflowDefinition = await workflowDefinitionStore.get(
     systemTask.workflow.name,
     systemTask.workflow.rev,
@@ -51,21 +53,21 @@ const processSubWorkflowTask = async (systemTask: ITask) => {
     return taskInstanceStore.update({
       transactionId: systemTask.transactionId,
       taskId: systemTask.taskId,
-      status: TaskStates.Failed,
+      status: State.TaskStates.Failed,
       isSystem: true,
     });
   }
 
   return workflowInstanceStore.create(
     systemTask.transactionId,
-    WorkflowTypes.SubWorkflow,
+    Workflow.WorkflowTypes.SubWorkflow,
     workflowDefinition,
     systemTask.input,
     systemTask.taskId,
   );
 };
 
-const processActivityTask = (task: ITask) => {
+const processActivityTask = (task: Task.ITask) => {
   return taskInstanceStore.reload({
     ...task,
     retries: task.retries - 1,
@@ -75,21 +77,21 @@ const processActivityTask = (task: ITask) => {
 
 export const executor = async () => {
   try {
-    const tasks: ITask[] = await poll(systemConsumerClient);
+    const tasks: Task.ITask[] = await poll(systemConsumerClient);
     if (tasks.length) {
       for (const task of tasks) {
         try {
           switch (task.type) {
-            case TaskTypes.Decision:
+            case Task.TaskTypes.Decision:
               await processDecisionTask(task);
               break;
-            case TaskTypes.Parallel:
+            case Task.TaskTypes.Parallel:
               await processParallelTask(task);
               break;
-            case TaskTypes.SubWorkflow:
+            case Task.TaskTypes.SubWorkflow:
               await processSubWorkflowTask(task);
               break;
-            case TaskTypes.Task:
+            case Task.TaskTypes.Task:
               // It's not system task
               // I return to prevent it from update the task
               await processActivityTask(task);
@@ -101,7 +103,7 @@ export const executor = async () => {
             isSystem: true,
             taskId: task.taskId,
             transactionId: task.transactionId,
-            status: TaskStates.Completed,
+            status: State.TaskStates.Completed,
           });
         } catch (error) {
           sendEvent({

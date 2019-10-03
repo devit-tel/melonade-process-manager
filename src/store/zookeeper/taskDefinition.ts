@@ -1,15 +1,14 @@
 // Serializer for 1 layer node (${root}/${taskName})
 import * as R from 'ramda';
+import { TaskDefinition } from '@melonade/melonade-declaration';
 import {
   ZookeeperStore,
   IZookeeperOptions,
   IZookeeperEvent,
   ZookeeperEvents,
 } from '.';
-import { TaskDefinition, ITaskDefinition } from '../../taskDefinition';
 import { jsonTryParse } from '../../utils/common';
 import { ITaskDefinitionStore } from '..';
-import { BadRequest } from '../../errors';
 
 // This is wrong
 export class TaskDefinitionZookeeperStore extends ZookeeperStore
@@ -28,19 +27,19 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
     });
   }
 
-  get(name: string): Promise<ITaskDefinition> {
+  get(name: string): Promise<TaskDefinition.ITaskDefinition> {
     return this.localStore[name];
   }
 
   create = async (
-    taskDefinition: ITaskDefinition,
-  ): Promise<ITaskDefinition> => {
+    taskDefinition: TaskDefinition.ITaskDefinition,
+  ): Promise<TaskDefinition.ITaskDefinition> => {
     const isTaskExists = await this.isExists(
       `${this.root}/${taskDefinition.name}`,
     );
 
     if (isTaskExists)
-      throw new BadRequest(`Task: ${taskDefinition.name} already exists`);
+      throw new Error(`Task: ${taskDefinition.name} already exists`);
 
     return new Promise((resolve: Function, reject: Function) =>
       this.client.create(
@@ -55,7 +54,9 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
     );
   };
 
-  update(taskDefinition: ITaskDefinition): Promise<ITaskDefinition> {
+  update(
+    taskDefinition: TaskDefinition.ITaskDefinition,
+  ): Promise<TaskDefinition.ITaskDefinition> {
     return new Promise((resolve: Function, reject: Function) =>
       this.client.setData(
         `${this.root}/${taskDefinition.name}`,
@@ -69,7 +70,7 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
     );
   }
 
-  list(): Promise<ITaskDefinition[]> {
+  list(): Promise<TaskDefinition.ITaskDefinition[]> {
     return Promise.resolve(this.listValue(undefined, 0));
   }
 
@@ -116,10 +117,9 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
       (dataError: Error, data: Buffer) => {
         if (!dataError) {
           try {
-            const taskDefinition = new TaskDefinition(
+            this.localStore[task] = new TaskDefinition.TaskDefinition(
               jsonTryParse(data.toString()),
             );
-            this.localStore[task] = taskDefinition.toObject();
           } catch (error) {
             console.error(error);
           }

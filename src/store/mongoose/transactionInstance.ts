@@ -1,12 +1,7 @@
 import * as mongoose from 'mongoose';
-import { MongooseStore } from '.';
-import { ITransaction } from '../../transaction';
-import { ITransactionInstanceStore } from '..';
-import {
-  TransactionPrevStates,
-  TransactionStates,
-} from '../../constants/transaction';
-import { ITransactionUpdate } from '../../state';
+import { Transaction, State, Event } from '@melonade/melonade-declaration';
+import { MongooseStore } from '../mongoose';
+import { ITransactionInstanceStore } from '../../store';
 
 const transacationSchema = new mongoose.Schema(
   {
@@ -41,14 +36,16 @@ export class TransactionInstanceMongoseStore extends MongooseStore
     super(uri, mongoOption, 'transaction-instance', transacationSchema);
   }
 
-  get = async (transactionId: string): Promise<ITransaction> => {
+  get = async (transactionId: string): Promise<Transaction.ITransaction> => {
     return this.model
       .findOne({ transactionId })
       .lean({ virtuals: true })
       .exec();
   };
 
-  create = async (transactionData: ITransaction): Promise<ITransaction> => {
+  create = async (
+    transactionData: Transaction.ITransaction,
+  ): Promise<Transaction.ITransaction> => {
     return {
       ...transactionData,
       ...(await this.model.create(transactionData)).toObject(),
@@ -56,20 +53,20 @@ export class TransactionInstanceMongoseStore extends MongooseStore
   };
 
   update = async (
-    transactionUpdate: ITransactionUpdate,
-  ): Promise<ITransaction> => {
+    transactionUpdate: Event.ITransactionUpdate,
+  ): Promise<Transaction.ITransaction> => {
     return this.model
       .findOneAndUpdate(
         {
           transactionId: transactionUpdate.transactionId,
-          status: TransactionPrevStates[transactionUpdate.status],
+          status: State.TransactionPrevStates[transactionUpdate.status],
         },
         {
           status: transactionUpdate.status,
           output: transactionUpdate.output,
           endTime: [
-            TransactionStates.Completed,
-            TransactionStates.Failed,
+            State.TransactionStates.Completed,
+            State.TransactionStates.Failed,
           ].includes(transactionUpdate.status)
             ? Date.now()
             : null,

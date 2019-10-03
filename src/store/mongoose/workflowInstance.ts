@@ -1,11 +1,8 @@
 import * as mongoose from 'mongoose';
+import { Workflow, Task, State, Event } from '@melonade/melonade-declaration';
 import * as mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 import { MongooseStore } from '../mongoose';
-import { IWorkflow } from '../../workflow';
 import { IWorkflowInstanceStore } from '../../store';
-import { WorkflowPrevStates, WorkflowStates } from '../../constants/workflow';
-import { IWorkflowUpdate } from '../../state';
-import { TaskTypesList } from '../../constants/task';
 
 const workflowSchema = new mongoose.Schema(
   {
@@ -36,7 +33,7 @@ const workflowSchema = new mongoose.Schema(
           taskReferenceName: String,
           type: {
             type: String,
-            enum: TaskTypesList,
+            enum: Task.TaskTypesList,
             required: true,
           },
           defaultDecision: [mongoose.Schema.Types.Mixed],
@@ -95,35 +92,39 @@ export class WorkflowInstanceMongoseStore extends MongooseStore
     super(uri, mongoOption, 'workflow-instance', workflowSchema);
   }
 
-  get = async (workflowId: string): Promise<IWorkflow> => {
+  get = async (workflowId: string): Promise<Workflow.IWorkflow> => {
     return this.model
       .findOne({ _id: workflowId })
       .lean({ virtuals: true })
       .exec();
   };
 
-  create = async (workflowData: IWorkflow): Promise<IWorkflow> => {
+  create = async (
+    workflowData: Workflow.IWorkflow,
+  ): Promise<Workflow.IWorkflow> => {
     return {
       ...workflowData,
       ...(await this.model.create(workflowData)).toObject(),
     };
   };
 
-  update = async (workflowUpdate: IWorkflowUpdate): Promise<IWorkflow> => {
+  update = async (
+    workflowUpdate: Event.IWorkflowUpdate,
+  ): Promise<Workflow.IWorkflow> => {
     return this.model
       .findOneAndUpdate(
         {
           _id: workflowUpdate.workflowId,
-          status: WorkflowPrevStates[workflowUpdate.status],
+          status: State.WorkflowPrevStates[workflowUpdate.status],
         },
         {
           status: workflowUpdate.status,
           output: workflowUpdate.output,
           endTime: [
-            WorkflowStates.Completed,
-            WorkflowStates.Failed,
-            WorkflowStates.Timeout,
-            WorkflowStates.Cancelled,
+            State.WorkflowStates.Completed,
+            State.WorkflowStates.Failed,
+            State.WorkflowStates.Timeout,
+            State.WorkflowStates.Cancelled,
           ].includes(workflowUpdate.status)
             ? Date.now()
             : null,

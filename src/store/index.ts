@@ -1,51 +1,74 @@
 import * as R from 'ramda';
-import { IWorkflowDefinition, AllTaskType } from '../workflowDefinition';
-import { ITaskDefinition } from '../taskDefinition';
-import { IWorkflow } from '../workflow';
-import { ITask } from '../task';
-import { WorkflowStates, WorkflowTypes } from '../constants/workflow';
-import { TaskStates, TaskTypes } from '../constants/task';
+import {
+  WorkflowDefinition,
+  TaskDefinition,
+  Transaction,
+  Workflow,
+  Task,
+  Event,
+  State,
+} from '@melonade/melonade-declaration';
 import { mapParametersToValue } from '../utils/task';
 import { dispatch, sendEvent } from '../kafka';
-import { ITaskUpdate, IWorkflowUpdate, ITransactionUpdate } from '../state';
-import { ITransaction } from '../transaction';
-import { TransactionStates } from '../constants/transaction';
+
+export enum StoreType {
+  ZooKeeper = 'ZOOKEEPER', // Greate for Definition
+  MongoDB = 'MONGODB',
+  DynamoDB = 'DYNAMODB',
+  Redis = 'REDIS', // Greate for Instance
+  Memory = 'MEMORY', // For Dev/Test, don't use in production
+}
 
 export interface IStore {
   isHealthy(): boolean;
 }
 
 export interface IWorkflowDefinitionStore extends IStore {
-  get(name: string, rev: string): Promise<IWorkflowDefinition>;
-  create(workflowDefinition: IWorkflowDefinition): Promise<IWorkflowDefinition>;
-  update(workflowDefinition: IWorkflowDefinition): Promise<IWorkflowDefinition>;
-  list(): Promise<IWorkflowDefinition[]>;
+  get(
+    name: string,
+    rev: string,
+  ): Promise<WorkflowDefinition.IWorkflowDefinition>;
+  create(
+    workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
+  ): Promise<WorkflowDefinition.IWorkflowDefinition>;
+  update(
+    workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
+  ): Promise<WorkflowDefinition.IWorkflowDefinition>;
+  list(): Promise<WorkflowDefinition.IWorkflowDefinition[]>;
 }
 
 export interface ITaskDefinitionStore extends IStore {
-  get(name: string): Promise<ITaskDefinition>;
-  create(taskDefinition: ITaskDefinition): Promise<ITaskDefinition>;
-  update(taskDefinition: ITaskDefinition): Promise<ITaskDefinition>;
-  list(): Promise<ITaskDefinition[]>;
+  get(name: string): Promise<TaskDefinition.ITaskDefinition>;
+  create(
+    taskDefinition: TaskDefinition.ITaskDefinition,
+  ): Promise<TaskDefinition.ITaskDefinition>;
+  update(
+    taskDefinition: TaskDefinition.ITaskDefinition,
+  ): Promise<TaskDefinition.ITaskDefinition>;
+  list(): Promise<TaskDefinition.ITaskDefinition[]>;
 }
 
 export interface ITransactionInstanceStore extends IStore {
-  get(workflowId: string): Promise<ITransaction>;
-  create(wofkflowData: ITransaction): Promise<ITransaction>;
-  update(workflowUpdate: ITransactionUpdate): Promise<ITransaction>;
+  get(workflowId: string): Promise<Transaction.ITransaction>;
+  create(
+    wofkflowData: Transaction.ITransaction,
+  ): Promise<Transaction.ITransaction>;
+  update(
+    workflowUpdate: Event.ITransactionUpdate,
+  ): Promise<Transaction.ITransaction>;
 }
 export interface IWorkflowInstanceStore extends IStore {
-  get(workflowId: string): Promise<IWorkflow>;
-  create(wofkflowData: IWorkflow): Promise<IWorkflow>;
-  update(workflowUpdate: IWorkflowUpdate): Promise<IWorkflow>;
+  get(workflowId: string): Promise<Workflow.IWorkflow>;
+  create(wofkflowData: Workflow.IWorkflow): Promise<Workflow.IWorkflow>;
+  update(workflowUpdate: Event.IWorkflowUpdate): Promise<Workflow.IWorkflow>;
   delete(workflowId: string): Promise<any>;
 }
 
 export interface ITaskInstanceStore extends IStore {
-  get(taskId: string): Promise<ITask>;
-  getAll(workflowId: string): Promise<ITask[]>;
-  create(taskData: ITask): Promise<ITask>;
-  update(taskUpdate: ITaskUpdate): Promise<ITask>;
+  get(taskId: string): Promise<Task.ITask>;
+  getAll(workflowId: string): Promise<Task.ITask[]>;
+  create(taskData: Task.ITask): Promise<Task.ITask>;
+  update(taskUpdate: Event.ITaskUpdate): Promise<Task.ITask>;
   delete(taskId: string): Promise<any>;
   deleteAll(workflowId: string): Promise<any>;
 }
@@ -58,23 +81,26 @@ export class WorkflowDefinitionStore {
     this.client = client;
   }
 
-  get(name: string, rev: string): Promise<IWorkflowDefinition> {
+  get(
+    name: string,
+    rev: string,
+  ): Promise<WorkflowDefinition.IWorkflowDefinition> {
     return this.client.get(name, rev);
   }
 
-  list(): Promise<IWorkflowDefinition[]> {
+  list(): Promise<WorkflowDefinition.IWorkflowDefinition[]> {
     return this.client.list();
   }
 
   create(
-    workflowDefinition: IWorkflowDefinition,
-  ): Promise<IWorkflowDefinition> {
+    workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
+  ): Promise<WorkflowDefinition.IWorkflowDefinition> {
     return this.client.create(workflowDefinition);
   }
 
   update(
-    workflowDefinition: IWorkflowDefinition,
-  ): Promise<IWorkflowDefinition> {
+    workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
+  ): Promise<WorkflowDefinition.IWorkflowDefinition> {
     return this.client.update(workflowDefinition);
   }
 }
@@ -87,19 +113,23 @@ export class TaskDefinitionStore {
     this.client = client;
   }
 
-  get(name: string): Promise<ITaskDefinition> {
+  get(name: string): Promise<TaskDefinition.ITaskDefinition> {
     return this.client.get(name);
   }
 
-  list(): Promise<ITaskDefinition[]> {
+  list(): Promise<TaskDefinition.ITaskDefinition[]> {
     return this.client.list();
   }
 
-  create(taskDefinition: ITaskDefinition): Promise<ITaskDefinition> {
+  create(
+    taskDefinition: TaskDefinition.ITaskDefinition,
+  ): Promise<TaskDefinition.ITaskDefinition> {
     return this.client.create(taskDefinition);
   }
 
-  update(taskDefinition: ITaskDefinition): Promise<ITaskDefinition> {
+  update(
+    taskDefinition: TaskDefinition.ITaskDefinition,
+  ): Promise<TaskDefinition.ITaskDefinition> {
     return this.client.update(taskDefinition);
   }
 }
@@ -112,18 +142,18 @@ export class TransactionInstanceStore {
     this.client = client;
   }
 
-  get(transactionId: string): Promise<ITransaction> {
+  get(transactionId: string): Promise<Transaction.ITransaction> {
     return this.client.get(transactionId);
   }
 
   create = async (
     transactionId: string,
-    workflowDefinition: IWorkflowDefinition,
+    workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
     input: any,
-  ): Promise<ITransaction> => {
+  ): Promise<Transaction.ITransaction> => {
     const transaction = await this.client.create({
       transactionId,
-      status: TransactionStates.Running,
+      status: State.TransactionStates.Running,
       input,
       output: null,
       createTime: Date.now(),
@@ -140,7 +170,7 @@ export class TransactionInstanceStore {
 
     await workflowInstanceStore.create(
       transactionId,
-      WorkflowTypes.Workflow,
+      Workflow.WorkflowTypes.Workflow,
       workflowDefinition,
       input,
     );
@@ -148,7 +178,7 @@ export class TransactionInstanceStore {
     return transaction;
   };
 
-  update = async (transactionUpdate: ITransactionUpdate) => {
+  update = async (transactionUpdate: Event.ITransactionUpdate) => {
     try {
       const transaction = await this.client.update(transactionUpdate);
       sendEvent({
@@ -181,23 +211,23 @@ export class WorkflowInstanceStore {
     this.client = client;
   }
 
-  get(workflowId: string): Promise<IWorkflow> {
+  get(workflowId: string): Promise<Workflow.IWorkflow> {
     return this.client.get(workflowId);
   }
 
   create = async (
     transactionId: string,
-    type: WorkflowTypes,
-    workflowDefinition: IWorkflowDefinition,
+    type: Workflow.WorkflowTypes,
+    workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
     input: any,
     childOf?: string,
-    overideWorkflow?: IWorkflow | object,
-  ): Promise<IWorkflow> => {
+    overideWorkflow?: Workflow.IWorkflow | object,
+  ): Promise<Workflow.IWorkflow> => {
     const workflow = await this.client.create({
       transactionId,
       type,
       workflowId: undefined,
-      status: WorkflowStates.Running,
+      status: State.WorkflowStates.Running,
       retries: R.pathOr(0, ['retry', 'limit'], workflowDefinition),
       input,
       output: null,
@@ -226,7 +256,7 @@ export class WorkflowInstanceStore {
     return workflow;
   };
 
-  update = async (workflowUpdate: IWorkflowUpdate) => {
+  update = async (workflowUpdate: Event.IWorkflowUpdate) => {
     try {
       const workflow = await this.client.update(workflowUpdate);
       sendEvent({
@@ -271,13 +301,13 @@ export class TaskInstanceStore {
     return this.client.getAll(workflowId);
   }
 
-  reload = async (taskData: ITask): Promise<ITask> => {
+  reload = async (taskData: Task.ITask): Promise<Task.ITask> => {
     await this.delete(taskData.taskId);
     const task = await this.client.create(
       R.omit(['_id'], {
         ...taskData,
         taskId: undefined,
-        status: TaskStates.Scheduled,
+        status: State.TaskStates.Scheduled,
         output: {},
         createTime: Date.now(),
         startTime: Date.now(),
@@ -287,7 +317,7 @@ export class TaskInstanceStore {
     dispatch(
       task,
       task.transactionId,
-      ![TaskTypes.Task, TaskTypes.Compensate].includes(task.type),
+      ![Task.TaskTypes.Task, Task.TaskTypes.Compensate].includes(task.type),
     );
     sendEvent({
       transactionId: task.transactionId,
@@ -300,12 +330,12 @@ export class TaskInstanceStore {
   };
 
   create = async (
-    workflow: IWorkflow,
-    workflowTask: AllTaskType,
-    tasksData: { [taskReferenceName: string]: ITask },
+    workflow: Workflow.IWorkflow,
+    workflowTask: WorkflowDefinition.AllTaskType,
+    tasksData: { [taskReferenceName: string]: Task.ITask },
     autoDispatch: boolean = false,
-    overideTask: ITask | object = {},
-  ): Promise<ITask> => {
+    overideTask: Task.ITask | object = {},
+  ): Promise<Task.ITask> => {
     const taskDefinition = await taskDefinitionStore.get(workflowTask.name);
     const task = await this.client.create({
       taskId: undefined,
@@ -314,7 +344,7 @@ export class TaskInstanceStore {
       workflowId: workflow.workflowId,
       transactionId: workflow.transactionId,
       type: workflowTask.type,
-      status: TaskStates.Scheduled,
+      status: State.TaskStates.Scheduled,
       isRetried: false,
       input: mapParametersToValue(workflowTask.inputParameters, {
         ...tasksData,
@@ -325,19 +355,19 @@ export class TaskInstanceStore {
       startTime: autoDispatch ? Date.now() : null,
       endTime: null,
       parallelTasks:
-        workflowTask.type === TaskTypes.Parallel
+        workflowTask.type === Task.TaskTypes.Parallel
           ? workflowTask.parallelTasks
           : undefined,
       decisions:
-        workflowTask.type === TaskTypes.Decision
+        workflowTask.type === Task.TaskTypes.Decision
           ? workflowTask.decisions
           : undefined,
       defaultDecision:
-        workflowTask.type === TaskTypes.Decision
+        workflowTask.type === Task.TaskTypes.Decision
           ? workflowTask.defaultDecision
           : undefined,
       workflow:
-        workflowTask.type === TaskTypes.SubWorkflow
+        workflowTask.type === Task.TaskTypes.SubWorkflow
           ? workflowTask.workflow
           : undefined,
       retries: R.pathOr(
@@ -367,7 +397,9 @@ export class TaskInstanceStore {
       dispatch(
         task,
         workflow.transactionId,
-        ![TaskTypes.Task, TaskTypes.Compensate].includes(workflowTask.type),
+        ![Task.TaskTypes.Task, Task.TaskTypes.Compensate].includes(
+          workflowTask.type,
+        ),
       );
       sendEvent({
         transactionId: workflow.transactionId,
@@ -380,7 +412,7 @@ export class TaskInstanceStore {
     return task;
   };
 
-  update = async (taskUpdate: ITaskUpdate): Promise<ITask> => {
+  update = async (taskUpdate: Event.ITaskUpdate): Promise<Task.ITask> => {
     try {
       const task = await this.client.update(taskUpdate);
       sendEvent({

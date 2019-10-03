@@ -1,29 +1,32 @@
-import { TaskDefinition, ITaskDefinition } from '../../../taskDefinition';
+import { TaskDefinition } from '@melonade/melonade-declaration';
 import { taskDefinitionStore } from '../../../store';
 import { createTopic } from '../../../kafka';
 
 export const createTaskDefinition = async (
-  taskDefinitionData: ITaskDefinition,
+  taskDefinitionData: TaskDefinition.ITaskDefinition,
 ): Promise<any> => {
-  const taskDefinition = new TaskDefinition(taskDefinitionData);
-  await taskDefinitionStore.create(taskDefinition.toObject());
+  const taskDefinition = new TaskDefinition.TaskDefinition(taskDefinitionData);
+  await taskDefinitionStore.create(taskDefinition);
   await createTopic(taskDefinition.name);
-  return taskDefinition.toObject();
+  return taskDefinition;
 };
 
-export const updateTaskDefinition = async (
-  taskDefinitionData: ITaskDefinition,
+export const updateTaskDefinition = (
+  taskDefinitionData: TaskDefinition.ITaskDefinition,
 ): Promise<any> => {
-  const taskDefinition = new TaskDefinition(taskDefinitionData);
-  await taskDefinitionStore.update(taskDefinition.toObject());
+  return taskDefinitionStore.update(
+    new TaskDefinition.TaskDefinition(taskDefinitionData),
+  );
 };
 
 export const getTaskDefinition = (
   taskName: string,
-): Promise<ITaskDefinition> => {
+): Promise<TaskDefinition.ITaskDefinition> => {
   return taskDefinitionStore.get(taskName);
 };
 
-export const listTaskDefinition = (): Promise<ITaskDefinition[]> => {
+export const listTaskDefinition = (): Promise<
+  TaskDefinition.ITaskDefinition[]
+> => {
   return taskDefinitionStore.list();
 };

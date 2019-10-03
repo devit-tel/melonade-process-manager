@@ -1,20 +1,13 @@
 import koaRouter = require('koa-router');
-import * as workflowRouter from './workflow';
-import * as taskRouter from './task';
+import * as transactionRouter from './transaction';
 import * as definitionRouter from './definition';
 
 export const router = new koaRouter();
 
 router.use(
-  '/workflow',
-  workflowRouter.router.routes(),
-  workflowRouter.router.allowedMethods(),
-);
-
-router.use(
-  '/task',
-  taskRouter.router.routes(),
-  taskRouter.router.allowedMethods(),
+  '/transaction',
+  transactionRouter.router.routes(),
+  transactionRouter.router.allowedMethods(),
 );
 
 router.use(

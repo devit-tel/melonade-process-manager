@@ -1,7 +1,8 @@
 import * as dotenv from 'dotenv';
-import * as kafkaConstant from './constants/kafka';
+import { Kafka } from '@melonade/melonade-declaration';
 
 dotenv.config();
+
 const pickAndReplaceFromENV = (template: string) =>
   Object.keys(process.env).reduce((result: any, key: string) => {
     if (new RegExp(template).test(key)) {
@@ -13,8 +14,8 @@ const pickAndReplaceFromENV = (template: string) =>
     return result;
   }, {});
 
-export const saga = {
-  namespace: process.env['saga.namespace'] || 'node',
+export const melonade = {
+  namespace: process.env['melonade.namespace'] || 'default',
 };
 
 export const server = {
@@ -25,15 +26,15 @@ export const server = {
 
 export const kafkaTopicName = {
   // Publish to specified task
-  task: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.TASK_TOPIC_NAME}`,
+  task: `${Kafka.topicPrefix}.${melonade.namespace}.${Kafka.topicSuffix.task}`,
   // Publish to system task
-  systemTask: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.SYSTEM_TASK_TOPIC_NAME}`,
+  systemTask: `${Kafka.topicPrefix}.${melonade.namespace}.${Kafka.topicSuffix.systemTask}`,
   // Publish to store event
-  store: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.STORE_TOPIC_NAME}`,
+  store: `${Kafka.topicPrefix}.${melonade.namespace}.${Kafka.topicSuffix.store}`,
   // Subscriptions to update event
-  event: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.EVENT_TOPIC}`,
+  event: `${Kafka.topicPrefix}.${melonade.namespace}.${Kafka.topicSuffix.event}`,
   // Subscriptions to command
-  command: `${saga.namespace}.${kafkaConstant.PREFIX}.${kafkaConstant.COMMAND_TOPIC_NAME}`,
+  command: `${Kafka.topicPrefix}.${melonade.namespace}.${Kafka.topicSuffix.command}`,
 };
 
 export const kafkaAdminConfig = {
@@ -44,7 +45,7 @@ export const kafkaAdminConfig = {
 export const kafkaTaskConfig = {
   config: {
     'enable.auto.commit': 'false',
-    'group.id': `saga-${saga.namespace}-state`,
+    'group.id': `melonade-${melonade.namespace}-state`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^task\\.kafka\\.conf\\.'),
   },
@@ -58,7 +59,7 @@ export const kafkaTaskConfig = {
 export const kafkaSystemTaskConfig = {
   config: {
     'enable.auto.commit': 'false',
-    'group.id': `saga-${saga.namespace}-system`,
+    'group.id': `melonade-${melonade.namespace}-system`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^system-task\\.kafka\\.conf\\.'),
   },
@@ -72,7 +73,7 @@ export const kafkaSystemTaskConfig = {
 export const kafkaCommandConfig = {
   config: {
     'enable.auto.commit': 'false',
-    'group.id': `saga-${saga.namespace}-command`,
+    'group.id': `melonade-${melonade.namespace}-command`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^command\\.kafka\\.conf\\.'),
   },
@@ -104,7 +105,7 @@ export const kafkaProducerConfig = {
 export const taskDefinitionStoreConfig = {
   type: process.env['task-definition.type'],
   zookeeperConfig: {
-    root: `/saga-pm-${saga.namespace}/task-definition`,
+    root: `/melonade-${melonade.namespace}/task-definition`,
     connectionString: process.env['task-definition.zookeeper.connections'],
     options: {
       sessionTimeout: 30000,
@@ -117,7 +118,7 @@ export const taskDefinitionStoreConfig = {
 export const workflowDefinitionStoreConfig = {
   type: process.env['task-definition.type'],
   zookeeperConfig: {
-    root: `/saga-pm-${saga.namespace}/workflow-definition`,
+    root: `/melonade-${melonade.namespace}/workflow-definition`,
     connectionString: process.env['workflow-definition.zookeeper.connections'],
     options: {
       sessionTimeout: 30000,
@@ -132,7 +133,7 @@ export const taskInstanceStoreConfig = {
   mongoDBConfig: {
     uri: process.env['task-instance.mongodb.uri'],
     options: {
-      dbName: `saga-pm-${saga.namespace}`,
+      dbName: `melonade-${melonade.namespace}`,
       useNewUrlParser: true,
       useCreateIndex: true,
       reconnectTries: Number.MAX_SAFE_INTEGER,
@@ -147,7 +148,7 @@ export const workflowInstanceStoreConfig = {
   mongoDBConfig: {
     uri: process.env['workflow-instance.mongodb.uri'],
     options: {
-      dbName: `saga-pm-${saga.namespace}`,
+      dbName: `melonade-${melonade.namespace}`,
       useNewUrlParser: true,
       useCreateIndex: true,
       reconnectTries: Number.MAX_SAFE_INTEGER,
@@ -162,7 +163,7 @@ export const transactionInstanceStoreConfig = {
   mongoDBConfig: {
     uri: process.env['transaction-instance.mongodb.uri'],
     options: {
-      dbName: `saga-pm-${saga.namespace}`,
+      dbName: `melonade-${melonade.namespace}`,
       useNewUrlParser: true,
       useCreateIndex: true,
       reconnectTries: Number.MAX_SAFE_INTEGER,

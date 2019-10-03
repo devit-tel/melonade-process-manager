@@ -6,7 +6,6 @@ import responseFormatter from './middlewares/responseFormatter';
 import errorHandler from './middlewares/errorHandler';
 import { router as v1Router } from './routers/v1';
 import { router as systemRouter } from './routers/system';
-import { NotFound } from '../errors';
 
 export class Server {
   server: koa;
@@ -38,7 +37,7 @@ export class Server {
     mainRouter.use('/v1', v1Router.routes(), v1Router.allowedMethods());
 
     mainRouter.all('*', () => {
-      throw new NotFound('Route not found');
+      throw new Error('Route not found');
     });
 
     this.server.use(mainRouter.routes());

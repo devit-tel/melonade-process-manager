@@ -1,34 +1,7 @@
 import { AdminClient, KafkaConsumer, Producer } from '@nv4re/node-rdkafka';
+import { Task, Event, Kafka } from '@melonade/melonade-declaration';
 import * as config from '../config';
 import { jsonTryParse } from '../utils/common';
-import { ITask } from '../task';
-import { IWorkflow } from '../workflow';
-import { ITaskUpdate, IWorkflowUpdate, ITransactionUpdate } from '../state';
-import { ITransaction } from '../transaction';
-
-export interface kafkaConsumerMessage {
-  value: Buffer;
-  size: number;
-  key: string;
-  topic: string;
-  offset: number;
-  partition: number;
-}
-
-export interface IEvent {
-  transactionId: string;
-  type: 'TRANSACTION' | 'WORKFLOW' | 'TASK' | 'SYSTEM';
-  details?:
-    | ITransaction
-    | IWorkflow
-    | ITask
-    | ITransactionUpdate
-    | IWorkflowUpdate
-    | ITaskUpdate;
-  timestamp: number;
-  isError: boolean;
-  error?: string;
-}
 
 export const adminClient = AdminClient.create(config.kafkaAdminConfig);
 export const stateConsumerClient = new KafkaConsumer(
@@ -103,10 +76,10 @@ export const poll = (
   new Promise((resolve: Function, reject: Function) => {
     consumer.consume(
       messageNumber,
-      (error: Error, messages: kafkaConsumerMessage[]) => {
+      (error: Error, messages: Kafka.kafkaConsumerMessage[]) => {
         if (error) return reject(error);
         resolve(
-          messages.map((message: kafkaConsumerMessage) =>
+          messages.map((message: Kafka.kafkaConsumerMessage) =>
             jsonTryParse(message.value.toString(), {}),
           ),
         );
@@ -115,7 +88,7 @@ export const poll = (
   });
 
 export const dispatch = (
-  task: ITask,
+  task: Task.ITask,
   transactionId: string,
   isSystemTask: boolean = false,
 ) =>
@@ -130,7 +103,7 @@ export const dispatch = (
   );
 
 // Use to send Retry, Failed, Reject event, Completed workflow, Dispatch task
-export const sendEvent = (event: IEvent) =>
+export const sendEvent = (event: Event.IEvent) =>
   producerClient.produce(
     config.kafkaTopicName.store,
     null,

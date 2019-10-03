@@ -1,5 +1,6 @@
 // Serializer for 2 layer node (${root}/${workflowName}/${workflowRev})
 import * as R from 'ramda';
+import { WorkflowDefinition } from '@melonade/melonade-declaration';
 import {
   ZookeeperStore,
   IZookeeperOptions,
@@ -7,12 +8,7 @@ import {
   ZookeeperEvents,
 } from '../zookeeper';
 import { IWorkflowDefinitionStore } from '../../store';
-import {
-  WorkflowDefinition,
-  IWorkflowDefinition,
-} from '../../workflowDefinition';
 import { jsonTryParse } from '../../utils/common';
-import { BadRequest } from '../../errors';
 
 export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
   implements IWorkflowDefinitionStore {
@@ -30,18 +26,21 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     });
   }
 
-  get(name: string, rev: string): Promise<IWorkflowDefinition> {
+  get(
+    name: string,
+    rev: string,
+  ): Promise<WorkflowDefinition.IWorkflowDefinition> {
     return R.path([name, rev], this.localStore);
   }
 
   create = async (
-    workflowDefinition: IWorkflowDefinition,
-  ): Promise<IWorkflowDefinition> => {
+    workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
+  ): Promise<WorkflowDefinition.IWorkflowDefinition> => {
     const isWorkflowExists = await this.isExists(
       `${this.root}/${workflowDefinition.name}/${workflowDefinition.rev}`,
     );
     if (isWorkflowExists)
-      throw new BadRequest(
+      throw new Error(
         `Workflow: ${workflowDefinition.name}${workflowDefinition.rev} already exists`,
       );
 
@@ -59,13 +58,13 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     );
   };
 
-  list(): Promise<IWorkflowDefinition[]> {
+  list(): Promise<WorkflowDefinition.IWorkflowDefinition[]> {
     return Promise.resolve(super.listValue(undefined, 0));
   }
 
   update(
-    workflowDefinition: IWorkflowDefinition,
-  ): Promise<IWorkflowDefinition> {
+    workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
+  ): Promise<WorkflowDefinition.IWorkflowDefinition> {
     return new Promise((resolve: Function, reject: Function) =>
       this.client.setData(
         `${this.root}/${workflowDefinition.name}/${workflowDefinition.rev}`,
@@ -140,12 +139,11 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
       (dataError: Error, data: Buffer) => {
         if (!dataError) {
           try {
-            const workflowDefinition = new WorkflowDefinition(
-              jsonTryParse(data.toString()),
-            );
             this.localStore = R.set(
               R.lensPath([workflow, rev]),
-              workflowDefinition.toObject(),
+              new WorkflowDefinition.WorkflowDefinition(
+                jsonTryParse(data.toString()),
+              ),
               this.localStore,
             );
           } catch (error) {

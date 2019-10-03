@@ -1,11 +1,10 @@
 import * as R from 'ramda';
+import { Task, Workflow } from '@melonade/melonade-declaration';
 import { isString } from './common';
-import { IWorkflow } from '../workflow';
-import { ITask } from '../task';
 
 export const mapParametersToValue = (
   parameters: { [key: string]: any },
-  tasksData: { [taskReferenceName: string]: ITask | IWorkflow },
+  tasksData: { [taskReferenceName: string]: Task.ITask | Workflow.IWorkflow },
 ): { [key: string]: any } => {
   const parametersPairs = R.toPairs(parameters);
   const valuePairs = parametersPairs.map(
