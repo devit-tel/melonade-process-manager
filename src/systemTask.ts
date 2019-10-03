@@ -44,8 +44,9 @@ const processSubWorkflowTask = async (systemTask: Task.ITask) => {
 
   if (!workflowDefinition) {
     sendEvent({
-      type: 'TASK',
+      type: 'SYSTEM',
       transactionId: systemTask.transactionId,
+      details: null,
       timestamp: Date.now(),
       isError: true,
       error: `Workflow: "${systemTask.workflow.name}":"${systemTask.workflow.rev}" is not exists`,
@@ -107,7 +108,7 @@ export const executor = async () => {
           });
         } catch (error) {
           sendEvent({
-            type: 'TASK',
+            type: 'SYSTEM',
             transactionId: task.transactionId,
             timestamp: Date.now(),
             details: task,
