@@ -103,7 +103,7 @@ export const dispatch = (
   );
 
 // Use to send Retry, Failed, Reject event, Completed workflow, Dispatch task
-export const sendEvent = (event: Event.IEvent) =>
+export const sendEvent = (event: Event.AllEvent) =>
   producerClient.produce(
     config.kafkaTopicName.store,
     null,
