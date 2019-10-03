@@ -1,4 +1,4 @@
-# node-saga-pm
+# melonade-process-manager
 
 This is prototype of saga implementation, written in Node.
 
