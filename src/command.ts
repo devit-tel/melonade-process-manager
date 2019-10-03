@@ -1,5 +1,5 @@
 import { Command } from '@melonade/melonade-declaration';
-import { commandConsumerClient, poll } from './kafka';
+import { commandConsumerClient, poll, sendEvent } from './kafka';
 import { workflowDefinitionStore, transactionInstanceStore } from './store';
 
 const processStartTransactionCommand = async (
@@ -38,6 +38,14 @@ const processCommands = async (
     } catch (error) {
       // Add some logger or send to event store
       console.log(error);
+      sendEvent({
+        transactionId: command.transactionId,
+        type: 'SYSTEM',
+        isError: true,
+        details: command,
+        error: error.toString(),
+        timestamp: Date.now(),
+      });
     }
   }
 };

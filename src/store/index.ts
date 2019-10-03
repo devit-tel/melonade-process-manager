@@ -428,7 +428,7 @@ export class TaskInstanceStore {
         transactionId: taskUpdate.transactionId,
         type: 'TASK',
         isError: true,
-        error,
+        error: error.toString(),
         details: taskUpdate,
         timestamp: Date.now(),
       });
