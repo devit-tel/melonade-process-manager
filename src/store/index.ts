@@ -196,7 +196,7 @@ export class TransactionInstanceStore {
         isError: true,
         timestamp: Date.now(),
         details: transactionUpdate,
-        error,
+        error: error.toString(),
       });
       return undefined;
     }
@@ -272,7 +272,7 @@ export class WorkflowInstanceStore {
         transactionId: workflowUpdate.transactionId,
         type: 'WORKFLOW',
         isError: true,
-        error,
+        error: error.toString(),
         details: workflowUpdate,
         timestamp: Date.now(),
       });

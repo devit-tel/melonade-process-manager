@@ -503,7 +503,7 @@ const processTasksOfWorkflow = async (
         transactionId: taskUpdate.transactionId,
         type: 'SYSTEM',
         isError: true,
-        error,
+        error: error.toString(),
         details: taskUpdate,
         timestamp: Date.now(),
       });
