@@ -492,10 +492,7 @@ const processTasksOfWorkflow = async (
           await handleCompletedTask(task);
           break;
         case State.TaskStates.Failed:
-          await handleFailedTask(task);
-          break;
         case State.TaskStates.Timeout:
-          // Timeout task will make workflow timeout and manual fix
           await handleFailedTask(task);
           break;
         default:
