@@ -21,7 +21,7 @@ This is prototype of saga implementation, written in Node.
 - [ ] Cron job
 - [x] Failed workflow handling
 - [x] Timeout workflow handling
-- [ ] Cancle workflow
+- [x] Cancel workflow
 - [x] Event store
 - [x] Compensate workflow
 - [x] Publish event to kafka

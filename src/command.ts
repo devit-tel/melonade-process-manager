@@ -25,7 +25,7 @@ const processStartTransactionCommand = async (
   );
 };
 
-const processCancleTransactionCommand = async (
+const processCancelTransactionCommand = async (
   command: Command.ICancelTransactionCommand,
 ): Promise<void> => {
   const workflow = await workflowInstanceStore.getByTransactionId(
@@ -52,7 +52,7 @@ const processCommands = async (
           await processStartTransactionCommand(command);
           break;
         case Command.CommandTypes.CancelTransaction:
-          await processCancleTransactionCommand(command);
+          await processCancelTransactionCommand(command);
           break;
         default:
           throw new Error(`Command type "${command.type}" is invalid`);
