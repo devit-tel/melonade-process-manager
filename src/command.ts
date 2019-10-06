@@ -1,6 +1,10 @@
-import { Command } from '@melonade/melonade-declaration';
+import { Command, State } from '@melonade/melonade-declaration';
 import { commandConsumerClient, poll, sendEvent } from './kafka';
-import { workflowDefinitionStore, transactionInstanceStore } from './store';
+import {
+  workflowDefinitionStore,
+  transactionInstanceStore,
+  workflowInstanceStore,
+} from './store';
 
 const processStartTransactionCommand = async (
   command: Command.IStartTransactionCommand,
@@ -21,6 +25,22 @@ const processStartTransactionCommand = async (
   );
 };
 
+const processCancleTransactionCommand = async (
+  command: Command.ICancelTransactionCommand,
+): Promise<void> => {
+  const workflow = await workflowInstanceStore.getByTransactionId(
+    command.transactionId,
+  );
+  await workflowInstanceStore.update({
+    transactionId: command.transactionId,
+    status: State.WorkflowStates.Cancelled,
+    workflowId: workflow.workflowId,
+    output: {
+      reason: command.reason,
+    },
+  });
+};
+
 const processCommands = async (
   commands: Command.AllCommand[],
 ): Promise<void> => {
@@ -31,7 +51,9 @@ const processCommands = async (
         case Command.CommandTypes.StartTransaction:
           await processStartTransactionCommand(command);
           break;
-
+        case Command.CommandTypes.CancelTransaction:
+          await processCancleTransactionCommand(command);
+          break;
         default:
           throw new Error(`Command type "${command.type}" is invalid`);
       }

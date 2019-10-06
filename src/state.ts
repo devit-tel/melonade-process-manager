@@ -255,6 +255,12 @@ const handleCompletedCompensateWorkflow = async (
     status: State.TransactionStates.Compensated,
   });
 
+const handleCompletedCancleWorkflow = async (workflow: Workflow.IWorkflow) =>
+  transactionInstanceStore.update({
+    transactionId: workflow.transactionId,
+    status: State.TransactionStates.Cancelled,
+  });
+
 const handleCompletedCompensateThenRetryWorkflow = async (
   workflow: Workflow.IWorkflow,
 ) => {
@@ -277,19 +283,58 @@ const handleCompletedCompensateThenRetryWorkflow = async (
   }
 };
 
-const handleCompletedTask = async (task: Task.ITask) => {
-  const { workflow, tasksData: taskData, nextTaskPath } = await getTaskInfo(
-    task,
-  );
+const handleCancleWorkflow = async (
+  workflow: Workflow.IWorkflow,
+  tasksData: { [taskReferenceName: string]: Task.ITask },
+) => {
+  const tasksDataList = R.values(tasksData);
+  const runningTasks = tasksDataList.filter((taskData: Task.ITask) => {
+    return [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
+      taskData.status,
+    );
+  });
+
+  // No running task, start recovery
+  // If there are running task wait for them first
+  if (runningTasks.length === 0) {
+    switch (workflow.workflowDefinition.failureStrategy) {
+      case State.WorkflowFailureStrategies.RecoveryWorkflow:
+        await handleRecoveryWorkflow(workflow, tasksDataList, true);
+        break;
+      case State.WorkflowFailureStrategies.Compensate:
+      case State.WorkflowFailureStrategies.CompensateThenRetry:
+        await handleCompenstateWorkflow(workflow, tasksDataList, true);
+
+        break;
+      case State.WorkflowFailureStrategies.Retry:
+      case State.WorkflowFailureStrategies.Failed:
+        await handleCompletedCancleWorkflow(workflow);
+        break;
+      default:
+        break;
+    }
+  }
+};
+
+const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
+  const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
+
+  if (workflow.status === State.WorkflowStates.Cancelled) {
+    await handleCancleWorkflow(workflow, tasksData);
+    return;
+  }
 
   if (!nextTaskPath.isCompleted && nextTaskPath.taskPath) {
     await taskInstanceStore.create(
       workflow,
       R.path(nextTaskPath.taskPath, workflow.workflowDefinition.tasks),
-      taskData,
+      tasksData,
       true,
     );
-  } else if (nextTaskPath.isCompleted) {
+    return;
+  }
+
+  if (nextTaskPath.isCompleted) {
     // When workflow is completed
     const completedWorkflow = await workflowInstanceStore.update({
       transactionId: task.transactionId,
@@ -298,7 +343,7 @@ const handleCompletedTask = async (task: Task.ITask) => {
       output: mapParametersToValue(
         workflow.workflowDefinition.outputParameters,
         {
-          ...taskData,
+          ...tasksData,
           workflow,
         },
       ),
@@ -319,9 +364,14 @@ const handleCompletedTask = async (task: Task.ITask) => {
       case Workflow.WorkflowTypes.CompensateThenRetryWorkflow:
         await handleCompletedCompensateThenRetryWorkflow(completedWorkflow);
         break;
+      case Workflow.WorkflowTypes.CancleWorkflow:
+        await handleCompletedCancleWorkflow(completedWorkflow);
+        break;
       default:
         break;
     }
+
+    return;
   }
 };
 
@@ -353,10 +403,13 @@ const getCompenstateTasks = R.compose(
 const handleRecoveryWorkflow = (
   workflow: Workflow.IWorkflow,
   tasksData: Task.ITask[],
+  isCancle: boolean = false,
 ) =>
   workflowInstanceStore.create(
     workflow.transactionId,
-    Workflow.WorkflowTypes.Workflow,
+    isCancle
+      ? Workflow.WorkflowTypes.CancleWorkflow
+      : Workflow.WorkflowTypes.CompensateWorkflow,
     workflow.workflowDefinition,
     toObjectByKey(tasksData, 'taskReferenceName'),
   );
@@ -383,12 +436,15 @@ const handleRetryWorkflow = (
 const handleCompenstateWorkflow = (
   workflow: Workflow.IWorkflow,
   tasksData: Task.ITask[],
+  isCancle: boolean = false,
 ) => {
   const compenstateTasks = getCompenstateTasks(tasksData);
   if (compenstateTasks.length) {
     return workflowInstanceStore.create(
       workflow.transactionId,
-      Workflow.WorkflowTypes.CompensateWorkflow,
+      isCancle
+        ? Workflow.WorkflowTypes.CancleWorkflow
+        : Workflow.WorkflowTypes.CompensateWorkflow,
       {
         name: workflow.workflowDefinition.name,
         rev: `${workflow.workflowDefinition.rev}_compensate`,
@@ -399,6 +455,9 @@ const handleCompenstateWorkflow = (
       toObjectByKey(tasksData, 'taskReferenceName'),
     );
   } else {
+    if (isCancle) {
+      return handleCompletedCancleWorkflow(workflow);
+    }
     return handleCompletedCompensateWorkflow(workflow);
   }
 };
@@ -438,11 +497,19 @@ const handleFailedWorkflow = (workflow: Workflow.IWorkflow) =>
 const handleFailedTask = async (task: Task.ITask) => {
   // if cannot retry anymore
   if (task.retries <= 0) {
-    const tasksData = await taskInstanceStore.getAll(task.workflowId);
-    const runningTasks = tasksData.filter((taskData: Task.ITask) => {
-      [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
-        taskData.status,
-      ) && taskData.taskReferenceName !== task.taskReferenceName;
+    const { workflow, tasksData } = await getTaskInfo(task);
+    if (workflow.status === State.WorkflowStates.Cancelled) {
+      await handleCancleWorkflow(workflow, tasksData);
+      return;
+    }
+
+    const tasksDataList = R.values(tasksData);
+    const runningTasks = tasksDataList.filter((taskData: Task.ITask) => {
+      return (
+        [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
+          taskData.status,
+        ) && taskData.taskReferenceName !== task.taskReferenceName
+      );
     });
 
     // No running task, start recovery
@@ -455,16 +522,16 @@ const handleFailedTask = async (task: Task.ITask) => {
       });
       switch (workflow.workflowDefinition.failureStrategy) {
         case State.WorkflowFailureStrategies.RecoveryWorkflow:
-          await handleRecoveryWorkflow(workflow, tasksData);
+          await handleRecoveryWorkflow(workflow, tasksDataList);
           break;
         case State.WorkflowFailureStrategies.Retry:
-          await handleRetryWorkflow(workflow, tasksData);
+          await handleRetryWorkflow(workflow, tasksDataList);
           break;
         case State.WorkflowFailureStrategies.Compensate:
-          await handleCompenstateWorkflow(workflow, tasksData);
+          await handleCompenstateWorkflow(workflow, tasksDataList);
           break;
         case State.WorkflowFailureStrategies.CompensateThenRetry:
-          await handleCompenstateThenRetryWorkflow(workflow, tasksData);
+          await handleCompenstateThenRetryWorkflow(workflow, tasksDataList);
           break;
         case State.WorkflowFailureStrategies.Failed:
           await handleFailedWorkflow(workflow);

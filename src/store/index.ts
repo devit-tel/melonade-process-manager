@@ -57,11 +57,13 @@ export interface ITransactionInstanceStore extends IStore {
     workflowUpdate: Event.ITransactionUpdate,
   ): Promise<Transaction.ITransaction>;
 }
+
 export interface IWorkflowInstanceStore extends IStore {
   get(workflowId: string): Promise<Workflow.IWorkflow>;
   create(wofkflowData: Workflow.IWorkflow): Promise<Workflow.IWorkflow>;
   update(workflowUpdate: Event.IWorkflowUpdate): Promise<Workflow.IWorkflow>;
   delete(workflowId: string): Promise<any>;
+  getByTransactionId(transactionId: string): Promise<Workflow.IWorkflow>;
 }
 
 export interface ITaskInstanceStore extends IStore {
@@ -282,6 +284,10 @@ export class WorkflowInstanceStore {
 
   delete(workflowId: string) {
     return this.client.delete(workflowId);
+  }
+
+  getByTransactionId(transactionId: string) {
+    return this.client.getByTransactionId(transactionId);
   }
 }
 

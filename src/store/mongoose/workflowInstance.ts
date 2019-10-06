@@ -142,4 +142,14 @@ export class WorkflowInstanceMongoseStore extends MongooseStore
       .deleteOne({ _id: workflowId })
       .lean({ virtuals: true })
       .exec();
+
+  getByTransactionId = (transactionId: string): Promise<Workflow.IWorkflow> =>
+    this.model
+      .findOne({
+        transactionId,
+        status: State.WorkflowStates.Running,
+        childOf: { $exists: false },
+      })
+      .lean({ virtuals: true })
+      .exec();
 }
