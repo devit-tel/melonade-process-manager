@@ -139,11 +139,4 @@ export class TaskInstanceMongooseStore extends MongooseStore
       .lean({ virtuals: true })
       .exec();
   }
-
-  deleteAll(workflowId: string): Promise<any> {
-    return this.model
-      .deleteMany({ workflowId })
-      .lean({ virtuals: true })
-      .exec();
-  }
 }

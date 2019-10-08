@@ -64,7 +64,6 @@ export interface ITaskInstanceStore extends IStore {
   create(taskData: Task.ITask): Promise<Task.ITask>;
   update(taskUpdate: Event.ITaskUpdate): Promise<Task.ITask>;
   delete(taskId: string): Promise<any>;
-  deleteAll(workflowId: string): Promise<any>;
 }
 
 export class WorkflowDefinitionStore {
@@ -436,10 +435,6 @@ export class TaskInstanceStore {
 
   delete(taskId: string): Promise<any> {
     return this.client.delete(taskId);
-  }
-
-  deleteAll(workflowId: string): Promise<any> {
-    return this.client.deleteAll(workflowId);
   }
 }
 
