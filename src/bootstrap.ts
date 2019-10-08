@@ -1,3 +1,4 @@
+import { Store } from '@melonade/melonade-declaration';
 import * as config from './config';
 import * as store from './store';
 import { WorkflowDefinitionZookeeperStore } from './store/zookeeper/workflowDefinition';
@@ -9,12 +10,11 @@ import { Server } from './server';
 import { executor as stateExecutor } from './state';
 import { executor as systemTaskExecutor } from './systemTask';
 import { executor as commandExecutor } from './command';
-import { StoreType } from './constants/store';
 import './kafka';
 import { TransactionInstanceMongoseStore } from './store/mongoose/transactionInstance';
 
 switch (config.workflowDefinitionStoreConfig.type) {
-  case StoreType.ZooKeeper:
+  case Store.StoreType.ZooKeeper:
     store.workflowDefinitionStore.setClient(
       new WorkflowDefinitionZookeeperStore(
         config.workflowDefinitionStoreConfig.zookeeperConfig.root,
@@ -30,7 +30,7 @@ switch (config.workflowDefinitionStoreConfig.type) {
 }
 
 switch (config.taskDefinitionStoreConfig.type) {
-  case StoreType.ZooKeeper:
+  case Store.StoreType.ZooKeeper:
     store.taskDefinitionStore.setClient(
       new TaskDefinitionZookeeperStore(
         config.taskDefinitionStoreConfig.zookeeperConfig.root,
@@ -46,10 +46,10 @@ switch (config.taskDefinitionStoreConfig.type) {
 }
 
 switch (config.transactionInstanceStoreConfig.type) {
-  // case StoreType.Memory:
+  // case Store.StoreType.Memory:
   //   store.transactionInstanceStore.setClient(new MemoryStore());
   //   break;
-  case StoreType.MongoDB:
+  case Store.StoreType.MongoDB:
     store.transactionInstanceStore.setClient(
       new TransactionInstanceMongoseStore(
         config.transactionInstanceStoreConfig.mongoDBConfig.uri,
@@ -64,10 +64,10 @@ switch (config.transactionInstanceStoreConfig.type) {
 }
 
 switch (config.workflowInstanceStoreConfig.type) {
-  // case StoreType.Memory:
+  // case Store.StoreType.Memory:
   //   store.workflowInstanceStore.setClient(new MemoryStore());
   //   break;
-  case StoreType.MongoDB:
+  case Store.StoreType.MongoDB:
     store.workflowInstanceStore.setClient(
       new WorkflowInstanceMongoseStore(
         config.workflowInstanceStoreConfig.mongoDBConfig.uri,
@@ -82,10 +82,10 @@ switch (config.workflowInstanceStoreConfig.type) {
 }
 
 switch (config.taskInstanceStoreConfig.type) {
-  // case StoreType.Memory:
+  // case Store.StoreType.Memory:
   //   store.taskInstanceStore.setClient(new MemoryStore());
   //   break;
-  case StoreType.MongoDB:
+  case Store.StoreType.MongoDB:
     store.taskInstanceStore.setClient(
       new TaskInstanceMongooseStore(
         config.taskInstanceStoreConfig.mongoDBConfig.uri,
