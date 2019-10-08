@@ -148,6 +148,7 @@ export class WorkflowInstanceMongoseStore extends MongooseStore
       .findOne({
         transactionId,
         status: State.WorkflowStates.Running,
+        type: Workflow.WorkflowTypes.Workflow,
         childOf: { $exists: false },
       })
       .lean({ virtuals: true })
