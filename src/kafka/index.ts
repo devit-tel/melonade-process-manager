@@ -1,5 +1,5 @@
 import { AdminClient, KafkaConsumer, Producer } from '@nv4re/node-rdkafka';
-import { Task, Event, Kafka } from '@melonade/melonade-declaration';
+import { Task, Event, Kafka, Timer } from '@melonade/melonade-declaration';
 import * as config from '../config';
 import { jsonTryParse } from '../utils/common';
 
@@ -86,6 +86,15 @@ export const poll = (
       },
     );
   });
+
+export const sendTimer = (timer: Timer.AllTimerType) =>
+  producerClient.produce(
+    config.kafkaTopicName.timer,
+    null,
+    Buffer.from(JSON.stringify(timer)),
+    null,
+    Date.now(),
+  );
 
 export const dispatch = (
   task: Task.ITask,

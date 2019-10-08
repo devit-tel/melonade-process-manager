@@ -5,8 +5,9 @@ import {
   WorkflowDefinition,
   Workflow,
   Task,
+  Timer,
 } from '@melonade/melonade-declaration';
-import { poll, stateConsumerClient, sendEvent } from './kafka';
+import { poll, stateConsumerClient, sendEvent, sendTimer } from './kafka';
 import {
   taskInstanceStore,
   workflowInstanceStore,
@@ -540,6 +541,14 @@ const handleFailedTask = async (task: Task.ITask) => {
           break;
       }
     }
+  } else {
+    sendTimer({
+      type: Timer.TimerType.delayTask,
+      task: {
+        ...task,
+        retries: task.retries - 1,
+      },
+    });
   }
 };
 
