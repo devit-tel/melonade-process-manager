@@ -1,42 +1,20 @@
-import nodeZookeeperClient = require('node-zookeeper-client');
+import * as nodeZookeeperClient from 'node-zookeeper-client';
 import * as R from 'ramda';
 import { IStore } from '../../store';
 import { enumToList } from '../../utils/common';
 
-export interface IZookeeperOptions {
-  sessionTimeout: number;
-  spinDelay: number;
-  retries: number;
-}
-
-export enum ZookeeperEvents {
-  NODE_CREATED = 'NODE_CREATED',
-  NODE_DELETED = 'NODE_DELETED',
-  NODE_DATA_CHANGED = 'NODE_DATA_CHANGED',
-  NODE_CHILDREN_CHANGED = 'NODE_CHILDREN_CHANGED',
-}
-
-export interface IZookeeperEvent {
-  type: number;
-  name: ZookeeperEvents;
-  path: string;
-}
-
 export class ZookeeperStore implements IStore {
   localStore: any = {};
   root: string = '/';
-  client: any;
+  client: nodeZookeeperClient.Client;
 
   constructor(
     root: string,
     connectionString: string,
-    options?: IZookeeperOptions,
+    options?: nodeZookeeperClient.Option,
   ) {
     this.root = root;
-    this.client = new nodeZookeeperClient.createClient(
-      connectionString,
-      options,
-    );
+    this.client = nodeZookeeperClient.createClient(connectionString, options);
     this.client.connect();
   }
 
@@ -63,10 +41,9 @@ export class ZookeeperStore implements IStore {
       this.client.setData(
         `${this.root}/${key.replace(/\./, '/')}`,
         Buffer.from(value),
-        null,
-        (error: Error, path: string) => {
+        (error: Error) => {
           if (error) return reject(error);
-          resolve(path);
+          resolve();
         },
       );
     });

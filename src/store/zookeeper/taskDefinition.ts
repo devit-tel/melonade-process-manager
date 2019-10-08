@@ -1,12 +1,8 @@
 // Serializer for 1 layer node (${root}/${taskName})
+import * as nodeZookeeperClient from 'node-zookeeper-client';
 import * as R from 'ramda';
 import { TaskDefinition } from '@melonade/melonade-declaration';
-import {
-  ZookeeperStore,
-  IZookeeperOptions,
-  IZookeeperEvent,
-  ZookeeperEvents,
-} from '.';
+import { ZookeeperStore } from '../zookeeper';
 import { jsonTryParse } from '../../utils/common';
 import { ITaskDefinitionStore } from '..';
 
@@ -16,15 +12,21 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
   constructor(
     root: string,
     connectionString: string,
-    options?: IZookeeperOptions,
+    options?: nodeZookeeperClient.Option,
   ) {
     super(root, connectionString, options);
 
-    this.client.mkdirp(this.root, null, null, null, (error: Error) => {
-      if (!error) {
-        this.getAndWatchTasks();
-      }
-    });
+    this.client.mkdirp(
+      this.root,
+      null,
+      null,
+      nodeZookeeperClient.CreateMode.PERSISTENT,
+      (error: Error) => {
+        if (!error) {
+          this.getAndWatchTasks();
+        }
+      },
+    );
   }
 
   get(name: string): Promise<TaskDefinition.ITaskDefinition> {
@@ -45,7 +47,7 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
       this.client.create(
         `${this.root}/${taskDefinition.name}`,
         Buffer.from(JSON.stringify(taskDefinition)),
-        'PERSISTENT',
+        nodeZookeeperClient.CreateMode.PERSISTENT,
         (error: Error) => {
           if (error) return reject(error);
           resolve(taskDefinition);
@@ -77,9 +79,9 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
   getAndWatchTasks = () => {
     this.client.getChildren(
       this.root,
-      (event: IZookeeperEvent) => {
-        switch (event.name) {
-          case ZookeeperEvents.NODE_CHILDREN_CHANGED:
+      (event: nodeZookeeperClient.Event) => {
+        switch (event.type) {
+          case nodeZookeeperClient.Event.NODE_CHILDREN_CHANGED:
             // When created new task, this is also fired when task are deleted, but did not handled at this time
             this.getAndWatchTasks();
             break;
@@ -103,9 +105,9 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
   getAndWatchTask = (task: string) => {
     this.client.getData(
       `${this.root}/${task}`,
-      (event: IZookeeperEvent) => {
-        switch (event.name) {
-          case ZookeeperEvents.NODE_DATA_CHANGED:
+      (event: nodeZookeeperClient.Event) => {
+        switch (event.type) {
+          case nodeZookeeperClient.Event.NODE_DATA_CHANGED:
             // When task's data change
             this.getAndWatchTask(task);
             break;

@@ -1,10 +1,10 @@
 // Serializer for 2 layer node (${root}/${workflowName}/${workflowRev})
 import * as R from 'ramda';
+import * as nodeZookeeperClient from 'node-zookeeper-client';
 import { WorkflowDefinition } from '@melonade/melonade-declaration';
 import {
   ZookeeperStore,
   IZookeeperOptions,
-  IZookeeperEvent,
   ZookeeperEvents,
 } from '../zookeeper';
 import { IWorkflowDefinitionStore } from '../../store';
@@ -19,11 +19,17 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
   ) {
     super(root, connectionString, options);
 
-    this.client.mkdirp(this.root, null, null, null, (error: Error) => {
-      if (!error) {
-        this.getAndWatchWorkflows();
-      }
-    });
+    this.client.mkdirp(
+      this.root,
+      null,
+      null,
+      nodeZookeeperClient.CreateMode.PERSISTENT,
+      (error: Error) => {
+        if (!error) {
+          this.getAndWatchWorkflows();
+        }
+      },
+    );
   }
 
   get(
@@ -49,7 +55,7 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
         `${this.root}/${workflowDefinition.name}/${workflowDefinition.rev}`,
         Buffer.from(JSON.stringify(workflowDefinition)),
         null,
-        'PERSISTENT',
+        nodeZookeeperClient.CreateMode.PERSISTENT,
         (error: Error) => {
           if (error) return reject(error);
           resolve(workflowDefinition);
@@ -81,7 +87,7 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
   private getAndWatchWorkflows = () => {
     this.client.getChildren(
       this.root,
-      (event: IZookeeperEvent) => {
+      (event: nodeZookeeperClient.Event) => {
         switch (event.name) {
           case ZookeeperEvents.NODE_CHILDREN_CHANGED:
             this.getAndWatchWorkflows();
@@ -101,7 +107,7 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
   private getAndWatchRevs = (workflow: string) => {
     this.client.getChildren(
       `${this.root}/${workflow}`,
-      (event: IZookeeperEvent) => {
+      (event: nodeZookeeperClient.Event) => {
         switch (event.name) {
           case ZookeeperEvents.NODE_CHILDREN_CHANGED:
             // When add new ref, this is also fire when ref are deleted, but did not work at this time
@@ -125,7 +131,7 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
   private getAndWatchRef = (workflow: string, rev: string) => {
     this.client.getData(
       `${this.root}/${workflow}/${rev}`,
-      (event: IZookeeperEvent) => {
+      (event: nodeZookeeperClient.Event) => {
         switch (event.name) {
           case ZookeeperEvents.NODE_DATA_CHANGED:
             // When rev's data change
