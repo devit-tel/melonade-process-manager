@@ -2,11 +2,7 @@
 import * as R from 'ramda';
 import * as nodeZookeeperClient from 'node-zookeeper-client';
 import { WorkflowDefinition } from '@melonade/melonade-declaration';
-import {
-  ZookeeperStore,
-  IZookeeperOptions,
-  ZookeeperEvents,
-} from '../zookeeper';
+import { ZookeeperStore } from '../zookeeper';
 import { IWorkflowDefinitionStore } from '../../store';
 import { jsonTryParse } from '../../utils/common';
 
@@ -15,7 +11,7 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
   constructor(
     root: string,
     connectionString: string,
-    options?: IZookeeperOptions,
+    options?: nodeZookeeperClient.Option,
   ) {
     super(root, connectionString, options);
 
@@ -88,8 +84,8 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     this.client.getChildren(
       this.root,
       (event: nodeZookeeperClient.Event) => {
-        switch (event.name) {
-          case ZookeeperEvents.NODE_CHILDREN_CHANGED:
+        switch (event.type) {
+          case nodeZookeeperClient.Event.NODE_CHILDREN_CHANGED:
             this.getAndWatchWorkflows();
             break;
           default:
@@ -108,8 +104,8 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     this.client.getChildren(
       `${this.root}/${workflow}`,
       (event: nodeZookeeperClient.Event) => {
-        switch (event.name) {
-          case ZookeeperEvents.NODE_CHILDREN_CHANGED:
+        switch (event.type) {
+          case nodeZookeeperClient.Event.NODE_CHILDREN_CHANGED:
             // When add new ref, this is also fire when ref are deleted, but did not work at this time
             this.getAndWatchRevs(workflow);
             break;
@@ -132,8 +128,8 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     this.client.getData(
       `${this.root}/${workflow}/${rev}`,
       (event: nodeZookeeperClient.Event) => {
-        switch (event.name) {
-          case ZookeeperEvents.NODE_DATA_CHANGED:
+        switch (event.type) {
+          case nodeZookeeperClient.Event.NODE_DATA_CHANGED:
             // When rev's data change
             this.getAndWatchRef(workflow, rev);
             break;
