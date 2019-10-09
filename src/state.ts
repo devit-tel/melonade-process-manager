@@ -496,7 +496,7 @@ const handleFailedWorkflow = (workflow: Workflow.IWorkflow) =>
 
 const handleFailedTask = async (task: Task.ITask) => {
   // if cannot retry anymore
-  if (task.retries < 0) {
+  if (task.retries <= 0) {
     const { workflow, tasksData } = await getTaskInfo(task);
     if (workflow.status === State.WorkflowStates.Cancelled) {
       await handleCancelWorkflow(workflow, tasksData);
@@ -574,6 +574,7 @@ const processTasksOfWorkflow = async (
           break;
       }
     } catch (error) {
+      console.log(error);
       sendEvent({
         transactionId: taskUpdate.transactionId,
         type: 'SYSTEM',

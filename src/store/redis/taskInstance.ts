@@ -13,6 +13,7 @@ export class TaskInstanceRedisStore extends RedisStore
 
   create = async (taskData: Task.ITask): Promise<Task.ITask> => {
     const task = {
+      logs: [],
       ...taskData,
       taskId: uuid(),
     };
@@ -67,7 +68,9 @@ export class TaskInstanceRedisStore extends RedisStore
       ].includes(taskUpdate.status)
         ? Date.now()
         : null,
-      logs: taskUpdate.logs ? [...task.logs, taskUpdate.logs] : task.logs,
+      logs: taskUpdate.logs
+        ? [...(task.logs ? task.logs : []), taskUpdate.logs]
+        : task.logs,
     };
 
     await this.client.set(key, JSON.stringify(updatedTask));
