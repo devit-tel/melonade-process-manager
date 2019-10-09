@@ -494,15 +494,32 @@ const handleFailedWorkflow = (workflow: Workflow.IWorkflow) =>
     status: State.TransactionStates.Failed,
   });
 
+const getWorkflowStatusFromTaskStatus = (
+  taskStatus: State.TaskStates,
+): State.WorkflowStates => {
+  switch (taskStatus) {
+    case State.TaskStates.Completed:
+      return State.WorkflowStates.Completed;
+    case State.TaskStates.AckTimeOut:
+    case State.TaskStates.Timeout:
+      return State.WorkflowStates.Timeout;
+    case State.TaskStates.Failed:
+      return State.WorkflowStates.Failed;
+    default:
+      return State.WorkflowStates.Failed;
+  }
+};
+
 const handleFailedTask = async (task: Task.ITask) => {
+  const { workflow, tasksData } = await getTaskInfo(task);
+  // If workflow oncancle do not retry or anything
+  if (workflow.status === State.WorkflowStates.Cancelled) {
+    await handleCancelWorkflow(workflow, tasksData);
+    return;
+  }
+
   // if cannot retry anymore
   if (task.retries <= 0) {
-    const { workflow, tasksData } = await getTaskInfo(task);
-    if (workflow.status === State.WorkflowStates.Cancelled) {
-      await handleCancelWorkflow(workflow, tasksData);
-      return;
-    }
-
     const tasksDataList = R.values(tasksData);
     const runningTasks = tasksDataList.filter((taskData: Task.ITask) => {
       return (
@@ -518,8 +535,9 @@ const handleFailedTask = async (task: Task.ITask) => {
       const workflow = await workflowInstanceStore.update({
         transactionId: task.transactionId,
         workflowId: task.workflowId,
-        status: State.WorkflowStates.Failed,
+        status: getWorkflowStatusFromTaskStatus(task.status),
       });
+
       switch (workflow.workflowDefinition.failureStrategy) {
         case State.WorkflowFailureStrategies.RecoveryWorkflow:
           await handleRecoveryWorkflow(workflow, tasksDataList);
@@ -535,8 +553,6 @@ const handleFailedTask = async (task: Task.ITask) => {
           break;
         case State.WorkflowFailureStrategies.Failed:
           await handleFailedWorkflow(workflow);
-          break;
-        default:
           break;
       }
     }
