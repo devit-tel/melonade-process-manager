@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose';
 import { Workflow, Task, State, Event } from '@melonade/melonade-declaration';
 import * as mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 import { MongooseStore } from '../mongoose';
-import { IWorkflowInstanceStore } from '../../store';
+import { IWorkflowInstanceStore, taskInstanceStore } from '../../store';
 
 const workflowSchema = new mongoose.Schema(
   {
@@ -153,4 +153,25 @@ export class WorkflowInstanceMongoseStore extends MongooseStore
       })
       .lean({ virtuals: true })
       .exec();
+
+  deleteAll = async (transactionId: string): Promise<void> => {
+    const workflows = await this.model
+      .find({
+        transactionId,
+      })
+      .lean({ virtuals: true })
+      .exec();
+
+    await Promise.all([
+      this.model
+        .deleteMany({
+          transactionId,
+        })
+        .lean()
+        .exec(),
+      ...workflows.map(workflow =>
+        taskInstanceStore.deleteAll(workflow.workflowId),
+      ),
+    ]);
+  };
 }

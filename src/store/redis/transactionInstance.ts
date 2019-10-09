@@ -1,6 +1,6 @@
 import ioredis from 'ioredis';
 import { Transaction, Event, State } from '@melonade/melonade-declaration';
-import { ITransactionInstanceStore } from '../../store';
+import { ITransactionInstanceStore, workflowInstanceStore } from '../../store';
 import { RedisStore } from '../redis';
 import { prefix } from '../../config';
 
@@ -61,7 +61,22 @@ export class TransactionInstanceRedisStore extends RedisStore
         : null,
     };
 
-    await this.client.set(key, JSON.stringify(updatedTransaction));
+    // In case of redis I dont want to keep completed transaction
+    if (
+      [
+        State.TransactionStates.Completed,
+        State.TransactionStates.Failed,
+        State.TransactionStates.Cancelled,
+        State.TransactionStates.Compensated,
+      ].includes(transactionUpdate.status)
+    ) {
+      await Promise.all([
+        this.client.del(key),
+        workflowInstanceStore.deleteAll(transaction.transactionId),
+      ]);
+    } else {
+      await this.client.set(key, JSON.stringify(updatedTransaction));
+    }
 
     return updatedTransaction;
   };

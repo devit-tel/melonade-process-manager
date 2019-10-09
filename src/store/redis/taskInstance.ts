@@ -111,4 +111,13 @@ export class TaskInstanceRedisStore extends RedisStore
       .del(`${prefix}.task.${taskId}`)
       .exec();
   };
+
+  deleteAll = async (workflowId: string): Promise<void> => {
+    const key = `${prefix}.workflow-task.${workflowId}`;
+    const taskKeys = await this.client.smembers(key);
+    await this.client.del(
+      ...taskKeys.map(taskId => `${prefix}.task.${taskId}`),
+      key,
+    );
+  };
 }

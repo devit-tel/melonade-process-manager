@@ -1,6 +1,6 @@
 import ioredis from 'ioredis';
 import { Workflow, Event, State } from '@melonade/melonade-declaration';
-import { IWorkflowInstanceStore } from '../../store';
+import { IWorkflowInstanceStore, taskInstanceStore } from '../../store';
 import { RedisStore } from '../redis';
 import { prefix } from '../../config';
 import * as uuid from 'uuid/v4';
@@ -103,4 +103,18 @@ export class WorkflowInstanceRedisStore extends RedisStore
   delete(workflowId: string): Promise<any> {
     return this.client.del(`${prefix}.workflow.${workflowId}`);
   }
+
+  deleteAll = async (transactionId: string): Promise<void> => {
+    const key = `${prefix}.transaction-workflow.${transactionId}`;
+    const workflowKeys = await this.client.smembers(key);
+    await Promise.all([
+      this.client.del(
+        ...workflowKeys.map(workflowId => `${prefix}.workflow.${workflowId}`),
+        key,
+      ),
+      ...workflowKeys.map(workflowId =>
+        taskInstanceStore.deleteAll(workflowId),
+      ),
+    ]);
+  };
 }

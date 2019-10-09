@@ -140,4 +140,13 @@ export class TaskInstanceMongooseStore extends MongooseStore
       .lean({ virtuals: true })
       .exec();
   }
+
+  deleteAll = async (workflowId: string): Promise<void> => {
+    await this.model
+      .deleteMany({
+        workflowId,
+      })
+      .lean()
+      .exec();
+  };
 }
