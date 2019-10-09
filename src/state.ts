@@ -334,6 +334,23 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
     return;
   }
 
+  if (!nextTaskPath.isCompleted && !nextTaskPath.taskPath) {
+    const tasksDataList = R.values(tasksData);
+
+    const failedTasks = tasksDataList.filter(task =>
+      [
+        State.TaskStates.Failed,
+        State.TaskStates.AckTimeOut,
+        State.TaskStates.Timeout,
+      ].includes(task.status),
+    );
+
+    if (failedTasks.length) {
+      await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
+      return;
+    }
+  }
+
   if (nextTaskPath.isCompleted) {
     // When workflow is completed
     const completedWorkflow = await workflowInstanceStore.update({
@@ -510,6 +527,47 @@ const getWorkflowStatusFromTaskStatus = (
   }
 };
 
+const handleWorkflowFailureStrategy = async (
+  task: Task.ITask,
+  tasksDataList: Task.ITask[],
+) => {
+  const runningTasks = tasksDataList.filter((taskData: Task.ITask) => {
+    return (
+      [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
+        taskData.status,
+      ) && taskData.taskReferenceName !== task.taskReferenceName
+    );
+  });
+
+  // No running task, start recovery
+  // If there are running task wait for them first
+  if (runningTasks.length === 0) {
+    const workflow = await workflowInstanceStore.update({
+      transactionId: task.transactionId,
+      workflowId: task.workflowId,
+      status: getWorkflowStatusFromTaskStatus(task.status),
+    });
+
+    switch (workflow.workflowDefinition.failureStrategy) {
+      case State.WorkflowFailureStrategies.RecoveryWorkflow:
+        await handleRecoveryWorkflow(workflow, tasksDataList);
+        break;
+      case State.WorkflowFailureStrategies.Retry:
+        await handleRetryWorkflow(workflow, tasksDataList);
+        break;
+      case State.WorkflowFailureStrategies.Compensate:
+        await handleCompenstateWorkflow(workflow, tasksDataList);
+        break;
+      case State.WorkflowFailureStrategies.CompensateThenRetry:
+        await handleCompenstateThenRetryWorkflow(workflow, tasksDataList);
+        break;
+      case State.WorkflowFailureStrategies.Failed:
+        await handleFailedWorkflow(workflow);
+        break;
+    }
+  }
+};
+
 const handleFailedTask = async (task: Task.ITask) => {
   const { workflow, tasksData } = await getTaskInfo(task);
   // If workflow oncancle do not retry or anything
@@ -521,41 +579,7 @@ const handleFailedTask = async (task: Task.ITask) => {
   // if cannot retry anymore
   if (task.retries <= 0) {
     const tasksDataList = R.values(tasksData);
-    const runningTasks = tasksDataList.filter((taskData: Task.ITask) => {
-      return (
-        [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
-          taskData.status,
-        ) && taskData.taskReferenceName !== task.taskReferenceName
-      );
-    });
-
-    // No running task, start recovery
-    // If there are running task wait for them first
-    if (runningTasks.length === 0) {
-      const workflow = await workflowInstanceStore.update({
-        transactionId: task.transactionId,
-        workflowId: task.workflowId,
-        status: getWorkflowStatusFromTaskStatus(task.status),
-      });
-
-      switch (workflow.workflowDefinition.failureStrategy) {
-        case State.WorkflowFailureStrategies.RecoveryWorkflow:
-          await handleRecoveryWorkflow(workflow, tasksDataList);
-          break;
-        case State.WorkflowFailureStrategies.Retry:
-          await handleRetryWorkflow(workflow, tasksDataList);
-          break;
-        case State.WorkflowFailureStrategies.Compensate:
-          await handleCompenstateWorkflow(workflow, tasksDataList);
-          break;
-        case State.WorkflowFailureStrategies.CompensateThenRetry:
-          await handleCompenstateThenRetryWorkflow(workflow, tasksDataList);
-          break;
-        case State.WorkflowFailureStrategies.Failed:
-          await handleFailedWorkflow(workflow);
-          break;
-      }
-    }
+    await handleWorkflowFailureStrategy(task, tasksDataList);
   } else {
     sendTimer({
       type: Timer.TimerType.delayTask,
