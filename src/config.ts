@@ -145,6 +145,10 @@ export const taskInstanceStoreConfig = {
       useFindAndModify: false,
     },
   },
+  redisConfig: {
+    db: '5',
+    ...pickAndReplaceFromENV('^task-instance\\.redis\\.'),
+  },
 };
 
 export const workflowInstanceStoreConfig = {
@@ -160,6 +164,10 @@ export const workflowInstanceStoreConfig = {
       useFindAndModify: false,
     },
   },
+  redisConfig: {
+    db: '4',
+    ...pickAndReplaceFromENV('^workflow-instance\\.redis\\.'),
+  },
 };
 
 export const transactionInstanceStoreConfig = {
@@ -174,5 +182,9 @@ export const transactionInstanceStoreConfig = {
       poolSize: 100,
       useFindAndModify: false,
     },
+  },
+  redisConfig: {
+    db: '3',
+    ...pickAndReplaceFromENV('^transaction-instance\\.redis\\.'),
   },
 };

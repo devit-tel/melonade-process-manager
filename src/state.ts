@@ -319,7 +319,6 @@ const handleCancelWorkflow = async (
 
 const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
-
   if (workflow.status === State.WorkflowStates.Cancelled) {
     await handleCancelWorkflow(workflow, tasksData);
     return;
@@ -497,7 +496,7 @@ const handleFailedWorkflow = (workflow: Workflow.IWorkflow) =>
 
 const handleFailedTask = async (task: Task.ITask) => {
   // if cannot retry anymore
-  if (task.retries <= 0) {
+  if (task.retries < 0) {
     const { workflow, tasksData } = await getTaskInfo(task);
     if (workflow.status === State.WorkflowStates.Cancelled) {
       await handleCancelWorkflow(workflow, tasksData);

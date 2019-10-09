@@ -12,6 +12,9 @@ import { executor as systemTaskExecutor } from './systemTask';
 import { executor as commandExecutor } from './command';
 import './kafka';
 import { TransactionInstanceMongoseStore } from './store/mongoose/transactionInstance';
+import { TransactionInstanceRedisStore } from './store/redis/transactionInstance';
+import { WorkflowInstanceRedisStore } from './store/redis/workflowInstance';
+import { TaskInstanceRedisStore } from './store/redis/taskInstance';
 
 switch (config.workflowDefinitionStoreConfig.type) {
   case Store.StoreType.ZooKeeper:
@@ -57,6 +60,13 @@ switch (config.transactionInstanceStoreConfig.type) {
       ),
     );
     break;
+  case Store.StoreType.Redis:
+    store.transactionInstanceStore.setClient(
+      new TransactionInstanceRedisStore(
+        config.transactionInstanceStoreConfig.redisConfig,
+      ),
+    );
+    break;
   default:
     throw new Error(
       `TranscationInstance Store: ${config.transactionInstanceStoreConfig.type} is invalid`,
@@ -72,6 +82,13 @@ switch (config.workflowInstanceStoreConfig.type) {
       new WorkflowInstanceMongoseStore(
         config.workflowInstanceStoreConfig.mongoDBConfig.uri,
         config.workflowInstanceStoreConfig.mongoDBConfig.options,
+      ),
+    );
+    break;
+  case Store.StoreType.Redis:
+    store.workflowInstanceStore.setClient(
+      new WorkflowInstanceRedisStore(
+        config.workflowInstanceStoreConfig.redisConfig,
       ),
     );
     break;
@@ -91,6 +108,11 @@ switch (config.taskInstanceStoreConfig.type) {
         config.taskInstanceStoreConfig.mongoDBConfig.uri,
         config.taskInstanceStoreConfig.mongoDBConfig.options,
       ),
+    );
+    break;
+  case Store.StoreType.Redis:
+    store.taskInstanceStore.setClient(
+      new TaskInstanceRedisStore(config.taskInstanceStoreConfig.redisConfig),
     );
     break;
   default:
