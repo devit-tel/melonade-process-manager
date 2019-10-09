@@ -11,18 +11,23 @@ export class TaskInstanceRedisStore extends RedisStore
     super(redisOptions);
   }
 
-  create = async (taskData: Task.ITask): Promise<Task.ITask> => {
+  create = async (
+    taskData: Task.ITask,
+    oldTaskId?: string,
+  ): Promise<Task.ITask> => {
     const task = {
       logs: [],
       ...taskData,
       taskId: uuid(),
     };
-
-    const results = await this.client
+    const pipeline = this.client
       .pipeline()
       .setnx(`${prefix}.task.${task.taskId}`, JSON.stringify(task))
-      .sadd(`${prefix}.workflow-task.${task.workflowId}`, task.taskId)
-      .exec();
+      .sadd(`${prefix}.workflow-task.${task.workflowId}`, task.taskId);
+
+    if (oldTaskId) pipeline.srem(oldTaskId);
+
+    const results = await pipeline.exec();
 
     if (results[0][1] !== 1) {
       // if cannot set recurrsively create
@@ -65,6 +70,7 @@ export class TaskInstanceRedisStore extends RedisStore
         State.TaskStates.Completed,
         State.TaskStates.Failed,
         State.TaskStates.Timeout,
+        State.TaskStates.AckTimeOut,
       ].includes(taskUpdate.status)
         ? Date.now()
         : null,
@@ -97,7 +103,12 @@ export class TaskInstanceRedisStore extends RedisStore
     return tasksString.map(JSON.parse);
   };
 
-  delete(taskId: string): Promise<any> {
-    return this.client.del(`${prefix}.task.${taskId}`);
-  }
+  delete = async (taskId: string): Promise<any> => {
+    const task = await this.get(taskId);
+    return this.client
+      .pipeline()
+      .srem(`${prefix}.workflow-task.${task.workflowId}`, taskId)
+      .del(`${prefix}.task.${taskId}`)
+      .exec();
+  };
 }

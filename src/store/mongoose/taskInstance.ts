@@ -97,6 +97,7 @@ export class TaskInstanceMongooseStore extends MongooseStore
             State.TaskStates.Completed,
             State.TaskStates.Failed,
             State.TaskStates.Timeout,
+            State.TaskStates.AckTimeOut,
           ].includes(taskUpdate.status)
             ? Date.now()
             : null,

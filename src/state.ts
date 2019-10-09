@@ -573,10 +573,7 @@ const processTasksOfWorkflow = async (
   for (const taskUpdate of workflowTasksUpdate) {
     // console.time(`${taskUpdate.taskId}-${taskUpdate.status}`);
     try {
-      const task = await taskInstanceStore.update({
-        ...taskUpdate,
-        isSystem: false,
-      });
+      const task = await taskInstanceStore.update(taskUpdate);
 
       switch (taskUpdate.status) {
         case State.TaskStates.Completed:
@@ -584,6 +581,7 @@ const processTasksOfWorkflow = async (
           break;
         case State.TaskStates.Failed:
         case State.TaskStates.Timeout:
+        case State.TaskStates.AckTimeOut:
           await handleFailedTask(task);
           break;
         default:
