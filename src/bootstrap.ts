@@ -117,7 +117,7 @@ switch (config.taskInstanceStoreConfig.type) {
     break;
   default:
     throw new Error(
-      `WorkflowInstance Store: ${config.taskInstanceStoreConfig.type} is invalid`,
+      `TaskInstance Store: ${config.taskInstanceStoreConfig.type} is invalid`,
     );
 }
 
