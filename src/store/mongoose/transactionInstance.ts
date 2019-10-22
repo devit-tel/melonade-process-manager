@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose';
 import { Transaction, State, Event } from '@melonade/melonade-declaration';
 import { MongooseStore } from '../mongoose';
-import { ITransactionInstanceStore } from '../../store';
+import { ITransactionInstanceStore, workflowInstanceStore } from '../../store';
 
 const transacationSchema = new mongoose.Schema(
   {
@@ -55,7 +55,7 @@ export class TransactionInstanceMongoseStore extends MongooseStore
   update = async (
     transactionUpdate: Event.ITransactionUpdate,
   ): Promise<Transaction.ITransaction> => {
-    return this.model
+    const updatedTransaction = await this.model
       .findOneAndUpdate(
         {
           transactionId: transactionUpdate.transactionId,
@@ -77,5 +77,23 @@ export class TransactionInstanceMongoseStore extends MongooseStore
       )
       .lean({ virtuals: true })
       .exec();
+
+    if (
+      [
+        State.TransactionStates.Completed,
+        State.TransactionStates.Failed,
+        State.TransactionStates.Cancelled,
+        State.TransactionStates.Compensated,
+      ].includes(transactionUpdate.status)
+    ) {
+      await Promise.all([
+        this.model.deleteOne({
+          transactionId: transactionUpdate.transactionId,
+        }),
+        workflowInstanceStore.deleteAll(transactionUpdate.transactionId),
+      ]);
+    }
+
+    return updatedTransaction;
   };
 }
