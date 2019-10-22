@@ -505,6 +505,7 @@ const handleCompenstateThenRetryWorkflow = (
     return handleCompletedCompensateThenRetryWorkflow(workflow);
   }
 };
+
 const handleFailedWorkflow = (workflow: Workflow.IWorkflow) =>
   transactionInstanceStore.update({
     transactionId: workflow.transactionId,

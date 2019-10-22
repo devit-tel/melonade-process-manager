@@ -13,13 +13,14 @@ export class WorkflowInstanceRedisStore extends RedisStore
 
   create = async (
     workflowData: Workflow.IWorkflow,
+    oldWorkflowId?: string,
   ): Promise<Workflow.IWorkflow> => {
     const workflow = {
       ...workflowData,
       workflowId: uuid(),
     };
 
-    const results = await this.client
+    const pipeline = this.client
       .pipeline()
       .setnx(
         `${prefix}.workflow.${workflow.workflowId}`,
@@ -28,13 +29,20 @@ export class WorkflowInstanceRedisStore extends RedisStore
       .sadd(
         `${prefix}.transaction-workflow.${workflow.transactionId}`,
         workflow.workflowId,
-      )
-      .exec();
+      );
+
+    if (oldWorkflowId)
+      pipeline.srem(
+        `${prefix}.transaction-workflow.${workflow.transactionId}`,
+        oldWorkflowId,
+      );
+
+    const results = await pipeline.exec();
 
     if (results[0][1] !== 1) {
       // if cannot set recurrsively create
       console.log('recreate');
-      return this.create(workflowData);
+      return this.create(workflowData, workflow.workflowId);
     }
 
     return workflow;

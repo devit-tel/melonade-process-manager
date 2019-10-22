@@ -1,27 +1,23 @@
-import ioredis from 'ioredis';
 import { Transaction, Event, State } from '@melonade/melonade-declaration';
 import { ITransactionInstanceStore, workflowInstanceStore } from '../../store';
-import { RedisStore } from '../redis';
-import { prefix } from '../../config';
+import { MemoryStore } from '../memory';
 
-export class TransactionInstanceRedisStore extends RedisStore
+export class TransactionInstanceMemoryStore extends MemoryStore
   implements ITransactionInstanceStore {
-  constructor(redisOptions: ioredis.RedisOptions) {
-    super(redisOptions);
+  constructor() {
+    super();
   }
 
   create = async (
     transaction: Transaction.ITransaction,
   ): Promise<Transaction.ITransaction> => {
-    const isSet = await this.client.setnx(
-      `${prefix}.transaction.${transaction.transactionId}`,
-      JSON.stringify(transaction),
-    );
-    if (isSet !== 1) {
+    if (this.localStore[transaction.transactionId]) {
       throw new Error(
         `Transaction "${transaction.transactionId}" already exists`,
       );
     }
+
+    this.setValue(transaction.transactionId, transaction);
 
     return transaction;
   };
@@ -29,15 +25,13 @@ export class TransactionInstanceRedisStore extends RedisStore
   update = async (
     transactionUpdate: Event.ITransactionUpdate,
   ): Promise<Transaction.ITransaction> => {
-    const key = `${prefix}.transaction.${transactionUpdate.transactionId}`;
-    const transactionString = await this.client.get(key);
-    if (!transactionString) {
+    const transaction = await this.getValue(transactionUpdate.transactionId);
+    if (!transaction) {
       throw new Error(
         `Transaction "${transactionUpdate.transactionId}" not found`,
       );
     }
 
-    const transaction: Transaction.ITransaction = JSON.parse(transactionString);
     if (
       !State.TransactionNextStates[transaction.status].includes(
         transactionUpdate.status,
@@ -69,27 +63,22 @@ export class TransactionInstanceRedisStore extends RedisStore
         State.TransactionStates.Compensated,
       ].includes(transactionUpdate.status)
     ) {
+      this.unsetValue(transaction.transactionId);
       await Promise.all([
-        this.client.del(key),
         workflowInstanceStore.deleteAll(transaction.transactionId),
       ]);
     } else {
-      await this.client.set(key, JSON.stringify(updatedTransaction));
+      this.setValue(transaction.transactionId, updatedTransaction);
     }
 
     return updatedTransaction;
   };
 
   get = async (transactionId: string): Promise<Transaction.ITransaction> => {
-    const TransactionString = await this.client.get(
-      `${prefix}.transaction.${transactionId}`,
-    );
-
-    if (TransactionString) return JSON.parse(TransactionString);
-    return null;
+    return this.getValue(transactionId);
   };
 
   delete(transactionId: string): Promise<any> {
-    return this.client.del(`${prefix}.transaction.${transactionId}`);
+    return this.unsetValue(transactionId);
   }
 }

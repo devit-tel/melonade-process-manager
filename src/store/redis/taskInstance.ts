@@ -25,14 +25,15 @@ export class TaskInstanceRedisStore extends RedisStore
       .setnx(`${prefix}.task.${task.taskId}`, JSON.stringify(task))
       .sadd(`${prefix}.workflow-task.${task.workflowId}`, task.taskId);
 
-    if (oldTaskId) pipeline.srem(oldTaskId);
+    if (oldTaskId)
+      pipeline.srem(`${prefix}.workflow-task.${task.workflowId}`, oldTaskId);
 
     const results = await pipeline.exec();
 
     if (results[0][1] !== 1) {
       // if cannot set recurrsively create
       console.log('recreate');
-      return this.create(taskData);
+      return this.create(taskData, task.taskId);
     }
 
     return task;
