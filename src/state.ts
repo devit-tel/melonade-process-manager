@@ -594,10 +594,10 @@ const handleFailedTask = async (task: Task.ITask) => {
   }
 };
 
-const processTasksOfWorkflow = async (
-  workflowTasksUpdate: Event.ITaskUpdate[],
+const processUpdatedTasks = async (
+  tasksUpdate: Event.ITaskUpdate[],
 ): Promise<any> => {
-  for (const taskUpdate of workflowTasksUpdate) {
+  for (const taskUpdate of tasksUpdate) {
     // console.time(`${taskUpdate.taskId}-${taskUpdate.status}`);
     try {
       const task = await taskInstanceStore.update(taskUpdate);
@@ -612,6 +612,7 @@ const processTasksOfWorkflow = async (
           await handleFailedTask(task);
           break;
         default:
+          // Case Inprogress we did't need to do anything except update the status
           break;
       }
     } catch (error) {
@@ -643,7 +644,7 @@ export const executor = async () => {
 
       await Promise.all(
         groupedTasks.map((workflowTasksUpdate: Event.ITaskUpdate[]) =>
-          processTasksOfWorkflow(workflowTasksUpdate),
+          processUpdatedTasks(workflowTasksUpdate),
         ),
       );
 
