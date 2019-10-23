@@ -16,14 +16,15 @@ import {
 import { toObjectByKey } from './utils/common';
 import { mapParametersToValue } from './utils/task';
 
-const isAllCompleted = R.all(R.pathEq(['status'], State.TaskStates.Completed));
+export const isAllCompleted = R.all(
+  R.pathEq(['status'], State.TaskStates.Completed),
+);
 
-const getNextPath = (currentPath: (string | number)[]): (string | number)[] => [
-  ...R.init(currentPath),
-  +R.last(currentPath) + 1,
-];
+export const getNextPath = (
+  currentPath: (string | number)[],
+): (string | number)[] => [...R.init(currentPath), +R.last(currentPath) + 1];
 
-const isChildOfDecisionDefault = (
+export const isChildOfDecisionDefault = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
 ): boolean =>
@@ -33,7 +34,7 @@ const isChildOfDecisionDefault = (
     tasks,
   ) && R.nth(-2, currentPath) === 'defaultDecision';
 
-const isChildOfDecisionCase = (
+export const isChildOfDecisionCase = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
 ): boolean =>
@@ -43,7 +44,7 @@ const isChildOfDecisionCase = (
     tasks,
   ) && R.nth(-3, currentPath) === 'decisions';
 
-const isTaskOfActivityTask = (
+const isGotNextTaskToRun = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
 ): boolean => !!R.path(getNextPath(currentPath), tasks);
@@ -79,7 +80,6 @@ const getNextParallelTask = (
   if (isAllCompleted(allTaskStatuses)) {
     return getNextTaskPath(tasks, R.dropLast(3, currentPath), taskData);
   }
-
   // Wait for other line
   return {
     isCompleted: false,
@@ -88,7 +88,7 @@ const getNextParallelTask = (
 };
 
 // Check if it's system task
-const getNextTaskPath = (
+export const getNextTaskPath = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
   taskData: { [taskReferenceName: string]: Task.ITask } = {},
@@ -110,7 +110,7 @@ const getNextTaskPath = (
         return { isCompleted: false, taskPath: getNextPath(currentPath) };
       }
       return getNextTaskPath(tasks, R.dropLast(3, currentPath), taskData);
-    case isTaskOfActivityTask(tasks, currentPath):
+    case isGotNextTaskToRun(tasks, currentPath):
       return { isCompleted: false, taskPath: getNextPath(currentPath) };
     // This case should never fall
     default:
