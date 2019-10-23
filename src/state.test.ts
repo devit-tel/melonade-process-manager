@@ -8,6 +8,9 @@ import * as state from './state';
 // Don't test async function here, because of they are stores
 // We have to test those on integate test
 
+jest.mock('./kafka');
+jest.mock('./store');
+
 describe('isAllCompleted', () => {
   test('All tasks completed', () => {
     expect(
@@ -839,12 +842,31 @@ describe('findTaskPath', () => {
   });
 
   test('Find child of decisions case', () => {
+    const spyFindTaskPath = jest.spyOn(state, 'findTaskPath');
     expect(state.findTaskPath('t4', exampleWorkflow.tasks)).toEqual([
       1,
       'decisions',
       'case1',
       1,
     ]);
+    // findTaskPath have to recursive 4 time (From the begining) to find the task
+    expect(spyFindTaskPath).toHaveBeenCalledTimes(4);
+    spyFindTaskPath.mockRestore();
+  });
+
+  test('Find child of decisions case (Optimize)', () => {
+    const spyFindTaskPath = jest.spyOn(state, 'findTaskPath');
+    expect(
+      state.findTaskPath('t4', exampleWorkflow.tasks, [
+        1,
+        'decisions',
+        'case1',
+        0,
+      ]),
+    ).toEqual([1, 'decisions', 'case1', 1]);
+    // findTaskPath will start from current path
+    expect(spyFindTaskPath).toHaveBeenCalledTimes(2);
+    spyFindTaskPath.mockRestore();
   });
 
   test('Find child of decisions default', () => {

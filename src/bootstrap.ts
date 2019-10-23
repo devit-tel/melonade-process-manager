@@ -2,6 +2,12 @@ import { Store } from '@melonade/melonade-declaration';
 import { executor as commandExecutor } from './command';
 import * as config from './config';
 import './kafka';
+import {
+  commandConsumerClient,
+  producerClient,
+  stateConsumerClient,
+  systemConsumerClient,
+} from './kafka';
 import { Server } from './server';
 import { executor as stateExecutor } from './state';
 import * as store from './store';
@@ -15,6 +21,11 @@ import { TaskDefinitionZookeeperStore } from './store/zookeeper/taskDefinition';
 import { WorkflowDefinitionZookeeperStore } from './store/zookeeper/workflowDefinition';
 import { executor as systemTaskExecutor } from './systemTask';
 // import { MemoryStore } from './store/memory';
+
+stateConsumerClient.connect();
+systemConsumerClient.connect();
+commandConsumerClient.connect();
+producerClient.connect();
 
 switch (config.workflowDefinitionStoreConfig.type) {
   case Store.StoreType.ZooKeeper:

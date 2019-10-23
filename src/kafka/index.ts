@@ -22,27 +22,23 @@ export const producerClient = new Producer(
 );
 
 stateConsumerClient.setDefaultConsumeTimeout(5);
-stateConsumerClient.connect();
 stateConsumerClient.on('ready', () => {
   console.log('State consumer kafka is ready');
   stateConsumerClient.subscribe([config.kafkaTopicName.event]);
 });
 
 systemConsumerClient.setDefaultConsumeTimeout(5);
-systemConsumerClient.connect();
 systemConsumerClient.on('ready', () => {
   console.log('System consumer kafka is ready');
   systemConsumerClient.subscribe([config.kafkaTopicName.systemTask]);
 });
 
 commandConsumerClient.setDefaultConsumeTimeout(5);
-commandConsumerClient.connect();
 commandConsumerClient.on('ready', () => {
   console.log('Command consumer kafka is ready');
   commandConsumerClient.subscribe([config.kafkaTopicName.command]);
 });
 
-producerClient.connect();
 producerClient.setPollInterval(100);
 producerClient.on('ready', () => {
   console.log('Producer kafka is ready');
