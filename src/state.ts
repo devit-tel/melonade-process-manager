@@ -636,14 +636,14 @@ export const executor = async () => {
       200,
     );
     if (tasksUpdate.length) {
-      const groupedTasks = R.toPairs(
+      // Grouped by workflowId, so it can execute parallely, but same workflowId have to run sequential bacause it can effect each other
+      const groupedTasks = R.values(
         R.groupBy(R.path(['workflowId']), tasksUpdate),
       );
 
       await Promise.all(
-        groupedTasks.map(
-          ([_workflowId, workflowTasksUpdate]: [string, Event.ITaskUpdate[]]) =>
-            processTasksOfWorkflow(workflowTasksUpdate),
+        groupedTasks.map((workflowTasksUpdate: Event.ITaskUpdate[]) =>
+          processTasksOfWorkflow(workflowTasksUpdate),
         ),
       );
 
