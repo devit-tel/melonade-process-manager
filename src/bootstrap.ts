@@ -1,7 +1,6 @@
 import { Store } from '@melonade/melonade-declaration';
 import { executor as commandExecutor } from './command';
 import * as config from './config';
-import './kafka';
 import {
   commandConsumerClient,
   producerClient,
