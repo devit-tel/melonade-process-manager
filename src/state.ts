@@ -97,25 +97,27 @@ export const getNextTaskPath = (
   if (R.equals([tasks.length - 1], currentPath))
     return { isCompleted: true, taskPath: null };
 
-  switch (true) {
-    case isTaskOfParallelTask(tasks, currentPath):
-      return getNextParallelTask(tasks, currentPath, taskData);
-    case isChildOfDecisionDefault(tasks, currentPath):
-      if (R.path(getNextPath(currentPath), tasks)) {
-        return { isCompleted: false, taskPath: getNextPath(currentPath) };
-      }
-      return getNextTaskPath(tasks, R.dropLast(2, currentPath), taskData);
-    case isChildOfDecisionCase(tasks, currentPath):
-      if (R.path(getNextPath(currentPath), tasks)) {
-        return { isCompleted: false, taskPath: getNextPath(currentPath) };
-      }
-      return getNextTaskPath(tasks, R.dropLast(3, currentPath), taskData);
-    case isGotNextTaskToRun(tasks, currentPath):
+  if (isTaskOfParallelTask(tasks, currentPath))
+    return getNextParallelTask(tasks, currentPath, taskData);
+
+  if (isChildOfDecisionDefault(tasks, currentPath)) {
+    if (R.path(getNextPath(currentPath), tasks)) {
       return { isCompleted: false, taskPath: getNextPath(currentPath) };
-    // This case should never fall
-    default:
-      throw new Error('Task is invalid');
+    }
+    return getNextTaskPath(tasks, R.dropLast(2, currentPath), taskData);
   }
+
+  if (isChildOfDecisionCase(tasks, currentPath)) {
+    if (R.path(getNextPath(currentPath), tasks)) {
+      return { isCompleted: false, taskPath: getNextPath(currentPath) };
+    }
+    return getNextTaskPath(tasks, R.dropLast(3, currentPath), taskData);
+  }
+
+  if (isGotNextTaskToRun(tasks, currentPath))
+    return { isCompleted: false, taskPath: getNextPath(currentPath) };
+
+  throw new Error('Task is invalid');
 };
 
 const findNextParallelTaskPath = (
