@@ -1,15 +1,15 @@
-import * as R from 'ramda';
 import {
-  WorkflowDefinition,
+  Event,
+  State,
+  Task,
   TaskDefinition,
   Transaction,
   Workflow,
-  Task,
-  Event,
-  State,
+  WorkflowDefinition,
 } from '@melonade/melonade-declaration';
-import { mapParametersToValue } from '../utils/task';
+import * as R from 'ramda';
 import { dispatch, sendEvent } from '../kafka';
+import { mapParametersToValue } from '../utils/task';
 
 export interface IStore {
   isHealthy(): boolean;

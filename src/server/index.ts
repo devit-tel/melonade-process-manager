@@ -2,10 +2,10 @@ import koa = require('koa');
 import koaBodyparser = require('koa-bodyparser');
 import koaCompress = require('koa-compress');
 import koaRouter = require('koa-router');
-import responseFormatter from './middlewares/responseFormatter';
 import errorHandler from './middlewares/errorHandler';
-import { router as v1Router } from './routers/v1';
+import responseFormatter from './middlewares/responseFormatter';
 import { router as systemRouter } from './routers/system';
+import { router as v1Router } from './routers/v1';
 
 export class Server {
   server: koa;

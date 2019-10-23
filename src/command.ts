@@ -1,8 +1,8 @@
 import { Command, State } from '@melonade/melonade-declaration';
 import { commandConsumerClient, poll, sendEvent } from './kafka';
 import {
-  workflowDefinitionStore,
   transactionInstanceStore,
+  workflowDefinitionStore,
   workflowInstanceStore,
 } from './store';
 

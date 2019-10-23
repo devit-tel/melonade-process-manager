@@ -1,5 +1,5 @@
-import * as dotenv from 'dotenv';
 import { Kafka } from '@melonade/melonade-declaration';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 

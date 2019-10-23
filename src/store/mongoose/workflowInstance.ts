@@ -1,8 +1,8 @@
+import { Event, State, Task, Workflow } from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
-import { Workflow, Task, State, Event } from '@melonade/melonade-declaration';
 import * as mongooseLeanVirtuals from 'mongoose-lean-virtuals';
-import { MongooseStore } from '../mongoose';
 import { IWorkflowInstanceStore, taskInstanceStore } from '../../store';
+import { MongooseStore } from '../mongoose';
 
 const workflowSchema = new mongoose.Schema(
   {
@@ -169,7 +169,7 @@ export class WorkflowInstanceMongoseStore extends MongooseStore
         })
         .lean()
         .exec(),
-      ...workflows.map(workflow =>
+      ...workflows.map((workflow: Workflow.IWorkflow) =>
         taskInstanceStore.deleteAll(workflow.workflowId),
       ),
     ]);

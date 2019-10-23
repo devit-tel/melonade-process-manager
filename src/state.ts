@@ -1,17 +1,17 @@
-import * as R from 'ramda';
 import {
   Event,
   State,
-  WorkflowDefinition,
-  Workflow,
   Task,
   Timer,
+  Workflow,
+  WorkflowDefinition,
 } from '@melonade/melonade-declaration';
-import { poll, stateConsumerClient, sendEvent, sendTimer } from './kafka';
+import * as R from 'ramda';
+import { poll, sendEvent, sendTimer, stateConsumerClient } from './kafka';
 import {
   taskInstanceStore,
-  workflowInstanceStore,
   transactionInstanceStore,
+  workflowInstanceStore,
 } from './store';
 import { toObjectByKey } from './utils/common';
 import { mapParametersToValue } from './utils/task';
@@ -339,7 +339,7 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   if (!nextTaskPath.isCompleted && !nextTaskPath.taskPath) {
     const tasksDataList = R.values(tasksData);
 
-    const failedTasks = tasksDataList.filter(task =>
+    const failedTasks = tasksDataList.filter((task: Task.ITask) =>
       [
         State.TaskStates.Failed,
         State.TaskStates.AckTimeOut,

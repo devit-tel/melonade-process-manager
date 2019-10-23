@@ -5,6 +5,6 @@ export const router = new koaRouter();
 router.get('/health', () => {
   // TODO add reak health check
   return {
-    status: 'OK'
-  }
+    status: 'OK',
+  };
 });

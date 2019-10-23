@@ -1,10 +1,10 @@
 // Serializer for 2 layer node (${root}/${workflowName}/${workflowRev})
-import * as R from 'ramda';
-import * as nodeZookeeperClient from 'node-zookeeper-client';
 import { WorkflowDefinition } from '@melonade/melonade-declaration';
-import { ZookeeperStore } from '../zookeeper';
+import * as nodeZookeeperClient from 'node-zookeeper-client';
+import * as R from 'ramda';
 import { IWorkflowDefinitionStore } from '../../store';
 import { jsonTryParse } from '../../utils/common';
+import { ZookeeperStore } from '../zookeeper';
 
 export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
   implements IWorkflowDefinitionStore {

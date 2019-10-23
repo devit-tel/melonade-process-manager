@@ -1,9 +1,9 @@
+import { Event, State, Task } from '@melonade/melonade-declaration';
 import ioredis from 'ioredis';
-import { Task, Event, State } from '@melonade/melonade-declaration';
+import * as uuid from 'uuid/v4';
+import { prefix } from '../../config';
 import { ITaskInstanceStore } from '../../store';
 import { RedisStore } from '../redis';
-import { prefix } from '../../config';
-import * as uuid from 'uuid/v4';
 
 export class TaskInstanceRedisStore extends RedisStore
   implements ITaskInstanceStore {
@@ -98,7 +98,7 @@ export class TaskInstanceRedisStore extends RedisStore
     );
 
     const tasksString = await this.client.mget(
-      ...taskKeys.map(taskId => `${prefix}.task.${taskId}`),
+      ...taskKeys.map((taskId: string) => `${prefix}.task.${taskId}`),
     );
 
     return tasksString.map(JSON.parse);
@@ -117,7 +117,7 @@ export class TaskInstanceRedisStore extends RedisStore
     const key = `${prefix}.workflow-task.${workflowId}`;
     const taskKeys = await this.client.smembers(key);
     await this.client.del(
-      ...taskKeys.map(taskId => `${prefix}.task.${taskId}`),
+      ...taskKeys.map((taskId: string) => `${prefix}.task.${taskId}`),
       key,
     );
   };

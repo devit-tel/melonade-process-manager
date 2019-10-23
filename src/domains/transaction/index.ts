@@ -1,9 +1,9 @@
-import * as uuid from 'uuid/v4';
 import {
-  WorkflowDefinition,
   Transaction,
+  WorkflowDefinition,
 } from '@melonade/melonade-declaration';
-import { workflowDefinitionStore, transactionInstanceStore } from '../../store';
+import * as uuid from 'uuid/v4';
+import { transactionInstanceStore, workflowDefinitionStore } from '../../store';
 
 export const startTransaction = async (
   workflowName: string,

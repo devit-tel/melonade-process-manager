@@ -1,6 +1,6 @@
 import koaRouter = require('koa-router');
-import * as transactionRouter from './transaction';
 import * as definitionRouter from './definition';
+import * as transactionRouter from './transaction';
 
 export const router = new koaRouter();
 

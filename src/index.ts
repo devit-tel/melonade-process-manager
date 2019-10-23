@@ -1,6 +1,6 @@
 import * as cluster from 'cluster';
-import * as os from 'os';
 import * as dotenv from 'dotenv';
+import * as os from 'os';
 
 dotenv.config();
 

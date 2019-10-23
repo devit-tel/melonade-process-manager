@@ -1,10 +1,10 @@
 // Serializer for 1 layer node (${root}/${taskName})
+import { TaskDefinition } from '@melonade/melonade-declaration';
 import * as nodeZookeeperClient from 'node-zookeeper-client';
 import * as R from 'ramda';
-import { TaskDefinition } from '@melonade/melonade-declaration';
-import { ZookeeperStore } from '../zookeeper';
-import { jsonTryParse } from '../../utils/common';
 import { ITaskDefinitionStore } from '..';
+import { jsonTryParse } from '../../utils/common';
+import { ZookeeperStore } from '../zookeeper';
 
 // This is wrong
 export class TaskDefinitionZookeeperStore extends ZookeeperStore

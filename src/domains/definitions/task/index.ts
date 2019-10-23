@@ -1,6 +1,6 @@
 import { TaskDefinition } from '@melonade/melonade-declaration';
-import { taskDefinitionStore } from '../../../store';
 import { createTopic } from '../../../kafka';
+import { taskDefinitionStore } from '../../../store';
 
 export const createTaskDefinition = async (
   taskDefinitionData: TaskDefinition.ITaskDefinition,

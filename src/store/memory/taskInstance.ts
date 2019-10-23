@@ -1,7 +1,7 @@
-import { Task, Event, State } from '@melonade/melonade-declaration';
+import { Event, State, Task } from '@melonade/melonade-declaration';
+import * as uuid from 'uuid/v4';
 import { ITaskInstanceStore } from '../../store';
 import { MemoryStore } from '../memory';
-import * as uuid from 'uuid/v4';
 
 export class TaskInstanceMemoryStore extends MemoryStore
   implements ITaskInstanceStore {

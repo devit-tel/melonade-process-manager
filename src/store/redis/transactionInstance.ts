@@ -1,8 +1,8 @@
+import { Event, State, Transaction } from '@melonade/melonade-declaration';
 import ioredis from 'ioredis';
-import { Transaction, Event, State } from '@melonade/melonade-declaration';
+import { prefix } from '../../config';
 import { ITransactionInstanceStore, workflowInstanceStore } from '../../store';
 import { RedisStore } from '../redis';
-import { prefix } from '../../config';
 
 export class TransactionInstanceRedisStore extends RedisStore
   implements ITransactionInstanceStore {

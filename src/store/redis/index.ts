@@ -1,5 +1,5 @@
-import { IStore } from '../../store';
 import ioredis from 'ioredis';
+import { IStore } from '../../store';
 
 export class RedisStore implements IStore {
   client: ioredis.Redis;

@@ -1,4 +1,4 @@
-import { Transaction, Event, State } from '@melonade/melonade-declaration';
+import { Event, State, Transaction } from '@melonade/melonade-declaration';
 import { ITransactionInstanceStore, workflowInstanceStore } from '../../store';
 import { MemoryStore } from '../memory';
 

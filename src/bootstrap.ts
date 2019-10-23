@@ -1,20 +1,20 @@
 import { Store } from '@melonade/melonade-declaration';
+import { executor as commandExecutor } from './command';
 import * as config from './config';
-import * as store from './store';
-import { WorkflowDefinitionZookeeperStore } from './store/zookeeper/workflowDefinition';
-import { TaskDefinitionZookeeperStore } from './store/zookeeper/taskDefinition';
-// import { MemoryStore } from './store/memory';
-import { TaskInstanceMongooseStore } from './store/mongoose/taskInstance';
-import { WorkflowInstanceMongoseStore } from './store/mongoose/workflowInstance';
+import './kafka';
 import { Server } from './server';
 import { executor as stateExecutor } from './state';
-import { executor as systemTaskExecutor } from './systemTask';
-import { executor as commandExecutor } from './command';
-import './kafka';
+import * as store from './store';
+import { TaskInstanceMongooseStore } from './store/mongoose/taskInstance';
 import { TransactionInstanceMongoseStore } from './store/mongoose/transactionInstance';
+import { WorkflowInstanceMongoseStore } from './store/mongoose/workflowInstance';
+import { TaskInstanceRedisStore } from './store/redis/taskInstance';
 import { TransactionInstanceRedisStore } from './store/redis/transactionInstance';
 import { WorkflowInstanceRedisStore } from './store/redis/workflowInstance';
-import { TaskInstanceRedisStore } from './store/redis/taskInstance';
+import { TaskDefinitionZookeeperStore } from './store/zookeeper/taskDefinition';
+import { WorkflowDefinitionZookeeperStore } from './store/zookeeper/workflowDefinition';
+import { executor as systemTaskExecutor } from './systemTask';
+// import { MemoryStore } from './store/memory';
 
 switch (config.workflowDefinitionStoreConfig.type) {
   case Store.StoreType.ZooKeeper:

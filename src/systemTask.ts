@@ -1,15 +1,15 @@
-import { systemConsumerClient, poll, sendEvent } from './kafka';
 import {
-  WorkflowDefinition,
-  Task,
   State,
+  Task,
   Workflow,
+  WorkflowDefinition,
 } from '@melonade/melonade-declaration';
+import { poll, sendEvent, systemConsumerClient } from './kafka';
 import { getTaskData } from './state';
 import {
-  workflowInstanceStore,
   taskInstanceStore,
   workflowDefinitionStore,
+  workflowInstanceStore,
 } from './store';
 
 const processDecisionTask = async (systemTask: Task.ITask) => {
