@@ -11,6 +11,9 @@ import {
   getNextTaskPath,
 } from './state';
 
+// Don't test async function here, because of they are stores
+// We have to test those on integate test
+
 describe('isAllCompleted', () => {
   test('All tasks completed', () => {
     expect(
