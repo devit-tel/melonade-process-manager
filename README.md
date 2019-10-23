@@ -35,9 +35,9 @@ This is prototype of saga implementation, written in Node.
 
 ## Known issues
 
-- [ ] parallel tasks can be empty
+- [x] parallel tasks can be empty
 - [ ] Sub workflow won't get compensate
 - [x] Task/Workflow data send as string's ISO time format instead of number
 - [ ] Workflow Definition can have random task name
-- [ ] MongoDB not fast enough for 5000 concurent (Lag)
-- [ ] Transaction did not cancelled if compensating
+- [x] MongoDB not fast enough for 5000 concurent (Lag about 1 min before task updated) => Added redis store
+- [x] Transaction did not cancelled if compensating
