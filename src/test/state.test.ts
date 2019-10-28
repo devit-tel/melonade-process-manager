@@ -19,6 +19,12 @@ import { WorkflowDefinitionMemoryStore } from '../store/memory/workflowDefinitio
 import { WorkflowInstanceMemoryStore } from '../store/memory/workflowInstance';
 
 jest.mock('../kafka');
+jest.spyOn(transactionInstanceStore, 'create');
+jest.spyOn(transactionInstanceStore, 'update');
+jest.spyOn(workflowInstanceStore, 'create');
+jest.spyOn(workflowInstanceStore, 'update');
+jest.spyOn(taskInstanceStore, 'create');
+jest.spyOn(taskInstanceStore, 'update');
 
 const mockedDispatch = <jest.Mock<typeof kafka.dispatch>>kafka.dispatch;
 
@@ -73,6 +79,12 @@ describe('Ideal workflow', () => {
     );
     dispatchedTasks.push(mockedDispatch.mock.calls[0][0]);
     expect(mockedDispatch).toBeCalledTimes(1);
+    expect(transactionInstanceStore.create).toBeCalledTimes(1);
+    expect(transactionInstanceStore.update).toBeCalledTimes(0);
+    expect(workflowInstanceStore.create).toBeCalledTimes(1);
+    expect(workflowInstanceStore.update).toBeCalledTimes(0);
+    expect(taskInstanceStore.create).toBeCalledTimes(1);
+    expect(taskInstanceStore.update).toBeCalledTimes(0);
   });
 
   test('Acknowledge and Finish 1st task', async () => {
@@ -99,6 +111,12 @@ describe('Ideal workflow', () => {
 
     dispatchedTasks.push(mockedDispatch.mock.calls[1][0]);
     expect(mockedDispatch).toBeCalledTimes(2);
+    expect(transactionInstanceStore.create).toBeCalledTimes(1);
+    expect(transactionInstanceStore.update).toBeCalledTimes(0);
+    expect(workflowInstanceStore.create).toBeCalledTimes(1);
+    expect(workflowInstanceStore.update).toBeCalledTimes(0);
+    expect(taskInstanceStore.create).toBeCalledTimes(2);
+    expect(taskInstanceStore.update).toBeCalledTimes(2);
   });
 
   test('Acknowledge and Finish 2nd task', async () => {
@@ -125,6 +143,12 @@ describe('Ideal workflow', () => {
 
     dispatchedTasks.push(mockedDispatch.mock.calls[2][0]);
     expect(mockedDispatch).toBeCalledTimes(3);
+    expect(transactionInstanceStore.create).toBeCalledTimes(1);
+    expect(transactionInstanceStore.update).toBeCalledTimes(0);
+    expect(workflowInstanceStore.create).toBeCalledTimes(1);
+    expect(workflowInstanceStore.update).toBeCalledTimes(0);
+    expect(taskInstanceStore.create).toBeCalledTimes(3);
+    expect(taskInstanceStore.update).toBeCalledTimes(4);
   });
 
   test('Transaction, workflow must in running state', async () => {
@@ -155,6 +179,12 @@ describe('Ideal workflow', () => {
     ]);
 
     expect(mockedDispatch).toBeCalledTimes(3);
+    expect(transactionInstanceStore.create).toBeCalledTimes(1);
+    expect(transactionInstanceStore.update).toBeCalledTimes(1);
+    expect(workflowInstanceStore.create).toBeCalledTimes(1);
+    expect(workflowInstanceStore.update).toBeCalledTimes(1);
+    expect(taskInstanceStore.create).toBeCalledTimes(3);
+    expect(taskInstanceStore.update).toBeCalledTimes(6);
   });
 
   test('Instance data must be clean up', async () => {
