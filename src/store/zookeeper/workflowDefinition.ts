@@ -60,8 +60,10 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     );
   };
 
-  list(): Promise<WorkflowDefinition.IWorkflowDefinition[]> {
-    return Promise.resolve(super.listValue(undefined, 0));
+  list(): Promise<{
+    [name: string]: { [rev: string]: WorkflowDefinition.IWorkflowDefinition };
+  }> {
+    return Promise.resolve(this.localStore);
   }
 
   update(

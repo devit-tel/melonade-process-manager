@@ -72,8 +72,8 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
     );
   }
 
-  list(): Promise<TaskDefinition.ITaskDefinition[]> {
-    return Promise.resolve(this.listValue(undefined, 0));
+  list(): Promise<{ [name: string]: TaskDefinition.ITaskDefinition }> {
+    return Promise.resolve(this.localStore);
   }
 
   getAndWatchTasks = () => {
