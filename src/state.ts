@@ -594,7 +594,7 @@ const handleFailedTask = async (task: Task.ITask) => {
   }
 };
 
-const processUpdatedTasks = async (
+export const processUpdatedTasks = async (
   tasksUpdate: Event.ITaskUpdate[],
 ): Promise<any> => {
   for (const taskUpdate of tasksUpdate) {

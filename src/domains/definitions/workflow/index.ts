@@ -16,7 +16,9 @@ export const getWorkflowDefinition = async (
   return workflowDefinitionStore.get(workflowName, workflowRev);
 };
 
-export const listWorkflowDefinition = async (): Promise<any[]> => {
+export const listWorkflowDefinition = async (): Promise<{
+  [name: string]: { [rev: string]: WorkflowDefinition.IWorkflowDefinition };
+}> => {
   return workflowDefinitionStore.list();
 };
 

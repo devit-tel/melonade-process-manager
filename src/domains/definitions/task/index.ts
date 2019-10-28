@@ -25,8 +25,8 @@ export const getTaskDefinition = (
   return taskDefinitionStore.get(taskName);
 };
 
-export const listTaskDefinition = (): Promise<
-  TaskDefinition.ITaskDefinition[]
-> => {
+export const listTaskDefinition = (): Promise<{
+  [name: string]: TaskDefinition.ITaskDefinition;
+}> => {
   return taskDefinitionStore.list();
 };
