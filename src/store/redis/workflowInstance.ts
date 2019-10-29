@@ -91,7 +91,7 @@ export class WorkflowInstanceRedisStore extends RedisStore
     );
 
     if (workflowString) return JSON.parse(workflowString);
-    return null;
+    return undefined;
   };
 
   getByTransactionId = async (
@@ -105,7 +105,7 @@ export class WorkflowInstanceRedisStore extends RedisStore
     );
 
     if (workflowString) return JSON.parse(workflowString);
-    return null;
+    return undefined;
   };
 
   delete(workflowId: string): Promise<any> {

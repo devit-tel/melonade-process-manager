@@ -17,7 +17,7 @@ export class MemoryStore implements IStore {
 
   unsetValue(key: string) {
     delete this.localStore[key];
-    return null;
+    return undefined;
   }
 
   getValue(key: string): any {

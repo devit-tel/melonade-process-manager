@@ -22,8 +22,23 @@ import { TaskInstanceMemoryStore } from '../store/memory/taskInstance';
 import { TransactionInstanceMemoryStore } from '../store/memory/transactionInstance';
 import { WorkflowDefinitionMemoryStore } from '../store/memory/workflowDefinition';
 import { WorkflowInstanceMemoryStore } from '../store/memory/workflowInstance';
+import { TaskInstanceRedisStore } from '../store/redis/taskInstance';
+import { TransactionInstanceRedisStore } from '../store/redis/transactionInstance';
+import { WorkflowInstanceRedisStore } from '../store/redis/workflowInstance';
 
 jest.mock('../kafka');
+jest.mock('ioredis', () => {
+  const Redis = require('ioredis-mock');
+  if (typeof Redis === 'object') {
+    // the first mock is an ioredis shim because ioredis-mock depends on it
+    // https://github.com/stipsan/ioredis-mock/blob/master/src/index.js#L101-L111
+    return {
+      Command: { _transformer: { argument: {}, reply: {} } },
+    };
+  }
+  // second mock for our code
+  return { default: Redis };
+});
 
 const storeSpies = [
   jest.spyOn(transactionInstanceStore, 'create'),
@@ -53,16 +68,9 @@ describe.each([
   {
     taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
     workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
-    taskInstanceStoreClient: new TaskInstanceMemoryStore(),
-    workflowInstanceStoreClient: new WorkflowInstanceMemoryStore(),
-    transactionInstanceStoreClient: new TransactionInstanceMemoryStore(),
-  },
-  {
-    taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
-    workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
-    taskInstanceStoreClient: new TaskInstanceMemoryStore(),
-    workflowInstanceStoreClient: new WorkflowInstanceMemoryStore(),
-    transactionInstanceStoreClient: new TransactionInstanceMemoryStore(),
+    taskInstanceStoreClient: new TaskInstanceRedisStore({}),
+    workflowInstanceStoreClient: new WorkflowInstanceRedisStore({}),
+    transactionInstanceStoreClient: new TransactionInstanceRedisStore({}),
   },
 ])(
   'Ideal workflow for (%p)',
@@ -80,11 +88,13 @@ describe.each([
     workflowInstanceStoreClient: IWorkflowInstanceStore;
     transactionInstanceStoreClient: ITransactionInstanceStore;
   }) => {
-    taskDefinitionStore.setClient(taskDefinitionStoreClient);
-    workflowDefinitionStore.setClient(workflowDefinitionStoreClient);
-    taskInstanceStore.setClient(taskInstanceStoreClient);
-    workflowInstanceStore.setClient(workflowInstanceStoreClient);
-    transactionInstanceStore.setClient(transactionInstanceStoreClient);
+    beforeAll(() => {
+      taskDefinitionStore.setClient(taskDefinitionStoreClient);
+      workflowDefinitionStore.setClient(workflowDefinitionStoreClient);
+      taskInstanceStore.setClient(taskInstanceStoreClient);
+      workflowInstanceStore.setClient(workflowInstanceStoreClient);
+      transactionInstanceStore.setClient(transactionInstanceStoreClient);
+    });
 
     const dispatchedTasks: Task.ITask[] = [];
     test('Start transaction and dispatch task', async () => {
