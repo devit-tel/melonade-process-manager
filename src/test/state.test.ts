@@ -56,6 +56,8 @@ afterEach(() => {
   mockedDispatch.mockClear();
 });
 
+const TRANSACTION_ID = 'someTransactionId';
+
 // Do test each store type
 describe.each([
   {
@@ -130,15 +132,15 @@ describe.each([
         ],
       };
 
-      await transactionInstanceStore.create(
-        'someTransactionId',
-        SAMPLE_WORKFLOW,
-        {
-          a: 'hello',
-        },
-      );
+      await transactionInstanceStore.create(TRANSACTION_ID, SAMPLE_WORKFLOW, {
+        a: 'hello',
+      });
       dispatchedTasks.push(mockedDispatch.mock.calls[0][0]);
       expect(mockedDispatch).toBeCalledTimes(1);
+      expect(mockedDispatch.mock.calls[0][0]).toMatchObject({
+        taskReferenceName: 't1',
+        status: State.TaskStates.Scheduled,
+      });
       expect(transactionInstanceStore.create).toBeCalledTimes(1);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
       expect(workflowInstanceStore.create).toBeCalledTimes(1);
@@ -172,6 +174,10 @@ describe.each([
       dispatchedTasks.push(mockedDispatch.mock.calls[0][0]);
 
       expect(mockedDispatch).toBeCalledTimes(1);
+      expect(mockedDispatch.mock.calls[0][0]).toMatchObject({
+        taskReferenceName: 't2',
+        status: State.TaskStates.Scheduled,
+      });
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
       expect(workflowInstanceStore.create).toBeCalledTimes(0);
@@ -205,6 +211,10 @@ describe.each([
       dispatchedTasks.push(mockedDispatch.mock.calls[0][0]);
 
       expect(mockedDispatch).toBeCalledTimes(1);
+      expect(mockedDispatch.mock.calls[0][0]).toMatchObject({
+        taskReferenceName: 't3',
+        status: State.TaskStates.Scheduled,
+      });
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
       expect(workflowInstanceStore.create).toBeCalledTimes(0);
@@ -214,9 +224,7 @@ describe.each([
     });
 
     test('Transaction, workflow must in running state', async () => {
-      const transaction = await transactionInstanceStore.get(
-        'someTransactionId',
-      );
+      const transaction = await transactionInstanceStore.get(TRANSACTION_ID);
       expect(transaction.status).toEqual(State.TransactionStates.Running);
     });
 
@@ -252,10 +260,13 @@ describe.each([
     });
 
     test('Instance data must be clean up', async () => {
-      const transaction = await transactionInstanceStore.get(
-        'someTransactionId',
-      );
+      const transaction = await transactionInstanceStore.get(TRANSACTION_ID);
       expect(transaction).toEqual(undefined);
+
+      for (const dispatchedTask of dispatchedTasks) {
+        const task = await taskInstanceStore.get(dispatchedTask.taskId);
+        expect(task).toEqual(undefined);
+      }
     });
   },
 );
