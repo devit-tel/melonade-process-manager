@@ -74,7 +74,7 @@ export class WorkflowDefinitionStore {
   client: IWorkflowDefinitionStore;
 
   setClient(client: IWorkflowDefinitionStore) {
-    if (this.client) throw new Error('Already set client');
+    // if (this.client) throw new Error('Already set client');
     this.client = client;
   }
 
@@ -108,7 +108,7 @@ export class TaskDefinitionStore {
   client: ITaskDefinitionStore;
 
   setClient(client: ITaskDefinitionStore) {
-    if (this.client) throw new Error('Already set client');
+    // if (this.client) throw new Error('Already set client');
     this.client = client;
   }
 
@@ -137,7 +137,7 @@ export class TransactionInstanceStore {
   client: ITransactionInstanceStore;
 
   setClient(client: ITransactionInstanceStore) {
-    if (this.client) throw new Error('Already set client');
+    // if (this.client) throw new Error('Already set client');
     this.client = client;
   }
 
@@ -206,7 +206,7 @@ export class WorkflowInstanceStore {
   client: IWorkflowInstanceStore;
 
   setClient(client: IWorkflowInstanceStore) {
-    if (this.client) throw new Error('Already set client');
+    // if (this.client) throw new Error('Already set client');
     this.client = client;
   }
 
@@ -296,7 +296,7 @@ export class TaskInstanceStore {
   client: ITaskInstanceStore;
 
   setClient(client: ITaskInstanceStore) {
-    if (this.client) throw new Error('Already set client');
+    // if (this.client) throw new Error('Already set client');
     this.client = client;
   }
 

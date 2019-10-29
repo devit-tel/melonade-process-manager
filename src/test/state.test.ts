@@ -24,17 +24,39 @@ import { WorkflowDefinitionMemoryStore } from '../store/memory/workflowDefinitio
 import { WorkflowInstanceMemoryStore } from '../store/memory/workflowInstance';
 
 jest.mock('../kafka');
-jest.spyOn(transactionInstanceStore, 'create');
-jest.spyOn(transactionInstanceStore, 'update');
-jest.spyOn(workflowInstanceStore, 'create');
-jest.spyOn(workflowInstanceStore, 'update');
-jest.spyOn(taskInstanceStore, 'create');
-jest.spyOn(taskInstanceStore, 'update');
+
+const storeSpies = [
+  jest.spyOn(transactionInstanceStore, 'create'),
+  jest.spyOn(transactionInstanceStore, 'update'),
+  jest.spyOn(workflowInstanceStore, 'create'),
+  jest.spyOn(workflowInstanceStore, 'update'),
+  jest.spyOn(taskInstanceStore, 'create'),
+  jest.spyOn(taskInstanceStore, 'update'),
+];
 
 const mockedDispatch = <jest.Mock<typeof kafka.dispatch>>kafka.dispatch;
 
+afterEach(() => {
+  storeSpies.map((spy: jest.SpyInstance<any>) => spy.mockClear());
+  mockedDispatch.mockClear();
+});
+
 // Do test each store type
 describe.each([
+  {
+    taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
+    workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
+    taskInstanceStoreClient: new TaskInstanceMemoryStore(),
+    workflowInstanceStoreClient: new WorkflowInstanceMemoryStore(),
+    transactionInstanceStoreClient: new TransactionInstanceMemoryStore(),
+  },
+  {
+    taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
+    workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
+    taskInstanceStoreClient: new TaskInstanceMemoryStore(),
+    workflowInstanceStoreClient: new WorkflowInstanceMemoryStore(),
+    transactionInstanceStoreClient: new TransactionInstanceMemoryStore(),
+  },
   {
     taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
     workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
@@ -58,7 +80,6 @@ describe.each([
     workflowInstanceStoreClient: IWorkflowInstanceStore;
     transactionInstanceStoreClient: ITransactionInstanceStore;
   }) => {
-    jest.resetModules();
     taskDefinitionStore.setClient(taskDefinitionStoreClient);
     workflowDefinitionStore.setClient(workflowDefinitionStoreClient);
     taskInstanceStore.setClient(taskInstanceStoreClient);
@@ -128,7 +149,7 @@ describe.each([
         },
       ]);
 
-      expect(mockedDispatch).toBeCalledTimes(1);
+      expect(mockedDispatch).toBeCalledTimes(0);
       await state.processUpdatedTasks([
         {
           taskId: currentTask.taskId,
@@ -138,13 +159,14 @@ describe.each([
         },
       ]);
 
-      dispatchedTasks.push(mockedDispatch.mock.calls[1][0]);
-      expect(mockedDispatch).toBeCalledTimes(2);
-      expect(transactionInstanceStore.create).toBeCalledTimes(1);
+      dispatchedTasks.push(mockedDispatch.mock.calls[0][0]);
+
+      expect(mockedDispatch).toBeCalledTimes(1);
+      expect(transactionInstanceStore.create).toBeCalledTimes(0);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
-      expect(workflowInstanceStore.create).toBeCalledTimes(1);
+      expect(workflowInstanceStore.create).toBeCalledTimes(0);
       expect(workflowInstanceStore.update).toBeCalledTimes(0);
-      expect(taskInstanceStore.create).toBeCalledTimes(2);
+      expect(taskInstanceStore.create).toBeCalledTimes(1);
       expect(taskInstanceStore.update).toBeCalledTimes(2);
     });
 
@@ -160,7 +182,7 @@ describe.each([
         },
       ]);
 
-      expect(mockedDispatch).toBeCalledTimes(2);
+      expect(mockedDispatch).toBeCalledTimes(0);
       await state.processUpdatedTasks([
         {
           taskId: currentTask.taskId,
@@ -170,14 +192,15 @@ describe.each([
         },
       ]);
 
-      dispatchedTasks.push(mockedDispatch.mock.calls[2][0]);
-      expect(mockedDispatch).toBeCalledTimes(3);
-      expect(transactionInstanceStore.create).toBeCalledTimes(1);
+      dispatchedTasks.push(mockedDispatch.mock.calls[0][0]);
+
+      expect(mockedDispatch).toBeCalledTimes(1);
+      expect(transactionInstanceStore.create).toBeCalledTimes(0);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
-      expect(workflowInstanceStore.create).toBeCalledTimes(1);
+      expect(workflowInstanceStore.create).toBeCalledTimes(0);
       expect(workflowInstanceStore.update).toBeCalledTimes(0);
-      expect(taskInstanceStore.create).toBeCalledTimes(3);
-      expect(taskInstanceStore.update).toBeCalledTimes(4);
+      expect(taskInstanceStore.create).toBeCalledTimes(1);
+      expect(taskInstanceStore.update).toBeCalledTimes(2);
     });
 
     test('Transaction, workflow must in running state', async () => {
@@ -199,7 +222,7 @@ describe.each([
         },
       ]);
 
-      expect(mockedDispatch).toBeCalledTimes(3);
+      expect(mockedDispatch).toBeCalledTimes(0);
       await state.processUpdatedTasks([
         {
           taskId: currentTask.taskId,
@@ -209,13 +232,13 @@ describe.each([
         },
       ]);
 
-      expect(mockedDispatch).toBeCalledTimes(3);
-      expect(transactionInstanceStore.create).toBeCalledTimes(1);
+      expect(mockedDispatch).toBeCalledTimes(0);
+      expect(transactionInstanceStore.create).toBeCalledTimes(0);
       expect(transactionInstanceStore.update).toBeCalledTimes(1);
-      expect(workflowInstanceStore.create).toBeCalledTimes(1);
+      expect(workflowInstanceStore.create).toBeCalledTimes(0);
       expect(workflowInstanceStore.update).toBeCalledTimes(1);
-      expect(taskInstanceStore.create).toBeCalledTimes(3);
-      expect(taskInstanceStore.update).toBeCalledTimes(6);
+      expect(taskInstanceStore.create).toBeCalledTimes(0);
+      expect(taskInstanceStore.update).toBeCalledTimes(2);
     });
 
     test('Instance data must be clean up', async () => {
