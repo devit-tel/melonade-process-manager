@@ -86,7 +86,7 @@ export class TransactionInstanceRedisStore extends RedisStore
     );
 
     if (TransactionString) return JSON.parse(TransactionString);
-    return undefined;
+    return null;
   };
 
   delete(transactionId: string): Promise<any> {

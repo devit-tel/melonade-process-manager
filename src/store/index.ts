@@ -197,7 +197,7 @@ export class TransactionInstanceStore {
         details: transactionUpdate,
         error: error.toString(),
       });
-      return undefined;
+      return null;
     }
   };
 }
@@ -275,7 +275,7 @@ export class WorkflowInstanceStore {
         details: workflowUpdate,
         timestamp: Date.now(),
       });
-      return undefined;
+      return null;
     }
   };
 

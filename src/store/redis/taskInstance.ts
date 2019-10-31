@@ -89,7 +89,7 @@ export class TaskInstanceRedisStore extends RedisStore
     const taskString = await this.client.get(`${prefix}.task.${taskId}`);
 
     if (taskString) return JSON.parse(taskString);
-    return undefined;
+    return null;
   };
 
   getAll = async (workflowId: string): Promise<Task.ITask[]> => {

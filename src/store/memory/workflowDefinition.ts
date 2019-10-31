@@ -14,7 +14,7 @@ export class WorkflowDefinitionMemoryStore extends MemoryStore
     name: string,
     rev: string,
   ): Promise<WorkflowDefinition.IWorkflowDefinition> {
-    return R.path([name, rev], this.localStore);
+    return R.pathOr(null, [name, rev], this.localStore);
   }
 
   create = async (

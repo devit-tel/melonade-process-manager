@@ -124,7 +124,7 @@ export class TaskInstanceMongooseStore extends MongooseStore
       .exec();
 
     if (taskData) return taskData;
-    return undefined;
+    return null;
   };
 
   getAll = (workflowId: string): Promise<Task.ITask[]> => {

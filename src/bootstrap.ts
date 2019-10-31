@@ -11,8 +11,8 @@ import { Server } from './server';
 import { executor as stateExecutor } from './state';
 import * as store from './store';
 import { TaskInstanceMongooseStore } from './store/mongoose/taskInstance';
-import { TransactionInstanceMongoseStore } from './store/mongoose/transactionInstance';
-import { WorkflowInstanceMongoseStore } from './store/mongoose/workflowInstance';
+import { TransactionInstanceMongooseStore } from './store/mongoose/transactionInstance';
+import { WorkflowInstanceMongooseStore } from './store/mongoose/workflowInstance';
 import { TaskInstanceRedisStore } from './store/redis/taskInstance';
 import { TransactionInstanceRedisStore } from './store/redis/transactionInstance';
 import { WorkflowInstanceRedisStore } from './store/redis/workflowInstance';
@@ -64,7 +64,7 @@ switch (config.transactionInstanceStoreConfig.type) {
   //   break;
   case Store.StoreType.MongoDB:
     store.transactionInstanceStore.setClient(
-      new TransactionInstanceMongoseStore(
+      new TransactionInstanceMongooseStore(
         config.transactionInstanceStoreConfig.mongoDBConfig.uri,
         config.transactionInstanceStoreConfig.mongoDBConfig.options,
       ),
@@ -89,7 +89,7 @@ switch (config.workflowInstanceStoreConfig.type) {
   //   break;
   case Store.StoreType.MongoDB:
     store.workflowInstanceStore.setClient(
-      new WorkflowInstanceMongoseStore(
+      new WorkflowInstanceMongooseStore(
         config.workflowInstanceStoreConfig.mongoDBConfig.uri,
         config.workflowInstanceStoreConfig.mongoDBConfig.options,
       ),

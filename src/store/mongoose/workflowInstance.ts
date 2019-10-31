@@ -86,7 +86,7 @@ workflowSchema
 
 workflowSchema.plugin(mongooseLeanVirtuals);
 
-export class WorkflowInstanceMongoseStore extends MongooseStore
+export class WorkflowInstanceMongooseStore extends MongooseStore
   implements IWorkflowInstanceStore {
   constructor(uri: string, mongoOption: mongoose.ConnectionOptions) {
     super(uri, mongoOption, 'workflow-instance', workflowSchema);

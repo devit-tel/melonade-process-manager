@@ -17,11 +17,11 @@ export class MemoryStore implements IStore {
 
   unsetValue(key: string) {
     delete this.localStore[key];
-    return undefined;
+    return null;
   }
 
   getValue(key: string): any {
-    return this.localStore[key];
+    return this.localStore[key] || null;
   }
 
   listValue(limit: number = Number.MAX_SAFE_INTEGER, offset: number = 0): any {

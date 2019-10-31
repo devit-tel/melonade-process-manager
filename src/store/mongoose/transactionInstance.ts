@@ -30,7 +30,7 @@ const transacationSchema = new mongoose.Schema(
   },
 );
 
-export class TransactionInstanceMongoseStore extends MongooseStore
+export class TransactionInstanceMongooseStore extends MongooseStore
   implements ITransactionInstanceStore {
   constructor(uri: string, mongoOption: mongoose.ConnectionOptions) {
     super(uri, mongoOption, 'transaction-instance', transacationSchema);

@@ -10,7 +10,7 @@ export class TaskDefinitionMemoryStore extends MemoryStore
   }
 
   get(name: string): Promise<TaskDefinition.ITaskDefinition> {
-    return Promise.resolve(this.localStore[name]);
+    return this.getValue(name);
   }
 
   create = async (
