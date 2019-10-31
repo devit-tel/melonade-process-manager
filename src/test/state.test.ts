@@ -55,6 +55,7 @@ const storeSpies = [
 ];
 
 const mockedDispatch = <jest.Mock<typeof kafka.dispatch>>kafka.dispatch;
+// const mockedSendEvent = <jest.Mock<typeof kafka.sendEvent>>kafka.sendEvent;
 
 describe('State test', () => {
   afterEach(() => {
@@ -171,6 +172,23 @@ describe('State test', () => {
       test('Acknowledge and Finish 1st task', async () => {
         // next task only dispatched if this task completed
         const currentTask = dispatchedTasks[0];
+
+        await state.processUpdatedTasks([
+          {
+            taskId: currentTask.taskId,
+            isSystem: false,
+            transactionId: currentTask.transactionId,
+            status: State.TaskStates.Completed,
+          },
+        ]);
+
+        // Should not accept this event and task won't updated
+        expect(mockedDispatch).toBeCalledTimes(0);
+        expect(await taskInstanceStore.get(currentTask.taskId)).toMatchObject({
+          taskId: currentTask.taskId,
+          status: State.TaskStates.Scheduled,
+        });
+
         await state.processUpdatedTasks([
           {
             taskId: currentTask.taskId,
@@ -202,7 +220,7 @@ describe('State test', () => {
         expect(workflowInstanceStore.create).toBeCalledTimes(0);
         expect(workflowInstanceStore.update).toBeCalledTimes(0);
         expect(taskInstanceStore.create).toBeCalledTimes(1);
-        expect(taskInstanceStore.update).toBeCalledTimes(2);
+        expect(taskInstanceStore.update).toBeCalledTimes(3);
       });
 
       test('Acknowledge and Finish 2nd task', async () => {
@@ -218,6 +236,7 @@ describe('State test', () => {
         ]);
 
         expect(mockedDispatch).toBeCalledTimes(0);
+
         await state.processUpdatedTasks([
           {
             taskId: currentTask.taskId,
@@ -242,7 +261,7 @@ describe('State test', () => {
         expect(taskInstanceStore.update).toBeCalledTimes(2);
       });
 
-      test('Transaction, workflow must in running state', async () => {
+      test('Transaction, workflow must still in running state', async () => {
         const transaction = await transactionInstanceStore.get(TRANSACTION_ID);
         expect(transaction.status).toEqual(State.TransactionStates.Running);
       });

@@ -439,7 +439,7 @@ export class TaskInstanceStore {
         details: taskUpdate,
         timestamp: Date.now(),
       });
-      throw error;
+      return null;
     }
   };
 

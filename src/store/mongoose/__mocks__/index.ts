@@ -1,6 +1,6 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
-const mongod = new MongoMemoryServer({
+new MongoMemoryServer({
   instance: {
     port: 51553,
     dbName: 'melonade-test',
@@ -8,6 +8,6 @@ const mongod = new MongoMemoryServer({
   },
 });
 
-afterAll(() => {
-  mongod.stop();
-});
+// afterAll(() => {
+//   mongod.stop();
+// });

@@ -368,6 +368,10 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       ),
     });
 
+    if (!completedWorkflow) {
+      throw new Error(`Cannot update workflow: ${task.workflowId}`);
+    }
+
     switch (workflow.type) {
       case Workflow.WorkflowTypes.Workflow:
         await handleCompletedWorkflow(completedWorkflow);
@@ -389,8 +393,6 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       default:
         break;
     }
-
-    return;
   }
 };
 
@@ -419,12 +421,12 @@ const getCompenstateTasks = R.compose(
   }),
 );
 
-const handleRecoveryWorkflow = (
+const handleRecoveryWorkflow = async (
   workflow: Workflow.IWorkflow,
   tasksData: Task.ITask[],
   isCancel: boolean = false,
-) =>
-  workflowInstanceStore.create(
+): Promise<void> => {
+  await workflowInstanceStore.create(
     workflow.transactionId,
     isCancel
       ? Workflow.WorkflowTypes.CancelWorkflow
@@ -432,13 +434,14 @@ const handleRecoveryWorkflow = (
     workflow.workflowDefinition,
     toObjectByKey(tasksData, 'taskReferenceName'),
   );
+};
 
-const handleRetryWorkflow = (
+const handleRetryWorkflow = async (
   workflow: Workflow.IWorkflow,
   tasksData: Task.ITask[],
-) => {
+): Promise<void> => {
   if (workflow.retries > 0) {
-    return workflowInstanceStore.create(
+    await workflowInstanceStore.create(
       workflow.transactionId,
       Workflow.WorkflowTypes.Workflow,
       workflow.workflowDefinition,
@@ -448,8 +451,10 @@ const handleRetryWorkflow = (
         retries: workflow.retries - 1,
       },
     );
+    return;
   }
-  return handleFailedWorkflow(workflow);
+  await handleFailedWorkflow(workflow);
+  return;
 };
 
 const handleCompenstateWorkflow = (
@@ -551,6 +556,10 @@ const handleWorkflowFailureStrategy = async (
       status: getWorkflowStatusFromTaskStatus(task.status),
     });
 
+    if (!workflow) {
+      throw new Error(`Cannot update workflow: ${task.workflowId}`);
+    }
+
     switch (workflow.workflowDefinition.failureStrategy) {
       case State.WorkflowFailureStrategies.RecoveryWorkflow:
         await handleRecoveryWorkflow(workflow, tasksDataList);
@@ -616,7 +625,6 @@ export const processUpdatedTasks = async (
           break;
       }
     } catch (error) {
-      console.log(error);
       sendEvent({
         transactionId: taskUpdate.transactionId,
         type: 'SYSTEM',
