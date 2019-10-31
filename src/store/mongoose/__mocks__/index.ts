@@ -1,10 +1,13 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
-new MongoMemoryServer({
+const mongod = new MongoMemoryServer({
   instance: {
     port: 51553,
     dbName: 'melonade-test',
+    debug: true,
   },
 });
 
-console.log('starting MongoMemoryServer');
+afterAll(() => {
+  mongod.stop();
+});
