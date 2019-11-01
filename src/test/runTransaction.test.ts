@@ -63,8 +63,6 @@ describe('State test', () => {
     mockedDispatch.mockClear();
   });
 
-  const TRANSACTION_ID = 'someTransactionId';
-
   // Do test each store type
   describe.each([
     {
@@ -119,6 +117,7 @@ describe('State test', () => {
       });
 
       describe('Simple workflow', () => {
+        const TRANSACTION_ID = 'simpleTransactionId';
         const dispatchedTasks: Task.ITask[] = [];
         test('Start transaction and dispatch task', async () => {
           const SAMPLE_WORKFLOW: WorkflowDefinition.IWorkflowDefinition = {
@@ -319,8 +318,10 @@ describe('State test', () => {
         });
       });
 
-      describe('Decision and Parrallel workflow', () => {
+      describe('Decision and Parallel workflow', () => {
+        const TRANSACTION_ID = 'decisionParallelTransactionId';
         const dispatchedTasks: Task.ITask[] = [];
+        // tslint:disable-next-line: max-func-body-length
         test('Start transaction and dispatch task', async () => {
           const SAMPLE_WORKFLOW: WorkflowDefinition.IWorkflowDefinition = {
             name: 'name',
@@ -331,6 +332,7 @@ describe('State test', () => {
               a: '${t1.output.a}',
               b: '${t2.output.b}',
               c: '${t3.output.c}',
+              case: 'case1',
             },
             tasks: [
               {
@@ -340,15 +342,65 @@ describe('State test', () => {
                 type: Task.TaskTypes.Task,
               },
               {
-                name: 't2',
-                taskReferenceName: 't2',
-                inputParameters: { b: '${t1.output.b}' },
-                type: Task.TaskTypes.Task,
+                name: 'p2',
+                taskReferenceName: 'p2',
+                inputParameters: {},
+                type: Task.TaskTypes.Parallel,
+                parallelTasks: [
+                  [
+                    {
+                      name: 'p2_1_t1',
+                      taskReferenceName: 'p2_1_t1',
+                      inputParameters: { a: '${workflow.input.a}' },
+                      type: Task.TaskTypes.Task,
+                    },
+                    {
+                      name: 'p2_1_t2',
+                      taskReferenceName: 'p2_1_t2',
+                      inputParameters: { a: '${workflow.input.a}' },
+                      type: Task.TaskTypes.Task,
+                    },
+                  ],
+                  [
+                    {
+                      name: 'p2_2_d1',
+                      taskReferenceName: 'p2_2_d1',
+                      inputParameters: { a: '${workflow.input.a}' },
+                      type: Task.TaskTypes.Decision,
+                      defaultDecision: [
+                        {
+                          name: 'p2_2_d1_default_t1',
+                          taskReferenceName: 'p2_2_d1_default_t1',
+                          inputParameters: { case: '${workflow.input.case}' },
+                          type: Task.TaskTypes.Task,
+                        },
+                      ],
+                      decisions: {
+                        case1: [
+                          {
+                            name: 'p2_2_d1_case1_t1',
+                            taskReferenceName: 'p2_2_d1_case1_t1',
+                            inputParameters: { c: '${workflow.input.c}' },
+                            type: Task.TaskTypes.Task,
+                          },
+                        ],
+                        case2: [
+                          {
+                            name: 'p2_2_d1_case2_t1',
+                            taskReferenceName: 'p2_2_d1_case2_t1',
+                            inputParameters: { c: '${workflow.input.c}' },
+                            type: Task.TaskTypes.Task,
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                ],
               },
               {
                 name: 't3',
                 taskReferenceName: 't3',
-                inputParameters: { c: '${t2.output.c}' },
+                inputParameters: { c: '${workflow.input.c}' },
                 type: Task.TaskTypes.Task,
               },
             ],
