@@ -100,6 +100,7 @@ export const processSystemTasks = async (
           default:
             throw new Error(`Task: ${task.type} is not system task`);
         }
+        // The only job of system task is dispatch others task, so after they do the job they're completed
         await taskInstanceStore.update({
           isSystem: true,
           taskId: task.taskId,
