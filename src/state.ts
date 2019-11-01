@@ -610,6 +610,7 @@ export const processUpdatedTasks = async (
     // console.time(`${taskUpdate.taskId}-${taskUpdate.status}`);
     try {
       const task = await taskInstanceStore.update(taskUpdate);
+      if (!task) continue;
 
       switch (taskUpdate.status) {
         case State.TaskStates.Completed:
