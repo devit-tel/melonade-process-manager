@@ -3,6 +3,7 @@ import {
   Task,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
+import * as R from 'ramda';
 import * as kafka from '../kafka';
 import * as state from '../state';
 import {
@@ -28,6 +29,7 @@ import { WorkflowInstanceMongooseStore } from '../store/mongoose/workflowInstanc
 import { TaskInstanceRedisStore } from '../store/redis/taskInstance';
 import { TransactionInstanceRedisStore } from '../store/redis/transactionInstance';
 import { WorkflowInstanceRedisStore } from '../store/redis/workflowInstance';
+import { processSystemTasks } from '../systemTask';
 
 let mongodbUrl: string = `mongodb://127.0.0.1:51553/melonade-test`;
 
@@ -116,7 +118,8 @@ describe('State test', () => {
         transactionInstanceStore.setClient(transactionInstanceStoreClient);
       });
 
-      describe('Simple workflow', () => {
+      // tslint:disable-next-line: max-func-body-length
+      describe.skip('Simple workflow', () => {
         const TRANSACTION_ID = 'simpleTransactionId';
         const dispatchedTasks: Task.ITask[] = [];
         test('Start transaction and dispatch task', async () => {
@@ -472,7 +475,7 @@ describe('State test', () => {
 
           expect(mockedDispatch).toBeCalledTimes(1);
           expect(mockedDispatch.mock.calls[0][0]).toMatchObject({
-            taskReferenceName: 't2',
+            taskReferenceName: 'p2',
             status: State.TaskStates.Scheduled,
           });
           expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -483,93 +486,127 @@ describe('State test', () => {
           expect(taskInstanceStore.update).toBeCalledTimes(3);
         });
 
-        test('Acknowledge and Finish 2nd task', async () => {
-          // next task only dispatched if this task completed
-          const currentTask = dispatchedTasks[1];
-          await state.processUpdatedTasks([
-            {
-              taskId: currentTask.taskId,
-              isSystem: false,
-              transactionId: currentTask.transactionId,
-              status: State.TaskStates.Inprogress,
-            },
-          ]);
+        test('Process parallel system task', async () => {
+          await processSystemTasks([R.last(dispatchedTasks)]);
 
-          expect(mockedDispatch).toBeCalledTimes(0);
-
-          await state.processUpdatedTasks([
-            {
-              taskId: currentTask.taskId,
-              isSystem: false,
-              transactionId: currentTask.transactionId,
-              status: State.TaskStates.Completed,
-            },
-          ]);
-
+          // Will dispatch 2 child of parallel
           dispatchedTasks.push(mockedDispatch.mock.calls[0][0]);
+          dispatchedTasks.push(mockedDispatch.mock.calls[1][0]);
 
-          expect(mockedDispatch).toBeCalledTimes(1);
-          expect(mockedDispatch.mock.calls[0][0]).toMatchObject({
-            taskReferenceName: 't3',
-            status: State.TaskStates.Scheduled,
-          });
+          expect(mockedDispatch).toBeCalledTimes(2);
+          expect(mockedDispatch).toBeCalledWith(
+            expect.objectContaining({
+              taskName: 'p2_1_t1',
+              taskReferenceName: 'p2_1_t1',
+              type: Task.TaskTypes.Task,
+            }),
+            'decisionParallelTransactionId',
+            false,
+          );
+          expect(mockedDispatch).toBeCalledWith(
+            expect.objectContaining({
+              taskName: 'p2_2_d1',
+              taskReferenceName: 'p2_2_d1',
+              type: Task.TaskTypes.Decision,
+            }),
+            'decisionParallelTransactionId',
+            true,
+          );
           expect(transactionInstanceStore.create).toBeCalledTimes(0);
           expect(transactionInstanceStore.update).toBeCalledTimes(0);
           expect(workflowInstanceStore.create).toBeCalledTimes(0);
           expect(workflowInstanceStore.update).toBeCalledTimes(0);
-          expect(taskInstanceStore.create).toBeCalledTimes(1);
-          expect(taskInstanceStore.update).toBeCalledTimes(2);
+          expect(taskInstanceStore.create).toBeCalledTimes(2);
+          expect(taskInstanceStore.update).toBeCalledTimes(1);
         });
 
-        test('Transaction, workflow must still in running state', async () => {
-          const transaction = await transactionInstanceStore.get(
-            TRANSACTION_ID,
-          );
-          expect(transaction.status).toEqual(State.TransactionStates.Running);
-        });
+        //   test('Acknowledge and Finish 2nd task', async () => {
+        //     // next task only dispatched if this task completed
+        //     const currentTask = dispatchedTasks[1];
+        //     await state.processUpdatedTasks([
+        //       {
+        //         taskId: currentTask.taskId,
+        //         isSystem: false,
+        //         transactionId: currentTask.transactionId,
+        //         status: State.TaskStates.Inprogress,
+        //       },
+        //     ]);
 
-        test('Acknowledge and Finish 3th task', async () => {
-          // This is last task of workflow, no more task to dispatch
-          const currentTask = dispatchedTasks[2];
-          await state.processUpdatedTasks([
-            {
-              taskId: currentTask.taskId,
-              isSystem: false,
-              transactionId: currentTask.transactionId,
-              status: State.TaskStates.Inprogress,
-            },
-          ]);
+        //     expect(mockedDispatch).toBeCalledTimes(0);
 
-          expect(mockedDispatch).toBeCalledTimes(0);
-          await state.processUpdatedTasks([
-            {
-              taskId: currentTask.taskId,
-              isSystem: false,
-              transactionId: currentTask.transactionId,
-              status: State.TaskStates.Completed,
-            },
-          ]);
+        //     await state.processUpdatedTasks([
+        //       {
+        //         taskId: currentTask.taskId,
+        //         isSystem: false,
+        //         transactionId: currentTask.transactionId,
+        //         status: State.TaskStates.Completed,
+        //       },
+        //     ]);
 
-          expect(mockedDispatch).toBeCalledTimes(0);
-          expect(transactionInstanceStore.create).toBeCalledTimes(0);
-          expect(transactionInstanceStore.update).toBeCalledTimes(1);
-          expect(workflowInstanceStore.create).toBeCalledTimes(0);
-          expect(workflowInstanceStore.update).toBeCalledTimes(1);
-          expect(taskInstanceStore.create).toBeCalledTimes(0);
-          expect(taskInstanceStore.update).toBeCalledTimes(2);
-        });
+        //     dispatchedTasks.push(mockedDispatch.mock.calls[0][0]);
 
-        test('Instance data must be clean up', async () => {
-          const transaction = await transactionInstanceStore.get(
-            TRANSACTION_ID,
-          );
-          expect(transaction).toEqual(null);
+        //     expect(mockedDispatch).toBeCalledTimes(1);
+        //     expect(mockedDispatch.mock.calls[0][0]).toMatchObject({
+        //       taskReferenceName: 't3',
+        //       status: State.TaskStates.Scheduled,
+        //     });
+        //     expect(transactionInstanceStore.create).toBeCalledTimes(0);
+        //     expect(transactionInstanceStore.update).toBeCalledTimes(0);
+        //     expect(workflowInstanceStore.create).toBeCalledTimes(0);
+        //     expect(workflowInstanceStore.update).toBeCalledTimes(0);
+        //     expect(taskInstanceStore.create).toBeCalledTimes(1);
+        //     expect(taskInstanceStore.update).toBeCalledTimes(2);
+        //   });
 
-          for (const dispatchedTask of dispatchedTasks) {
-            const task = await taskInstanceStore.get(dispatchedTask.taskId);
-            expect(task).toEqual(null);
-          }
-        });
+        //   test('Transaction, workflow must still in running state', async () => {
+        //     const transaction = await transactionInstanceStore.get(
+        //       TRANSACTION_ID,
+        //     );
+        //     expect(transaction.status).toEqual(State.TransactionStates.Running);
+        //   });
+
+        //   test('Acknowledge and Finish 3th task', async () => {
+        //     // This is last task of workflow, no more task to dispatch
+        //     const currentTask = dispatchedTasks[2];
+        //     await state.processUpdatedTasks([
+        //       {
+        //         taskId: currentTask.taskId,
+        //         isSystem: false,
+        //         transactionId: currentTask.transactionId,
+        //         status: State.TaskStates.Inprogress,
+        //       },
+        //     ]);
+
+        //     expect(mockedDispatch).toBeCalledTimes(0);
+        //     await state.processUpdatedTasks([
+        //       {
+        //         taskId: currentTask.taskId,
+        //         isSystem: false,
+        //         transactionId: currentTask.transactionId,
+        //         status: State.TaskStates.Completed,
+        //       },
+        //     ]);
+
+        //     expect(mockedDispatch).toBeCalledTimes(0);
+        //     expect(transactionInstanceStore.create).toBeCalledTimes(0);
+        //     expect(transactionInstanceStore.update).toBeCalledTimes(1);
+        //     expect(workflowInstanceStore.create).toBeCalledTimes(0);
+        //     expect(workflowInstanceStore.update).toBeCalledTimes(1);
+        //     expect(taskInstanceStore.create).toBeCalledTimes(0);
+        //     expect(taskInstanceStore.update).toBeCalledTimes(2);
+        //   });
+
+        //   test('Instance data must be clean up', async () => {
+        //     const transaction = await transactionInstanceStore.get(
+        //       TRANSACTION_ID,
+        //     );
+        //     expect(transaction).toEqual(null);
+
+        //     for (const dispatchedTask of dispatchedTasks) {
+        //       const task = await taskInstanceStore.get(dispatchedTask.taskId);
+        //       expect(task).toEqual(null);
+        //     }
+        //   });
       });
     },
   );
