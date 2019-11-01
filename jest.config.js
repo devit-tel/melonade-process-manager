@@ -10,5 +10,5 @@ module.exports = {
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(ts|js)x?$',
   coverageDirectory: 'coverage',
   collectCoverageFrom: ['src/**/*.{ts,tsx,js,jsx}', '!src/**/*.d.ts'],
-  setupFilesAfterEnv: ['./src/store/mongoose/__mocks__/index.ts'],
+  setupFiles: ['./src/store/mongoose/__mocks__/index.ts'],
 };
