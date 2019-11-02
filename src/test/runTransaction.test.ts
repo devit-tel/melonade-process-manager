@@ -23,15 +23,15 @@ import { TaskInstanceMemoryStore } from '../store/memory/taskInstance';
 import { TransactionInstanceMemoryStore } from '../store/memory/transactionInstance';
 import { WorkflowDefinitionMemoryStore } from '../store/memory/workflowDefinition';
 import { WorkflowInstanceMemoryStore } from '../store/memory/workflowInstance';
-import { TaskInstanceMongooseStore } from '../store/mongoose/taskInstance';
-import { TransactionInstanceMongooseStore } from '../store/mongoose/transactionInstance';
-import { WorkflowInstanceMongooseStore } from '../store/mongoose/workflowInstance';
-import { TaskInstanceRedisStore } from '../store/redis/taskInstance';
-import { TransactionInstanceRedisStore } from '../store/redis/transactionInstance';
-import { WorkflowInstanceRedisStore } from '../store/redis/workflowInstance';
+// import { TaskInstanceMongooseStore } from '../store/mongoose/taskInstance';
+// import { TransactionInstanceMongooseStore } from '../store/mongoose/transactionInstance';
+// import { WorkflowInstanceMongooseStore } from '../store/mongoose/workflowInstance';
+// import { TaskInstanceRedisStore } from '../store/redis/taskInstance';
+// import { TransactionInstanceRedisStore } from '../store/redis/transactionInstance';
+// import { WorkflowInstanceRedisStore } from '../store/redis/workflowInstance';
 import { processSystemTasks } from '../systemTask';
 
-let mongodbUrl: string = `mongodb://127.0.0.1:51553/melonade-test`;
+// let mongodbUrl: string = `mongodb://127.0.0.1:51553/melonade-test`;
 
 jest.mock('../kafka');
 jest.mock('ioredis', () => {
@@ -74,26 +74,26 @@ describe('State test', () => {
       workflowInstanceStoreClient: new WorkflowInstanceMemoryStore(),
       transactionInstanceStoreClient: new TransactionInstanceMemoryStore(),
     },
-    {
-      taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
-      workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
-      taskInstanceStoreClient: new TaskInstanceRedisStore({}),
-      workflowInstanceStoreClient: new WorkflowInstanceRedisStore({}),
-      transactionInstanceStoreClient: new TransactionInstanceRedisStore({}),
-    },
-    {
-      taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
-      workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
-      taskInstanceStoreClient: new TaskInstanceMongooseStore(mongodbUrl, {}),
-      workflowInstanceStoreClient: new WorkflowInstanceMongooseStore(
-        mongodbUrl,
-        {},
-      ),
-      transactionInstanceStoreClient: new TransactionInstanceMongooseStore(
-        mongodbUrl,
-        {},
-      ),
-    },
+    // {
+    //   taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
+    //   workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
+    //   taskInstanceStoreClient: new TaskInstanceRedisStore({}),
+    //   workflowInstanceStoreClient: new WorkflowInstanceRedisStore({}),
+    //   transactionInstanceStoreClient: new TransactionInstanceRedisStore({}),
+    // },
+    // {
+    //   taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
+    //   workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
+    //   taskInstanceStoreClient: new TaskInstanceMongooseStore(mongodbUrl, {}),
+    //   workflowInstanceStoreClient: new WorkflowInstanceMongooseStore(
+    //     mongodbUrl,
+    //     {},
+    //   ),
+    //   transactionInstanceStoreClient: new TransactionInstanceMongooseStore(
+    //     mongodbUrl,
+    //     {},
+    //   ),
+    // },
   ])(
     'Integate test workflows for (%p)',
     // tslint:disable-next-line: max-func-body-length
@@ -181,7 +181,7 @@ describe('State test', () => {
           // next task only dispatched if this task completed
           const currentTask = dispatchedTasks['t1'];
 
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -199,7 +199,7 @@ describe('State test', () => {
             },
           );
 
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -209,7 +209,7 @@ describe('State test', () => {
           ]);
 
           expect(mockedDispatch).toBeCalledTimes(0);
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -237,7 +237,7 @@ describe('State test', () => {
         test('Acknowledge and Finish 2nd task', async () => {
           // next task only dispatched if this task completed
           const currentTask = dispatchedTasks['t2'];
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -248,7 +248,7 @@ describe('State test', () => {
 
           expect(mockedDispatch).toBeCalledTimes(0);
 
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -283,7 +283,7 @@ describe('State test', () => {
         test('Acknowledge and Finish 3th task', async () => {
           // This is last task of workflow, no more task to dispatch
           const currentTask = dispatchedTasks['t3'];
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -293,7 +293,7 @@ describe('State test', () => {
           ]);
 
           expect(mockedDispatch).toBeCalledTimes(0);
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -443,7 +443,7 @@ describe('State test', () => {
           // next task only dispatched if this task completed
           const currentTask = dispatchedTasks['t1'];
 
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -461,7 +461,7 @@ describe('State test', () => {
             },
           );
 
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -471,7 +471,7 @@ describe('State test', () => {
           ]);
 
           expect(mockedDispatch).toBeCalledTimes(0);
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -560,7 +560,7 @@ describe('State test', () => {
         test('Acknowledge and Finish p2_1_t1 task', async () => {
           // next task only dispatched if this task completed
           const currentTask = dispatchedTasks['p2_1_t1'];
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -571,7 +571,7 @@ describe('State test', () => {
 
           expect(mockedDispatch).toBeCalledTimes(0);
 
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -599,7 +599,7 @@ describe('State test', () => {
         test('Acknowledge and Finish p2_1_t2 task', async () => {
           // next task only dispatched if this task completed
           const currentTask = dispatchedTasks['p2_1_t2'];
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -610,7 +610,7 @@ describe('State test', () => {
 
           expect(mockedDispatch).toBeCalledTimes(0);
 
-          await state.processUpdatedTasks([
+          await state.processUpdateTasks([
             {
               taskId: currentTask.taskId,
               isSystem: false,
@@ -619,11 +619,6 @@ describe('State test', () => {
             },
           ]);
 
-          dispatchedTasks[mockedDispatch.mock.calls[0][0].taskName] =
-            mockedDispatch.mock.calls[0][0];
-
-          console.log(mockedDispatch.mock.calls[0][0]);
-
           expect(mockedDispatch).toBeCalledTimes(0);
           expect(transactionInstanceStore.create).toBeCalledTimes(0);
           expect(transactionInstanceStore.update).toBeCalledTimes(0);
@@ -631,6 +626,13 @@ describe('State test', () => {
           expect(workflowInstanceStore.update).toBeCalledTimes(0);
           expect(taskInstanceStore.create).toBeCalledTimes(0);
           expect(taskInstanceStore.update).toBeCalledTimes(2);
+
+          console.log(
+            '1',
+            (await taskInstanceStore.getAll(currentTask.workflowId)).map(
+              R.pick(['taskReferenceName', 'status']),
+            ),
+          );
         });
 
         //   test('Transaction, workflow must still in running state', async () => {
@@ -640,36 +642,43 @@ describe('State test', () => {
         //     expect(transaction.status).toEqual(State.TransactionStates.Running);
         //   });
 
-        //   test('Acknowledge and Finish 3th task', async () => {
-        //     // This is last task of workflow, no more task to dispatch
-        //     const currentTask = dispatchedTasks[2];
-        //     await state.processUpdatedTasks([
-        //       {
-        //         taskId: currentTask.taskId,
-        //         isSystem: false,
-        //         transactionId: currentTask.transactionId,
-        //         status: State.TaskStates.Inprogress,
-        //       },
-        //     ]);
+        test('Acknowledge and Finish p2_2_d1_case1_t1 task', async () => {
+          // This is last task of workflow, no more task to dispatch
+          const currentTask = dispatchedTasks['p2_2_d1_case1_t1'];
+          await state.processUpdateTasks([
+            {
+              taskId: currentTask.taskId,
+              isSystem: false,
+              transactionId: currentTask.transactionId,
+              status: State.TaskStates.Inprogress,
+            },
+          ]);
 
-        //     expect(mockedDispatch).toBeCalledTimes(0);
-        //     await state.processUpdatedTasks([
-        //       {
-        //         taskId: currentTask.taskId,
-        //         isSystem: false,
-        //         transactionId: currentTask.transactionId,
-        //         status: State.TaskStates.Completed,
-        //       },
-        //     ]);
+          expect(mockedDispatch).toBeCalledTimes(0);
+          await state.processUpdateTasks([
+            {
+              taskId: currentTask.taskId,
+              isSystem: false,
+              transactionId: currentTask.transactionId,
+              status: State.TaskStates.Completed,
+            },
+          ]);
 
-        //     expect(mockedDispatch).toBeCalledTimes(0);
-        //     expect(transactionInstanceStore.create).toBeCalledTimes(0);
-        //     expect(transactionInstanceStore.update).toBeCalledTimes(1);
-        //     expect(workflowInstanceStore.create).toBeCalledTimes(0);
-        //     expect(workflowInstanceStore.update).toBeCalledTimes(1);
-        //     expect(taskInstanceStore.create).toBeCalledTimes(0);
-        //     expect(taskInstanceStore.update).toBeCalledTimes(2);
-        //   });
+          expect(mockedDispatch).toBeCalledTimes(0);
+          expect(transactionInstanceStore.create).toBeCalledTimes(0);
+          expect(transactionInstanceStore.update).toBeCalledTimes(0);
+          expect(workflowInstanceStore.create).toBeCalledTimes(0);
+          expect(workflowInstanceStore.update).toBeCalledTimes(0);
+          expect(taskInstanceStore.create).toBeCalledTimes(0);
+          expect(taskInstanceStore.update).toBeCalledTimes(2);
+
+          console.log(
+            '2',
+            (await taskInstanceStore.getAll(currentTask.workflowId)).map(
+              R.pick(['taskReferenceName', 'status']),
+            ),
+          );
+        });
 
         //   test('Instance data must be clean up', async () => {
         //     const transaction = await transactionInstanceStore.get(

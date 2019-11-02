@@ -105,7 +105,7 @@ export const processSystemTasks = async (
           isSystem: true,
           taskId: task.taskId,
           transactionId: task.transactionId,
-          status: State.TaskStates.Completed,
+          status: State.TaskStates.Inprogress,
         });
       } catch (error) {
         sendEvent({

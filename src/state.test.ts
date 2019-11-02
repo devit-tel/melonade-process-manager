@@ -3,6 +3,7 @@ import {
   Task,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
+import * as R from 'ramda';
 import * as state from './state';
 
 // Don't test async function here, because of they are stores
@@ -586,28 +587,89 @@ describe('getNextTaskPath', () => {
     },
   ];
 
+  const getTaskData = (
+    taskReferenceName: string,
+    type: Task.TaskTypes,
+    status: State.TaskStates = State.TaskStates.Completed,
+  ): Task.ITask => ({
+    taskName: 'task',
+    taskReferenceName,
+    taskId: '',
+    workflowId: '',
+    transactionId: '',
+    status,
+    retries: 0,
+    isRetried: false,
+    input: {},
+    output: {},
+    createTime: 0,
+    startTime: 0,
+    endTime: 0,
+    retryDelay: 0,
+    ackTimeout: 0,
+    timeout: 0,
+    type,
+  });
+
+  const mockTasksData = {
+    t1: getTaskData('t1', Task.TaskTypes.Task),
+    t2: getTaskData('t2', Task.TaskTypes.Decision),
+    t3: getTaskData('t3', Task.TaskTypes.Task),
+    t4: getTaskData('t4', Task.TaskTypes.Task),
+    t5: getTaskData('t5', Task.TaskTypes.Task),
+    t6: getTaskData('t6', Task.TaskTypes.Task),
+    t7: getTaskData('t7', Task.TaskTypes.Task),
+    t8: getTaskData('t8', Task.TaskTypes.Task),
+    t9: getTaskData('t9', Task.TaskTypes.Parallel),
+    t10: getTaskData('t10', Task.TaskTypes.Task),
+    t11: getTaskData('t11', Task.TaskTypes.Task),
+    t12: getTaskData('t12', Task.TaskTypes.Parallel),
+    t13: getTaskData('t13', Task.TaskTypes.Task),
+    t14: getTaskData('t14', Task.TaskTypes.Task),
+  };
+
   test('First task finished', () => {
-    expect(state.getNextTaskPath(exampleTasks, [0], {})).toEqual({
+    expect(
+      state.getNextTaskPath(exampleTasks, [0], R.pick(['t1'], mockTasksData)),
+    ).toEqual({
       isCompleted: false,
+      parentTask: null,
       taskPath: [1],
+      isLastChild: false,
     });
   });
 
   test('Child of Decisions task', () => {
     expect(
-      state.getNextTaskPath(exampleTasks, [1, 'decisions', 'case1', 0], {}),
+      state.getNextTaskPath(
+        exampleTasks,
+        [1, 'decisions', 'case1', 0],
+        R.pick(['t1', 't2', 't3'], mockTasksData),
+      ),
     ).toEqual({
       isCompleted: false,
+      parentTask: expect.objectContaining({
+        taskReferenceName: 't2',
+      }),
       taskPath: [1, 'decisions', 'case1', 1],
+      isLastChild: false,
     });
   });
 
   test('Child of Decisions task (last task)', () => {
     expect(
-      state.getNextTaskPath(exampleTasks, [1, 'decisions', 'case1', 1], {}),
+      state.getNextTaskPath(
+        exampleTasks,
+        [1, 'decisions', 'case1', 1],
+        R.pick(['t1', 't2', 't3', 't4'], mockTasksData),
+      ),
     ).toEqual({
       isCompleted: false,
+      parentTask: expect.objectContaining({
+        taskReferenceName: 't2',
+      }),
       taskPath: [2],
+      isLastChild: true,
     });
   });
 
@@ -617,107 +679,52 @@ describe('getNextTaskPath', () => {
       state.getNextTaskPath(
         [exampleTasks[0], exampleTasks[1]],
         [1, 'decisions', 'case1', 1],
-        {},
+        R.pick(['t1', 't2', 't3', 't4'], mockTasksData),
       ),
     ).toEqual({
       isCompleted: true,
+      parentTask: expect.objectContaining({
+        taskReferenceName: 't2',
+      }),
       taskPath: null,
+      isLastChild: true,
     });
   });
 
   test('Child of Parallel (Wait)', () => {
     expect(
       state.getNextTaskPath(exampleTasks, [2, 'parallelTasks', 0, 0], {
-        t13: {
-          taskName: 'task',
-          taskReferenceName: 't13',
-          taskId: '',
-          workflowId: '',
-          transactionId: '',
-          status: State.TaskStates.Completed,
-          retries: 0,
-          isRetried: false,
-          input: {},
-          output: {},
-          createTime: 0,
-          startTime: 0,
-          endTime: 0,
-          retryDelay: 0,
-          ackTimeout: 0,
-          timeout: 0,
-          type: Task.TaskTypes.Task,
-        },
-        t14: {
-          taskName: 'task',
-          taskReferenceName: 't14',
-          taskId: '',
-          workflowId: '',
-          transactionId: '',
-          status: State.TaskStates.Inprogress,
-          retries: 0,
-          isRetried: false,
-          input: {},
-          output: {},
-          createTime: 0,
-          startTime: 0,
-          endTime: 0,
-          retryDelay: 0,
-          ackTimeout: 0,
-          timeout: 0,
-          type: Task.TaskTypes.Task,
-        },
+        ...R.pick(['t1', 't2', 't3', 't4', 't12', 't13'], mockTasksData),
+        t14: getTaskData(
+          't14',
+          Task.TaskTypes.Task,
+          State.TaskStates.Inprogress,
+        ),
       }),
     ).toEqual({
       isCompleted: false,
       taskPath: null,
+      parentTask: expect.objectContaining({
+        taskReferenceName: 't12',
+      }),
+      isLastChild: false,
     });
   });
 
   test('Child of Parallel (All completed)', () => {
     expect(
-      state.getNextTaskPath(exampleTasks, [2, 'parallelTasks', 0, 0], {
-        t13: {
-          taskName: 'task',
-          taskReferenceName: 't13',
-          taskId: '',
-          workflowId: '',
-          transactionId: '',
-          status: State.TaskStates.Completed,
-          retries: 0,
-          isRetried: false,
-          input: {},
-          output: {},
-          createTime: 0,
-          startTime: 0,
-          endTime: 0,
-          retryDelay: 0,
-          ackTimeout: 0,
-          timeout: 0,
-          type: Task.TaskTypes.Task,
-        },
-        t14: {
-          taskName: 'task',
-          taskReferenceName: 't14',
-          taskId: '',
-          workflowId: '',
-          transactionId: '',
-          status: State.TaskStates.Completed,
-          retries: 0,
-          isRetried: false,
-          input: {},
-          output: {},
-          createTime: 0,
-          startTime: 0,
-          endTime: 0,
-          retryDelay: 0,
-          ackTimeout: 0,
-          timeout: 0,
-          type: Task.TaskTypes.Task,
-        },
-      }),
+      state.getNextTaskPath(
+        exampleTasks,
+        [2, 'parallelTasks', 0, 0],
+        R.pick(['t1', 't2', 't3', 't4', 't12', 't13', 't14'], mockTasksData),
+      ),
     ).toEqual({
       isCompleted: true,
       taskPath: null,
+      parentTask: expect.objectContaining({
+        taskReferenceName: 't12',
+      }),
+      isLastChild: true,
     });
   });
 });
