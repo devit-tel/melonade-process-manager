@@ -82,7 +82,7 @@ const getNextParallelTask = (
     return {
       isCompleted: false,
       taskPath: getNextPath(currentPath),
-      parentTask,
+      parentTask: parentTask,
       isLastChild,
     };
   }
@@ -98,14 +98,14 @@ const getNextParallelTask = (
       R.dropLast(3, currentPath),
       taskData,
       parentTask,
-      isLastChild,
+      childTask ? isLastChild : true,
     );
   }
   // Wait for other line
   return {
     isCompleted: false,
     taskPath: null,
-    parentTask,
+    parentTask: childTask || parentTask,
     isLastChild,
   };
 };
@@ -145,16 +145,16 @@ export const getNextTaskPath = (
       return {
         isCompleted: false,
         taskPath: getNextPath(currentPath),
-        parentTask: taskData[taskReferenceName],
-        isLastChild: false,
+        parentTask: parentTask || taskData[taskReferenceName],
+        isLastChild: isLastChild || false,
       };
     }
     return getNextTaskPath(
       tasks,
       R.dropLast(2, currentPath),
       taskData,
-      taskData[taskReferenceName],
-      true,
+      parentTask || taskData[taskReferenceName],
+      parentTask ? isLastChild : true,
     );
   }
 
@@ -167,16 +167,16 @@ export const getNextTaskPath = (
       return {
         isCompleted: false,
         taskPath: getNextPath(currentPath),
-        parentTask: taskData[taskReferenceName],
-        isLastChild: false,
+        parentTask: parentTask || taskData[taskReferenceName],
+        isLastChild,
       };
     }
     return getNextTaskPath(
       tasks,
       R.dropLast(3, currentPath),
       taskData,
-      taskData[taskReferenceName],
-      true,
+      parentTask || taskData[taskReferenceName],
+      parentTask ? isLastChild : true,
     );
   }
 
@@ -392,12 +392,13 @@ const handleCancelWorkflow = async (
 
 const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
+  // If workflow cancelled
   if (workflow.status === State.WorkflowStates.Cancelled) {
     await handleCancelWorkflow(workflow, tasksData);
     return;
   }
 
-  console.log(nextTaskPath.isLastChild, !!nextTaskPath.parentTask);
+  // For all childs of system task completed => update system task to completed too
   if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
     await processUpdateTask({
       taskId: nextTaskPath.parentTask.taskId,
@@ -405,8 +406,10 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       status: State.TaskStates.Completed,
       isSystem: true,
     });
+    return;
   }
 
+  // For child of system task completed but have next siblin to run
   if (!nextTaskPath.isCompleted && nextTaskPath.taskPath) {
     await taskInstanceStore.create(
       workflow,
@@ -417,6 +420,7 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
     return;
   }
 
+  // For siblin of child of parallel are failed but the task is completed
   if (!nextTaskPath.isCompleted && !nextTaskPath.taskPath) {
     const tasksDataList = R.values(tasksData);
 
@@ -434,6 +438,7 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
     }
   }
 
+  // All tasks's complated update workflow
   if (nextTaskPath.isCompleted) {
     // When workflow is completed
     const completedWorkflow = await workflowInstanceStore.update({
