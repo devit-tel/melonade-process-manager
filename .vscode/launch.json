@@ -10,7 +10,8 @@
       "name": "Start",
       "program": "${workspaceFolder}/src/bootstrap.ts",
       "preLaunchTask": "tsc: build - tsconfig.release.json",
-      "outFiles": ["${workspaceFolder}/build/**/*.js"]
+      "outFiles": ["${workspaceFolder}/build/**/*.js"],
+      "runtimeVersion": "10.16.3"
     },
     {
       "type": "node",
