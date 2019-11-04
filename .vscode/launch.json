@@ -7,8 +7,8 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
-      "program": "${workspaceFolder}\\src\\bootstrap.ts",
+      "name": "Start",
+      "program": "${workspaceFolder}/src/bootstrap.ts",
       "preLaunchTask": "tsc: build - tsconfig.release.json",
       "outFiles": ["${workspaceFolder}/build/**/*.js"]
     },
