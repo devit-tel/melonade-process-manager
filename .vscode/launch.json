@@ -24,7 +24,8 @@
       "disableOptimisticBPs": true,
       "windows": {
         "program": "${workspaceFolder}/node_modules/jest/bin/jest"
-      }
+      },
+      "runtimeVersion": "10.16.3"
     },
     {
       "type": "node",
@@ -37,7 +38,8 @@
       "disableOptimisticBPs": true,
       "windows": {
         "program": "${workspaceFolder}/node_modules/jest/bin/jest"
-      }
+      },
+      "runtimeVersion": "10.16.3"
     }
   ]
 }
