@@ -1,5 +1,6 @@
 import { Event, Kafka, Task, Timer } from '@melonade/melonade-declaration';
 import { AdminClient, KafkaConsumer, Producer } from '@nv4re/node-rdkafka';
+import * as R from 'ramda';
 import * as config from '../config';
 import { jsonTryParse } from '../utils/common';
 
@@ -20,6 +21,14 @@ export const producerClient = new Producer(
   config.kafkaProducerConfig.config,
   config.kafkaProducerConfig.topic,
 );
+
+export const isHealthy = (): boolean => {
+  return R.all(R.equals(true), [
+    systemConsumerClient.isConnected(),
+    commandConsumerClient.isConnected(),
+    producerClient.isConnected(),
+  ]);
+};
 
 stateConsumerClient.setDefaultConsumeTimeout(5);
 stateConsumerClient.on('ready', () => {

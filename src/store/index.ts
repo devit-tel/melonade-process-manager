@@ -29,6 +29,7 @@ export interface IWorkflowDefinitionStore extends IStore {
   list(): Promise<{
     [name: string]: { [rev: string]: WorkflowDefinition.IWorkflowDefinition };
   }>;
+  isHealthy(): boolean;
 }
 
 export interface ITaskDefinitionStore extends IStore {
@@ -40,6 +41,7 @@ export interface ITaskDefinitionStore extends IStore {
     taskDefinition: TaskDefinition.ITaskDefinition,
   ): Promise<TaskDefinition.ITaskDefinition>;
   list(): Promise<{ [name: string]: TaskDefinition.ITaskDefinition }>;
+  isHealthy(): boolean;
 }
 
 export interface ITransactionInstanceStore extends IStore {
@@ -50,6 +52,7 @@ export interface ITransactionInstanceStore extends IStore {
   update(
     workflowUpdate: Event.ITransactionUpdate,
   ): Promise<Transaction.ITransaction>;
+  isHealthy(): boolean;
 }
 
 export interface IWorkflowInstanceStore extends IStore {
@@ -59,6 +62,7 @@ export interface IWorkflowInstanceStore extends IStore {
   delete(workflowId: string): Promise<any>;
   getByTransactionId(transactionId: string): Promise<Workflow.IWorkflow>;
   deleteAll(transactionId: string): Promise<void>;
+  isHealthy(): boolean;
 }
 
 export interface ITaskInstanceStore extends IStore {
@@ -68,6 +72,7 @@ export interface ITaskInstanceStore extends IStore {
   update(taskUpdate: Event.ITaskUpdate): Promise<Task.ITask>;
   delete(taskId: string): Promise<any>;
   deleteAll(workflowId: string): Promise<void>;
+  isHealthy(): boolean;
 }
 
 export class WorkflowDefinitionStore {
@@ -102,6 +107,10 @@ export class WorkflowDefinitionStore {
   ): Promise<WorkflowDefinition.IWorkflowDefinition> {
     return this.client.update(workflowDefinition);
   }
+
+  isHealthy(): boolean {
+    return this.client.isHealthy();
+  }
 }
 
 export class TaskDefinitionStore {
@@ -130,6 +139,10 @@ export class TaskDefinitionStore {
     taskDefinition: TaskDefinition.ITaskDefinition,
   ): Promise<TaskDefinition.ITaskDefinition> {
     return this.client.update(taskDefinition);
+  }
+
+  isHealthy(): boolean {
+    return this.client.isHealthy();
   }
 }
 
@@ -200,6 +213,10 @@ export class TransactionInstanceStore {
       return null;
     }
   };
+
+  isHealthy(): boolean {
+    return this.client.isHealthy();
+  }
 }
 
 export class WorkflowInstanceStore {
@@ -289,6 +306,10 @@ export class WorkflowInstanceStore {
 
   deleteAll(transactionId: string) {
     return this.client.deleteAll(transactionId);
+  }
+
+  isHealthy(): boolean {
+    return this.client.isHealthy();
   }
 }
 
@@ -450,6 +471,10 @@ export class TaskInstanceStore {
   deleteAll(workflowId: string) {
     return this.client.deleteAll(workflowId);
   }
+
+  isHealthy(): boolean {
+    return this.client.isHealthy();
+  }
 }
 
 // This's global instance
@@ -458,3 +483,12 @@ export const workflowDefinitionStore = new WorkflowDefinitionStore();
 export const taskInstanceStore = new TaskInstanceStore();
 export const workflowInstanceStore = new WorkflowInstanceStore();
 export const transactionInstanceStore = new TransactionInstanceStore();
+
+export const isHealthy = () =>
+  R.all(R.equals(true), [
+    transactionInstanceStore.isHealthy(),
+    workflowInstanceStore.isHealthy(),
+    taskInstanceStore.isHealthy(),
+    workflowDefinitionStore.isHealthy(),
+    taskDefinitionStore.isHealthy(),
+  ]);
