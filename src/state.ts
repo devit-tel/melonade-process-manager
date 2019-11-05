@@ -629,7 +629,9 @@ const handleWorkflowFailureStrategy = async (
     return (
       [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
         taskData.status,
-      ) && taskData.taskReferenceName !== task.taskReferenceName
+      ) &&
+      taskData.taskReferenceName !== task.taskReferenceName &&
+      taskData.type === Task.TaskTypes.Task
     );
   });
 
