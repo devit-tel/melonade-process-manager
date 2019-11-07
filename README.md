@@ -32,6 +32,7 @@ This is prototype of saga implementation, written in Node.
 - [ ] Rewrite all the test XD
 - [ ] Instance delete retention
 - [ ] Graceful shutdown
+- [ ] Dispatch system task to itself not more (procress immediately)
 
 ## Known issues
 
