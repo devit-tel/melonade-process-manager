@@ -676,18 +676,26 @@ const handleFailedTask = async (task: Task.ITask) => {
     return;
   }
 
-  // if cannot retry anymore
-  if (task.retries <= 0) {
-    const tasksDataList = R.values(tasksData);
-    await handleWorkflowFailureStrategy(task, tasksDataList);
-  } else {
-    sendTimer({
-      type: Timer.TimerType.delayTask,
-      task: {
+  // Check if can retry the task
+  if (task.retries > 0) {
+    if (task.retryDelay > 0) {
+      sendTimer({
+        type: Timer.TimerType.delayTask,
+        task: {
+          ...task,
+          retries: task.retries - 1,
+        },
+      });
+    } else {
+      await taskInstanceStore.reload({
         ...task,
         retries: task.retries - 1,
-      },
-    });
+        isRetried: true,
+      });
+    }
+  } else {
+    const tasksDataList = R.values(tasksData);
+    await handleWorkflowFailureStrategy(task, tasksDataList);
   }
 };
 
