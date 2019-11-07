@@ -377,7 +377,7 @@ const handleCancelWorkflow = async (
         break;
       case State.WorkflowFailureStrategies.Compensate:
       case State.WorkflowFailureStrategies.CompensateThenRetry:
-        await handleCompenstateWorkflow(workflow, tasksDataList, true);
+        await handleCompensateWorkflow(workflow, tasksDataList, true);
 
         break;
       case State.WorkflowFailureStrategies.Retry:
@@ -482,7 +482,7 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   }
 };
 
-const getCompenstateTasks = R.compose(
+const getCompensateTasks = R.compose(
   R.map(
     (task: Task.ITask): WorkflowDefinition.AllTaskType => {
       return {
@@ -543,13 +543,13 @@ const handleRetryWorkflow = async (
   return;
 };
 
-const handleCompenstateWorkflow = (
+const handleCompensateWorkflow = (
   workflow: Workflow.IWorkflow,
   tasksData: Task.ITask[],
   isCancel: boolean = false,
 ) => {
-  const compenstateTasks = getCompenstateTasks(tasksData);
-  if (compenstateTasks.length) {
+  const compensateTasks = getCompensateTasks(tasksData);
+  if (compensateTasks.length) {
     return workflowInstanceStore.create(
       workflow.transactionId,
       isCancel
@@ -558,7 +558,7 @@ const handleCompenstateWorkflow = (
       {
         name: workflow.workflowDefinition.name,
         rev: `${workflow.workflowDefinition.rev}_compensate`,
-        tasks: compenstateTasks,
+        tasks: compensateTasks,
         failureStrategy: State.WorkflowFailureStrategies.Failed,
         outputParameters: {},
       },
@@ -572,19 +572,19 @@ const handleCompenstateWorkflow = (
   }
 };
 
-const handleCompenstateThenRetryWorkflow = (
+const handleCompensateThenRetryWorkflow = (
   workflow: Workflow.IWorkflow,
   tasksData: Task.ITask[],
 ) => {
-  const compenstateTasks = getCompenstateTasks(tasksData);
-  if (compenstateTasks.length) {
+  const compensateTasks = getCompensateTasks(tasksData);
+  if (compensateTasks.length) {
     return workflowInstanceStore.create(
       workflow.transactionId,
       Workflow.WorkflowTypes.CompensateThenRetryWorkflow,
       {
         name: workflow.workflowDefinition.name,
         rev: `${workflow.workflowDefinition.rev}_compensate`,
-        tasks: getCompenstateTasks(tasksData),
+        tasks: getCompensateTasks(tasksData),
         failureStrategy: State.WorkflowFailureStrategies.Failed,
         outputParameters: {},
       },
@@ -656,10 +656,10 @@ const handleWorkflowFailureStrategy = async (
         await handleRetryWorkflow(workflow, tasksDataList);
         break;
       case State.WorkflowFailureStrategies.Compensate:
-        await handleCompenstateWorkflow(workflow, tasksDataList);
+        await handleCompensateWorkflow(workflow, tasksDataList);
         break;
       case State.WorkflowFailureStrategies.CompensateThenRetry:
-        await handleCompenstateThenRetryWorkflow(workflow, tasksDataList);
+        await handleCompensateThenRetryWorkflow(workflow, tasksDataList);
         break;
       case State.WorkflowFailureStrategies.Failed:
         await handleFailedWorkflow(workflow);
