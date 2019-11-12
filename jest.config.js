@@ -15,4 +15,7 @@ module.exports = {
     '!src/server/**/*.ts',
   ],
   setupFiles: ['./src/store/mongoose/__mocks__/index.ts'],
+  moduleNameMapper: {
+    '~/(.*)': '<rootDir>/src/$1',
+  },
 };

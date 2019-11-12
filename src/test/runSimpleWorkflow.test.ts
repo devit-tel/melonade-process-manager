@@ -6,8 +6,8 @@ import {
   Workflow,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
-import * as kafka from '../kafka';
-import * as state from '../state';
+import * as kafka from '~/kafka';
+import * as state from '~/state';
 import {
   ITaskDefinitionStore,
   ITaskInstanceStore,
@@ -19,25 +19,25 @@ import {
   transactionInstanceStore,
   workflowDefinitionStore,
   workflowInstanceStore,
-} from '../store';
-import { TaskDefinitionMemoryStore } from '../store/memory/taskDefinition';
-import { TaskInstanceMemoryStore } from '../store/memory/taskInstance';
-import { TransactionInstanceMemoryStore } from '../store/memory/transactionInstance';
-import { WorkflowDefinitionMemoryStore } from '../store/memory/workflowDefinition';
-import { WorkflowInstanceMemoryStore } from '../store/memory/workflowInstance';
-import { TaskInstanceMongooseStore } from '../store/mongoose/taskInstance';
-import { TransactionInstanceMongooseStore } from '../store/mongoose/transactionInstance';
-import { WorkflowInstanceMongooseStore } from '../store/mongoose/workflowInstance';
-import { TaskInstanceRedisStore } from '../store/redis/taskInstance';
-import { TransactionInstanceRedisStore } from '../store/redis/transactionInstance';
-import { WorkflowInstanceRedisStore } from '../store/redis/workflowInstance';
+} from '~/store';
+import { TaskDefinitionMemoryStore } from '~/store/memory/taskDefinition';
+import { TaskInstanceMemoryStore } from '~/store/memory/taskInstance';
+import { TransactionInstanceMemoryStore } from '~/store/memory/transactionInstance';
+import { WorkflowDefinitionMemoryStore } from '~/store/memory/workflowDefinition';
+import { WorkflowInstanceMemoryStore } from '~/store/memory/workflowInstance';
+import { TaskInstanceMongooseStore } from '~/store/mongoose/taskInstance';
+import { TransactionInstanceMongooseStore } from '~/store/mongoose/transactionInstance';
+import { WorkflowInstanceMongooseStore } from '~/store/mongoose/workflowInstance';
+import { TaskInstanceRedisStore } from '~/store/redis/taskInstance';
+import { TransactionInstanceRedisStore } from '~/store/redis/transactionInstance';
+import { WorkflowInstanceRedisStore } from '~/store/redis/workflowInstance';
 
 const MONGODB_URL: string = 'mongodb://127.0.0.1:51553/melonade-test';
 
 const TASK_RETRY_LIMIT = 3;
 const WORKFLOW_RETRY_LIMIT = 3;
 
-jest.mock('../kafka');
+jest.mock('~/kafka');
 jest.mock('ioredis', () => {
   const Redis = require('ioredis-mock');
   if (typeof Redis === 'object') {
