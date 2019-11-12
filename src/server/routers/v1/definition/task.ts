@@ -1,26 +1,28 @@
 import koaRouter = require('koa-router');
-import {
-  createTaskDefinition,
-  getTaskDefinition,
-  listTaskDefinition,
-  updateTaskDefinition,
-} from '../../../../domains/definitions/task';
+import { TaskDefinition } from '@melonade/melonade-declaration';
+import { createTopic } from '../../../../kafka';
+import { taskDefinitionStore } from '../../../../store';
 
 export const router = new koaRouter();
 
-router.post('/', (ctx: koaRouter.IRouterContext | any) => {
-  return createTaskDefinition(ctx.request.body);
+router.post('/', async (ctx: koaRouter.IRouterContext | any) => {
+  const taskDefinition = new TaskDefinition.TaskDefinition(ctx.request.body);
+  await taskDefinitionStore.create(taskDefinition);
+  await createTopic(taskDefinition.name);
+  return taskDefinition;
 });
 
 router.put('/', (ctx: koaRouter.IRouterContext | any) => {
-  return updateTaskDefinition(ctx.request.body);
+  return taskDefinitionStore.update(
+    new TaskDefinition.TaskDefinition(ctx.request.body),
+  );
 });
 
 router.get('/:name', (ctx: koaRouter.IRouterContext) => {
   const { name } = ctx.params;
-  return getTaskDefinition(name);
+  return taskDefinitionStore.get(name);
 });
 
 router.get('/', () => {
-  return listTaskDefinition();
+  return taskDefinitionStore.list();
 });
