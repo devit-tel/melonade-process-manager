@@ -1,72 +1,6 @@
-import {
-  State,
-  Task,
-  Workflow,
-  WorkflowDefinition,
-} from '@melonade/melonade-declaration';
+import { Task } from '@melonade/melonade-declaration';
 import { poll, sendEvent, systemConsumerClient } from './kafka';
-import { getTaskData } from './state';
-import {
-  taskInstanceStore,
-  workflowDefinitionStore,
-  workflowInstanceStore,
-} from './store';
-
-const processDecisionTask = async (systemTask: Task.ITask) => {
-  const workflow = await workflowInstanceStore.get(systemTask.workflowId);
-  const taskData = await getTaskData(workflow);
-
-  await taskInstanceStore.create(
-    workflow,
-    systemTask.decisions[systemTask.input.case]
-      ? systemTask.decisions[systemTask.input.case][0]
-      : systemTask.defaultDecision[0],
-    taskData,
-    true,
-  );
-};
-
-const processParallelTask = async (systemTask: Task.ITask) => {
-  const workflow = await workflowInstanceStore.get(systemTask.workflowId);
-  const taskData = await getTaskData(workflow);
-  await Promise.all(
-    systemTask.parallelTasks.map((tasks: WorkflowDefinition.AllTaskType[]) =>
-      taskInstanceStore.create(workflow, tasks[0], taskData, true),
-    ),
-  );
-};
-
-const processSubWorkflowTask = async (systemTask: Task.ITask) => {
-  const workflowDefinition = await workflowDefinitionStore.get(
-    systemTask.workflow.name,
-    systemTask.workflow.rev,
-  );
-
-  if (!workflowDefinition) {
-    sendEvent({
-      type: 'SYSTEM',
-      transactionId: systemTask.transactionId,
-      details: null,
-      timestamp: Date.now(),
-      isError: true,
-      error: `Workflow: "${systemTask.workflow.name}":"${systemTask.workflow.rev}" is not exists`,
-    });
-    return taskInstanceStore.update({
-      transactionId: systemTask.transactionId,
-      taskId: systemTask.taskId,
-      status: State.TaskStates.Failed,
-      isSystem: true,
-    });
-  }
-
-  return workflowInstanceStore.create(
-    systemTask.transactionId,
-    Workflow.WorkflowTypes.SubWorkflow,
-    workflowDefinition,
-    systemTask.input,
-    systemTask.taskId,
-  );
-};
+import { taskInstanceStore } from './store';
 
 const processActivityTask = (task: Task.ITask) => {
   return taskInstanceStore.reload({
@@ -83,15 +17,6 @@ export const processSystemTasks = async (
     for (const task of tasks) {
       try {
         switch (task.type) {
-          case Task.TaskTypes.Decision:
-            await processDecisionTask(task);
-            break;
-          case Task.TaskTypes.Parallel:
-            await processParallelTask(task);
-            break;
-          case Task.TaskTypes.SubWorkflow:
-            await processSubWorkflowTask(task);
-            break;
           case Task.TaskTypes.Task:
             // It's not system task
             // I return to prevent it from update the task
@@ -100,13 +25,6 @@ export const processSystemTasks = async (
           default:
             throw new Error(`Task: ${task.type} is not system task`);
         }
-        // The only job of system task is dispatch others task, so after they do the job they're completed
-        await taskInstanceStore.update({
-          isSystem: true,
-          taskId: task.taskId,
-          transactionId: task.transactionId,
-          status: State.TaskStates.Inprogress,
-        });
       } catch (error) {
         sendEvent({
           type: 'SYSTEM',

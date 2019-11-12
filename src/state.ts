@@ -415,7 +415,6 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       workflow,
       R.path(nextTaskPath.taskPath, workflow.workflowDefinition.tasks),
       tasksData,
-      true,
     );
     return;
   }
