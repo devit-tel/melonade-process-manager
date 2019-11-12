@@ -75,14 +75,14 @@ const getNextParallelTask = (
     R.dropLast(3, currentPath).concat('taskReferenceName'),
     tasks,
   );
-  const parentTask = childTask ? childTask : taskData[taskReferenceName];
+  const parentTask = childTask || taskData[taskReferenceName];
 
   // If still got next task in line
   if (R.path(getNextPath(currentPath), tasks)) {
     return {
       isCompleted: false,
       taskPath: getNextPath(currentPath),
-      parentTask: parentTask,
+      parentTask,
       isLastChild,
     };
   }
@@ -105,7 +105,7 @@ const getNextParallelTask = (
   return {
     isCompleted: false,
     taskPath: null,
-    parentTask: childTask || parentTask,
+    parentTask,
     isLastChild,
   };
 };
@@ -138,7 +138,7 @@ export const getNextTaskPath = (
 
   if (isChildOfDecisionDefault(tasks, currentPath)) {
     const taskReferenceName: string = R.path(
-      R.dropLast(3, currentPath).concat('taskReferenceName'),
+      R.dropLast(2, currentPath).concat('taskReferenceName'),
       tasks,
     );
     if (R.path(getNextPath(currentPath), tasks)) {
