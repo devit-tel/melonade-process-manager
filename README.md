@@ -1,6 +1,6 @@
 # melonade-process-manager
 
-This is prototype of saga implementation, written in Node.
+Workflow manager that implemented SAGA, written in typescript
 
 ## Tasks
 
@@ -18,7 +18,7 @@ This is prototype of saga implementation, written in Node.
 - [ ] Use custom error
 - [x] Clean up completed workflows/tasks
 - [x] Delay dispatcher
-- [ ] Cron job
+- [ ] Cron job transaction support
 - [x] Failed workflow handling
 - [x] Timeout workflow handling
 - [x] Cancel workflow
@@ -27,21 +27,22 @@ This is prototype of saga implementation, written in Node.
 - [x] Publish event to kafka
 - [x] Update Workflow/Transaction's output
 - [x] Time keeper
-- [ ] Refactor redundant action in "STATE"
+- [x] Refactor redundant action in "STATE"
 - [x] Watch for workflowDefinition changed
-- [ ] Rewrite all the test XD
-- [ ] Instance delete retention
+- [x] Rewrite all the test XD
+- [x] Instance delete retention => clean up when transaction finished
 - [ ] Graceful shutdown
-- [x] Dispatch system task to itself not more (procress immediately)
+- [x] Procress system task immediately intread of dispatch to itself
 - [ ] Use json schema
 - [ ] Document
 - [ ] Remove sub-workflow
+- [ ] Test parallel task inside another parallel task
 
 ## Known issues
 
 - [x] parallel tasks can be empty
 - [ ] Sub workflow won't get compensate
 - [x] Task/Workflow data send as string's ISO time format instead of number
-- [ ] Workflow Definition can have random task name
+- [ ] Workflow Definition can have task that not existed
 - [x] MongoDB not fast enough for 5000 concurent (Lag about 1 min before task updated) => Added redis store
 - [x] Transaction did not cancelled if compensating
