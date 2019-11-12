@@ -13,6 +13,8 @@ module.exports = {
     'src/**/*.{ts,tsx,js,jsx}',
     '!src/**/*.d.ts',
     '!src/server/**/*.ts',
+    '!src/bootstrap.ts',
+    '!src/index.ts',
   ],
   setupFiles: ['./src/store/mongoose/__mocks__/index.ts'],
   moduleNameMapper: {
