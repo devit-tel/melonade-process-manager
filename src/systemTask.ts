@@ -1,6 +1,6 @@
 import { Task } from '@melonade/melonade-declaration';
-import { poll, sendEvent, systemConsumerClient } from './kafka';
-import { taskInstanceStore } from './store';
+import { poll, sendEvent, systemConsumerClient } from '~/kafka';
+import { taskInstanceStore } from '~/store';
 
 const processActivityTask = (task: Task.ITask) => {
   return taskInstanceStore.reload({

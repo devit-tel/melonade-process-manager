@@ -1,24 +1,24 @@
 import { Store } from '@melonade/melonade-declaration';
-import { executor as commandExecutor } from './command';
-import * as config from './config';
+import { executor as commandExecutor } from '~/command';
+import * as config from '~/config';
 import {
   commandConsumerClient,
   producerClient,
   stateConsumerClient,
   systemConsumerClient,
-} from './kafka';
-import { Server } from './server';
-import { executor as stateExecutor } from './state';
-import * as store from './store';
-import { TaskInstanceMongooseStore } from './store/mongoose/taskInstance';
-import { TransactionInstanceMongooseStore } from './store/mongoose/transactionInstance';
-import { WorkflowInstanceMongooseStore } from './store/mongoose/workflowInstance';
-import { TaskInstanceRedisStore } from './store/redis/taskInstance';
-import { TransactionInstanceRedisStore } from './store/redis/transactionInstance';
-import { WorkflowInstanceRedisStore } from './store/redis/workflowInstance';
-import { TaskDefinitionZookeeperStore } from './store/zookeeper/taskDefinition';
-import { WorkflowDefinitionZookeeperStore } from './store/zookeeper/workflowDefinition';
-import { executor as systemTaskExecutor } from './systemTask';
+} from '~/kafka';
+import { Server } from '~/server';
+import { executor as stateExecutor } from '~/state';
+import * as store from '~/store';
+import { TaskInstanceMongooseStore } from '~/store/mongoose/taskInstance';
+import { TransactionInstanceMongooseStore } from '~/store/mongoose/transactionInstance';
+import { WorkflowInstanceMongooseStore } from '~/store/mongoose/workflowInstance';
+import { TaskInstanceRedisStore } from '~/store/redis/taskInstance';
+import { TransactionInstanceRedisStore } from '~/store/redis/transactionInstance';
+import { WorkflowInstanceRedisStore } from '~/store/redis/workflowInstance';
+import { TaskDefinitionZookeeperStore } from '~/store/zookeeper/taskDefinition';
+import { WorkflowDefinitionZookeeperStore } from '~/store/zookeeper/workflowDefinition';
+import { executor as systemTaskExecutor } from '~/systemTask';
 // import { MemoryStore } from './store/memory';
 
 stateConsumerClient.connect();

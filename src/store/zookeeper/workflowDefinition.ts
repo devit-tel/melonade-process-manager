@@ -2,9 +2,9 @@
 import { WorkflowDefinition } from '@melonade/melonade-declaration';
 import * as nodeZookeeperClient from 'node-zookeeper-client';
 import * as R from 'ramda';
-import { IWorkflowDefinitionStore } from '../../store';
-import { jsonTryParse } from '../../utils/common';
-import { ZookeeperStore } from '../zookeeper';
+import { IWorkflowDefinitionStore } from '~/store';
+import { ZookeeperStore } from '~/store/zookeeper';
+import { jsonTryParse } from '~/utils/common';
 
 export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
   implements IWorkflowDefinitionStore {

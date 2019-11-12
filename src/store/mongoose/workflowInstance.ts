@@ -1,8 +1,8 @@
 import { Event, State, Task, Workflow } from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
 import * as mongooseLeanVirtuals from 'mongoose-lean-virtuals';
-import { IWorkflowInstanceStore, taskInstanceStore } from '../../store';
-import { MongooseStore } from '../mongoose';
+import { IWorkflowInstanceStore, taskInstanceStore } from '~/store';
+import { MongooseStore } from '~/store/mongoose';
 
 const workflowSchema = new mongoose.Schema(
   {

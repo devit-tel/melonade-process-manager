@@ -1,8 +1,8 @@
 // Serializer for 2 layer node (${root}/${workflowName}/${workflowRev})
 import { WorkflowDefinition } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import { IWorkflowDefinitionStore } from '../../store';
-import { MemoryStore } from '../memory';
+import { IWorkflowDefinitionStore } from '~/store';
+import { MemoryStore } from '~/store/memory';
 
 export class WorkflowDefinitionMemoryStore extends MemoryStore
   implements IWorkflowDefinitionStore {

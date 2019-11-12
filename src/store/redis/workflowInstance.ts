@@ -1,9 +1,9 @@
 import { Event, State, Workflow } from '@melonade/melonade-declaration';
 import ioredis from 'ioredis';
 import * as uuid from 'uuid/v4';
-import { prefix } from '../../config';
-import { IWorkflowInstanceStore, taskInstanceStore } from '../../store';
-import { RedisStore } from '../redis';
+import { prefix } from '~/config';
+import { IWorkflowInstanceStore, taskInstanceStore } from '~/store';
+import { RedisStore } from '~/store/redis';
 
 export class WorkflowInstanceRedisStore extends RedisStore
   implements IWorkflowInstanceStore {

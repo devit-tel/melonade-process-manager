@@ -8,8 +8,8 @@ import {
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import { dispatch, sendEvent } from '../kafka';
-import { mapParametersToValue } from '../utils/task';
+import { dispatch, sendEvent } from '~/kafka';
+import { mapParametersToValue } from '~/utils/task';
 
 export interface IStore {
   isHealthy(): boolean;

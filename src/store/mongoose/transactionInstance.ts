@@ -1,7 +1,7 @@
 import { Event, State, Transaction } from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
-import { ITransactionInstanceStore, workflowInstanceStore } from '../../store';
-import { MongooseStore } from '../mongoose';
+import { ITransactionInstanceStore, workflowInstanceStore } from '~/store';
+import { MongooseStore } from '~/store/mongoose';
 
 const transacationSchema = new mongoose.Schema(
   {
