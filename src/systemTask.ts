@@ -18,10 +18,8 @@ export const processSystemTasks = async (
       try {
         switch (task.type) {
           case Task.TaskTypes.Task:
-            // It's not system task
-            // I return to prevent it from update the task
             await processActivityTask(task);
-            continue;
+            break;
           default:
             throw new Error(`Task: ${task.type} is not system task`);
         }
