@@ -101,18 +101,12 @@ export const sendTimer = (timer: Timer.AllTimerType) =>
     Date.now(),
   );
 
-export const dispatch = (
-  task: Task.ITask,
-  transactionId: string,
-  isSystemTask: boolean = false,
-) =>
+export const dispatch = (task: Task.ITask) =>
   producerClient.produce(
-    isSystemTask
-      ? config.kafkaTopicName.systemTask
-      : `${config.kafkaTopicName.task}.${task.taskName}`,
+    `${config.kafkaTopicName.task}.${task.taskName}`,
     null,
     Buffer.from(JSON.stringify(task)),
-    transactionId,
+    task.transactionId,
     Date.now(),
   );
 

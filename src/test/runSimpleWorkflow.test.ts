@@ -250,8 +250,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't1',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
       expect(transactionInstanceStore.create).toBeCalledTimes(1);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
@@ -310,8 +308,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -371,8 +367,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't3',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -495,8 +489,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't1',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
       expect(transactionInstanceStore.create).toBeCalledTimes(1);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
@@ -555,8 +547,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -616,8 +606,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't3',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -678,8 +666,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't3',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -802,8 +788,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't1',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
       expect(transactionInstanceStore.create).toBeCalledTimes(1);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
@@ -862,8 +846,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -923,8 +905,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't3',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -986,8 +966,6 @@ describe('Run simple workflow', () => {
             taskReferenceName: 't3',
             status: State.TaskStates.Scheduled,
           }),
-          TRANSACTION_ID,
-          false,
         );
 
         expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1114,8 +1092,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't1',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
       expect(transactionInstanceStore.create).toBeCalledTimes(1);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
@@ -1174,8 +1150,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1235,8 +1209,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't3',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1298,8 +1270,6 @@ describe('Run simple workflow', () => {
             taskReferenceName: 't3',
             status: State.TaskStates.Scheduled,
           }),
-          TRANSACTION_ID,
-          false,
         );
 
         expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1382,8 +1352,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1446,8 +1414,6 @@ describe('Run simple workflow', () => {
           status: State.TaskStates.Scheduled,
           type: Task.TaskTypes.Compensate,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1576,8 +1542,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't1',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
       expect(transactionInstanceStore.create).toBeCalledTimes(1);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
@@ -1636,8 +1600,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1697,8 +1659,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't3',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1760,8 +1720,6 @@ describe('Run simple workflow', () => {
             taskReferenceName: 't3',
             status: State.TaskStates.Scheduled,
           }),
-          TRANSACTION_ID,
-          false,
         );
 
         expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1844,8 +1802,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -1908,8 +1864,6 @@ describe('Run simple workflow', () => {
           status: State.TaskStates.Scheduled,
           type: Task.TaskTypes.Compensate,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2038,8 +1992,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't1',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
       expect(transactionInstanceStore.create).toBeCalledTimes(1);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
@@ -2098,8 +2050,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2159,8 +2109,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't3',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2222,8 +2170,6 @@ describe('Run simple workflow', () => {
             taskReferenceName: 't3',
             status: State.TaskStates.Scheduled,
           }),
-          TRANSACTION_ID,
-          false,
         );
 
         expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2306,8 +2252,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2370,8 +2314,6 @@ describe('Run simple workflow', () => {
           status: State.TaskStates.Scheduled,
           type: Task.TaskTypes.Compensate,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2453,8 +2395,6 @@ describe('Run simple workflow', () => {
           status: State.TaskStates.Scheduled,
           type: Task.TaskTypes.Task,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2514,8 +2454,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't2',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2575,8 +2513,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't3',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
 
       expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2703,8 +2639,6 @@ describe('Run simple workflow', () => {
           taskReferenceName: 't1',
           status: State.TaskStates.Scheduled,
         }),
-        TRANSACTION_ID,
-        false,
       );
       expect(transactionInstanceStore.create).toBeCalledTimes(1);
       expect(transactionInstanceStore.update).toBeCalledTimes(0);
@@ -2764,8 +2698,6 @@ describe('Run simple workflow', () => {
             taskReferenceName: 't2',
             status: State.TaskStates.Scheduled,
           }),
-          TRANSACTION_ID,
-          false,
         );
 
         expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2825,8 +2757,6 @@ describe('Run simple workflow', () => {
             taskReferenceName: 't3',
             status: State.TaskStates.Scheduled,
           }),
-          TRANSACTION_ID,
-          false,
         );
 
         expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2888,8 +2818,6 @@ describe('Run simple workflow', () => {
               taskReferenceName: 't3',
               status: State.TaskStates.Scheduled,
             }),
-            TRANSACTION_ID,
-            false,
           );
 
           expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -2972,8 +2900,6 @@ describe('Run simple workflow', () => {
             taskReferenceName: 't2',
             status: State.TaskStates.Scheduled,
           }),
-          TRANSACTION_ID,
-          false,
         );
 
         expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -3036,8 +2962,6 @@ describe('Run simple workflow', () => {
             status: State.TaskStates.Scheduled,
             type: Task.TaskTypes.Compensate,
           }),
-          TRANSACTION_ID,
-          false,
         );
 
         expect(transactionInstanceStore.create).toBeCalledTimes(0);
@@ -3120,8 +3044,6 @@ describe('Run simple workflow', () => {
               status: State.TaskStates.Scheduled,
               type: Task.TaskTypes.Task,
             }),
-            TRANSACTION_ID,
-            false,
           );
 
           expect(transactionInstanceStore.create).toBeCalledTimes(0);

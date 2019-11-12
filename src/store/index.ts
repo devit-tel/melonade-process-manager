@@ -337,11 +337,7 @@ export class TaskInstanceStore {
         endTime: null,
       }),
     );
-    dispatch(
-      task,
-      task.transactionId,
-      ![Task.TaskTypes.Task, Task.TaskTypes.Compensate].includes(task.type),
-    );
+    dispatch(task);
     sendEvent({
       transactionId: task.transactionId,
       type: 'TASK',
@@ -541,7 +537,7 @@ export class TaskInstanceStore {
       ...overideTask,
     });
 
-    dispatch(task, workflow.transactionId, false);
+    dispatch(task);
     sendEvent({
       transactionId: workflow.transactionId,
       type: 'TASK',

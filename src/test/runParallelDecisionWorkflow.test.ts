@@ -254,6 +254,7 @@ describe('Run simple workflow', () => {
     test('All task completed', async () => {
       const TRANSACTION_ID = 'SIMPLE_SUCCESS_TRANSACTION_ID';
       let currentTask: Task.ITask;
+
       await transactionInstanceStore.create(
         TRANSACTION_ID,
         WORKFLOW_DEFINITION,
@@ -311,6 +312,65 @@ describe('Run simple workflow', () => {
       expect(workflowInstanceStore.update).toBeCalledTimes(0);
       expect(taskInstanceStore.create).toBeCalledTimes(1);
       expect(taskInstanceStore.update).toBeCalledTimes(0);
+      expect(taskInstanceStore.reload).toBeCalledTimes(0);
+
+      // ----------------------------------------------------------------
+      currentTask = mockedDispatch.mock.calls[0][0];
+      cleanMock();
+      // ----------------------------------------------------------------
+
+      await updateTask(currentTask);
+
+      expect(mockedSendEvent).toBeCalledTimes(3);
+      expect(mockedSendEvent).toBeCalledWith(
+        expect.objectContaining({
+          type: 'TASK',
+          details: expect.objectContaining({
+            transactionId: TRANSACTION_ID,
+            taskReferenceName: 't1',
+            status: State.TaskStates.Inprogress,
+          }),
+          isError: false,
+        }),
+      );
+      expect(mockedSendEvent).toBeCalledWith(
+        expect.objectContaining({
+          type: 'TASK',
+          details: expect.objectContaining({
+            transactionId: TRANSACTION_ID,
+            taskReferenceName: 't1',
+            status: State.TaskStates.Completed,
+          }),
+          isError: false,
+        }),
+      );
+      expect(mockedSendEvent).toBeCalledWith(
+        expect.objectContaining({
+          type: 'TASK',
+          details: expect.objectContaining({
+            transactionId: TRANSACTION_ID,
+            taskReferenceName: 'p2',
+            status: State.TaskStates.Scheduled,
+          }),
+          isError: false,
+        }),
+      );
+
+      expect(mockedDispatch).toBeCalledTimes(1);
+      expect(mockedDispatch).toBeCalledWith(
+        expect.objectContaining({
+          type: Task.TaskTypes.Task,
+          taskReferenceName: 'p2',
+          status: State.TaskStates.Scheduled,
+        }),
+      );
+
+      expect(transactionInstanceStore.create).toBeCalledTimes(0);
+      expect(transactionInstanceStore.update).toBeCalledTimes(0);
+      expect(workflowInstanceStore.create).toBeCalledTimes(0);
+      expect(workflowInstanceStore.update).toBeCalledTimes(0);
+      expect(taskInstanceStore.create).toBeCalledTimes(1);
+      expect(taskInstanceStore.update).toBeCalledTimes(2);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
       // ----------------------------------------------------------------
