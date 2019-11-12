@@ -100,7 +100,7 @@ interface IAllStoreType {
   transactionInstanceStoreClient: ITransactionInstanceStore;
 }
 
-describe('Run simple workflow', () => {
+describe('Run parallel decision workflow', () => {
   afterEach(cleanMock);
 
   // Do test each store type
@@ -1108,16 +1108,16 @@ describe('Run simple workflow', () => {
       // ----------------------------------------------------------------
     });
 
-    test('task t3 failed 1 time with failureStrategy = Failed', async () => {});
+    test('Task t3 failed 1 time with failureStrategy = Failed', async () => {});
 
-    test('task t3 failed 4 time with failureStrategy = Failed', async () => {});
+    test('Task t3 failed 4 time with failureStrategy = Failed', async () => {});
 
-    test('task t3 failed 4 time with failureStrategy = Compensate', async () => {});
+    test('Task t3 failed 4 time with failureStrategy = Compensate', async () => {});
 
-    test('task t3 failed 4 time with failureStrategy = Compensate but compensate task failed', async () => {});
+    test('Task t3 failed 4 time with failureStrategy = Compensate but compensate task failed', async () => {});
 
-    test('task t3 failed 4 time with failureStrategy = CompensateThenRetry and completed in 2nd try', async () => {});
+    test('Task t3 failed 4 time with failureStrategy = CompensateThenRetry and completed in 2nd try', async () => {});
 
-    test('task t3 failed 4 time with failureStrategy = CompensateThenRetry but still failed after 4 retry', async () => {});
+    test('Task t3 failed 4 time with failureStrategy = CompensateThenRetry but still failed after 4 retry', async () => {});
   });
 });
