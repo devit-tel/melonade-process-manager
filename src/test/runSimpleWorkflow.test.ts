@@ -200,7 +200,7 @@ describe('Run simple workflow', () => {
     };
 
     test('All task completed', async () => {
-      const TRANSACTION_ID = 'SIMPLE_SUCCESS_TRANSACTION_ID';
+      const TRANSACTION_ID = 'ALL_TASK_COMPLETED';
       let currentTask: Task.ITask;
       await transactionInstanceStore.create(
         TRANSACTION_ID,
@@ -439,7 +439,8 @@ describe('Run simple workflow', () => {
     });
 
     test('task t3 failed 1 time with failureStrategy = Failed', async () => {
-      const TRANSACTION_ID = 'SIMPLE_SUCCESS_TRANSACTION_ID';
+      const TRANSACTION_ID =
+        'TASK_T3_FAILED_1_TIME_WITH_FAILURE_STRATEGY_FAILED';
       let currentTask: Task.ITask;
       await transactionInstanceStore.create(
         TRANSACTION_ID,
@@ -738,7 +739,8 @@ describe('Run simple workflow', () => {
     });
 
     test('task t3 failed 4 time with failureStrategy = Failed', async () => {
-      const TRANSACTION_ID = 'SIMPLE_SUCCESS_TRANSACTION_ID';
+      const TRANSACTION_ID =
+        'TASK_T3_FAILED_4_TIME_WITH_FAILURE_STRATEGY_FAILED';
       let currentTask: Task.ITask;
       await transactionInstanceStore.create(
         TRANSACTION_ID,
@@ -1039,7 +1041,8 @@ describe('Run simple workflow', () => {
     });
 
     test('task t3 failed 4 time with failureStrategy = Compensate', async () => {
-      const TRANSACTION_ID = 'SIMPLE_SUCCESS_TRANSACTION_ID';
+      const TRANSACTION_ID =
+        'TASK_T3_FAILED_4_TIME_WITH_FAILURE_STRATEGY_COMPENSATE';
       let currentTask: Task.ITask;
       await transactionInstanceStore.create(
         TRANSACTION_ID,
@@ -1489,7 +1492,8 @@ describe('Run simple workflow', () => {
     });
 
     test('task t3 failed 4 time with failureStrategy = Compensate but compensate task failed', async () => {
-      const TRANSACTION_ID = 'SIMPLE_SUCCESS_TRANSACTION_ID';
+      const TRANSACTION_ID =
+        'TASK_T3_FAILED_4_TIME_WITH_FAILURE_STRATEGY_COMPENSATE_BUT_COMPENSATE_TASK_FAILED';
       let currentTask: Task.ITask;
       await transactionInstanceStore.create(
         TRANSACTION_ID,
@@ -1939,7 +1943,8 @@ describe('Run simple workflow', () => {
     });
 
     test('task t3 failed 4 time with failureStrategy = CompensateThenRetry and completed in 2nd try', async () => {
-      const TRANSACTION_ID = 'SIMPLE_SUCCESS_TRANSACTION_ID';
+      const TRANSACTION_ID =
+        'TASK_T3_FAILED_4_TIME_WITH_FAILURE_STRATEGY_COMPENSATE_THEN_RETRY_AND_COMPLETED_IN_2ND_TRY';
       let currentTask: Task.ITask;
       await transactionInstanceStore.create(
         TRANSACTION_ID,
@@ -2586,7 +2591,8 @@ describe('Run simple workflow', () => {
     });
 
     test('task t3 failed 4 time with failureStrategy = CompensateThenRetry but still failed after 4 retry', async () => {
-      const TRANSACTION_ID = 'SIMPLE_SUCCESS_TRANSACTION_ID';
+      const TRANSACTION_ID =
+        'TASK_T3_FAILED_4_TIME_WITH_FAILURE_STRATEGY_COMPENSATE_THEN_RETRY_BUT_STILL_FAILED_AFTER_4_RETRY';
       let currentTask: Task.ITask;
       await transactionInstanceStore.create(
         TRANSACTION_ID,
