@@ -323,6 +323,10 @@ export class TaskInstanceStore {
   }
 
   reload = async (taskData: Task.ITask): Promise<Task.ITask> => {
+    const workflow = await workflowInstanceStore.get(taskData.workflowId);
+    if (!R.propEq('status', State.WorkflowStates.Running, workflow))
+      throw new Error('WORKFLOW_NOT_RUNNING');
+
     await this.delete(taskData.taskId);
     const task = await this.client.create(
       R.omit(['_id'], {
