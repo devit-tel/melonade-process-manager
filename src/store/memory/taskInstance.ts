@@ -27,20 +27,15 @@ export class TaskInstanceMemoryStore extends MemoryStore
       throw new Error(`Task "${taskUpdate.taskId}" not found`);
     }
 
-    if (taskUpdate.isSystem) {
-      if (
-        !State.TaskNextStatesSystem[task.status].includes(taskUpdate.status)
-      ) {
-        throw new Error(
-          `Cannot change status of "${taskUpdate.taskId}" from ${task.status} to ${taskUpdate.status}`,
-        );
-      }
-    } else {
-      if (!State.TaskNextStates[task.status].includes(taskUpdate.status)) {
-        throw new Error(
-          `Cannot change status of "${taskUpdate.taskId}" from ${task.status} to ${taskUpdate.status}`,
-        );
-      }
+    if (
+      (taskUpdate.isSystem &&
+        !State.TaskNextStatesSystem[task.status].includes(taskUpdate.status)) ||
+      (!taskUpdate.isSystem &&
+        !State.TaskNextStates[task.status].includes(taskUpdate.status))
+    ) {
+      throw new Error(
+        `Cannot change status of "${taskUpdate.taskId}" from ${task.status} to ${taskUpdate.status}`,
+      );
     }
 
     const updatedTask = {
