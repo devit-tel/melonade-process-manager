@@ -37,6 +37,7 @@ Workflow manager that implemented SAGA, written in typescript
 - [ ] Document
 - [x] Remove sub-workflow
 - [ ] Test parallel task inside another parallel task
+- [ ] Standardise the error, so it easilier to summary.
 
 ## Known issues
 
