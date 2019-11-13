@@ -5,7 +5,6 @@ import {
   commandConsumerClient,
   producerClient,
   stateConsumerClient,
-  systemConsumerClient,
 } from '~/kafka';
 import { Server } from '~/server';
 import { executor as stateExecutor } from '~/state';
@@ -18,11 +17,9 @@ import { TransactionInstanceRedisStore } from '~/store/redis/transactionInstance
 import { WorkflowInstanceRedisStore } from '~/store/redis/workflowInstance';
 import { TaskDefinitionZookeeperStore } from '~/store/zookeeper/taskDefinition';
 import { WorkflowDefinitionZookeeperStore } from '~/store/zookeeper/workflowDefinition';
-import { executor as systemTaskExecutor } from '~/systemTask';
 // import { MemoryStore } from './store/memory';
 
 stateConsumerClient.connect();
-systemConsumerClient.connect();
 commandConsumerClient.connect();
 producerClient.connect();
 
@@ -136,5 +133,4 @@ if (config.server.enabled) {
 }
 
 stateExecutor();
-systemTaskExecutor();
 commandExecutor();
