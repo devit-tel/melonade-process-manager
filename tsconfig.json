@@ -19,6 +19,6 @@
     "strictNullChecks": false
   },
   "include": ["src/**/*"],
-  "exclude": ["src/**/*.test.ts"],
+  "exclude": ["src/**/*.test.ts", "**/__mocks__/**/*.ts"],
   "resolveMappedPaths": true
 }
