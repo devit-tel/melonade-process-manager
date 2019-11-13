@@ -236,7 +236,6 @@ export class WorkflowInstanceStore {
     type: Workflow.WorkflowTypes,
     workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
     input: any,
-    childOf?: string,
     overideWorkflow?: Workflow.IWorkflow | object,
   ): Promise<Workflow.IWorkflow> => {
     const workflow = await this.client.create({
@@ -250,7 +249,6 @@ export class WorkflowInstanceStore {
       createTime: Date.now(),
       startTime: Date.now(),
       endTime: null,
-      childOf,
       workflowDefinition,
       ...overideWorkflow,
     });
@@ -385,10 +383,6 @@ export class TaskInstanceStore {
       defaultDecision:
         workflowTask.type === Task.TaskTypes.Decision
           ? workflowTask.defaultDecision
-          : undefined,
-      workflow:
-        workflowTask.type === Task.TaskTypes.SubWorkflow
-          ? workflowTask.workflow
           : undefined,
       retries: R.pathOr(
         R.pathOr(0, ['retry', 'limit'], taskDefinition),

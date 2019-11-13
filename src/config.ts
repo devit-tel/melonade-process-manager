@@ -29,8 +29,6 @@ export const prefix = `${Kafka.topicPrefix}.${melonade.namespace}`;
 export const kafkaTopicName = {
   // Publish to specified task
   task: `${prefix}.${Kafka.topicSuffix.task}`,
-  // Publish to system task
-  systemTask: `${prefix}.${Kafka.topicSuffix.systemTask}`,
   // Publish to store event
   store: `${prefix}.${Kafka.topicSuffix.store}`,
   // Subscriptions to update event

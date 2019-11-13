@@ -35,13 +35,13 @@ Workflow manager that implemented SAGA, written in typescript
 - [x] Procress system task immediately intread of dispatch to itself
 - [ ] Use json schema
 - [ ] Document
-- [ ] Remove sub-workflow
+- [x] Remove sub-workflow
 - [ ] Test parallel task inside another parallel task
 
 ## Known issues
 
 - [x] parallel tasks can be empty
-- [ ] Sub workflow won't get compensate
+- [x] Sub workflow won't get compensate => Not support sub-workflow anymore
 - [x] Task/Workflow data send as string's ISO time format instead of number
 - [ ] Workflow Definition can have task that not existed
 - [x] MongoDB not fast enough for 5000 concurent (Lag about 1 min before task updated) => Added redis store

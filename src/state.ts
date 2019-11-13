@@ -264,7 +264,6 @@ export const findTaskPath = (
             currentPath,
             currentTask,
           );
-        case Task.TaskTypes.SubWorkflow:
         case Task.TaskTypes.Task:
         case Task.TaskTypes.Compensate:
         default:
@@ -347,7 +346,6 @@ const handleCompletedCompensateThenRetryWorkflow = async (
       Workflow.WorkflowTypes.Workflow,
       transaction.workflowDefinition,
       transaction.input,
-      undefined,
       {
         retries: workflow.retries - 1,
       },
@@ -461,11 +459,6 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       case Workflow.WorkflowTypes.Workflow:
         await handleCompletedWorkflow(completedWorkflow);
         break;
-      case Workflow.WorkflowTypes.SubWorkflow:
-        await handleCompletedTask(
-          await taskInstanceStore.get(completedWorkflow.childOf),
-        );
-        break;
       case Workflow.WorkflowTypes.CompensateWorkflow:
         await handleCompletedCompensateWorkflow(completedWorkflow);
         break;
@@ -531,7 +524,6 @@ const handleRetryWorkflow = async (
       Workflow.WorkflowTypes.Workflow,
       workflow.workflowDefinition,
       tasksData,
-      undefined,
       {
         retries: workflow.retries - 1,
       },
@@ -588,7 +580,6 @@ const handleCompensateThenRetryWorkflow = (
         outputParameters: {},
       },
       toObjectByKey(tasksData, 'taskReferenceName'),
-      undefined,
       {
         retries: workflow.retries,
       },
