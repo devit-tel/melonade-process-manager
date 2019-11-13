@@ -1,6 +1,9 @@
 name: On tags
 
-on: [tags]
+on:
+  push:
+    tags:
+      - v*
 
 jobs:
   push-docker:
