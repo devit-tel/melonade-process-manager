@@ -15,7 +15,7 @@ Workflow manager that implemented SAGA, written in typescript
 - [x] Consumer
 - [x] Config
 - [ ] Logger
-- [ ] Use custom error
+- [x] Use custom error
 - [x] Clean up completed workflows/tasks
 - [x] Delay dispatcher
 - [ ] Cron job transaction support
