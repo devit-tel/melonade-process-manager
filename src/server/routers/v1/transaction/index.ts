@@ -1,10 +1,7 @@
 import koaRouter = require('koa-router');
 import { WorkflowDefinition } from '@melonade/melonade-declaration';
-import {
-  transactionInstanceStore,
-  workflowDefinitionStore,
-} from '../../../../store';
-import uuid = require('uuid');
+import * as uuid from 'uuid/v4';
+import { transactionInstanceStore, workflowDefinitionStore } from '../../../../store';
 
 export const router = new koaRouter();
 
