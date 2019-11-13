@@ -12,7 +12,7 @@
     "build": "npm run clean & tsc -p tsconfig.release.json",
     "build:watch": "npm run clean & tsc -w -p tsconfig.release.json",
     "lint": "tslint -t stylish --project \"tsconfig.json\"",
-    "test": "jest --coverage",
+    "test": "jest --coverage --forceExi",
     "test:watch": "jest --watch",
     "start:watch": "nodemon"
   },
