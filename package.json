@@ -1,11 +1,11 @@
 {
-  "name": "node-typescript-boilerplate",
-  "version": "0.0.0",
-  "description": "Minimalistic boilerplate to quick-start Node.js development in TypeScript.",
+  "name": "melonade-process-manager",
+  "version": "0.6.0",
+  "description": "workflow process manager",
   "engines": {
     "node": ">= 10.13 <11"
   },
-  "author": "Jakub Synowiec <github@jakubsynowiec.info>",
+  "author": "NV4RE",
   "license": "Apache-2.0",
   "scripts": {
     "clean": "rimraf coverage build tmp",
