@@ -22,5 +22,6 @@
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "__tests__/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
 }
