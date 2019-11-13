@@ -60,10 +60,6 @@ const workflowSchema = new mongoose.Schema(
       },
       outputParameters: mongoose.Schema.Types.Mixed,
     },
-    childOf: {
-      type: String,
-      index: true,
-    },
   },
   {
     toObject: {
@@ -96,7 +92,7 @@ export class WorkflowInstanceMongooseStore extends MongooseStore
     return this.model
       .findOne({ _id: workflowId })
       .lean({ virtuals: true })
-      .exec();
+      .exec() as Promise<Workflow.IWorkflow>;
   };
 
   create = async (
@@ -134,7 +130,7 @@ export class WorkflowInstanceMongooseStore extends MongooseStore
         },
       )
       .lean({ virtuals: true })
-      .exec();
+      .exec() as Promise<Workflow.IWorkflow>;
   };
 
   delete = (workflowId: string): Promise<any> =>
@@ -149,13 +145,12 @@ export class WorkflowInstanceMongooseStore extends MongooseStore
         transactionId,
         status: State.WorkflowStates.Running,
         type: Workflow.WorkflowTypes.Workflow,
-        childOf: { $exists: false },
       })
       .lean({ virtuals: true })
-      .exec();
+      .exec() as Promise<Workflow.IWorkflow>;
 
   deleteAll = async (transactionId: string): Promise<void> => {
-    const workflows = await this.model
+    const workflows = <Workflow.IWorkflow[]>await this.model
       .find({
         transactionId,
       })

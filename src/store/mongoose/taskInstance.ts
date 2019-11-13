@@ -75,7 +75,7 @@ export class TaskInstanceMongooseStore extends MongooseStore
     };
   };
   update = async (taskUpdate: Event.ITaskUpdate): Promise<Task.ITask> => {
-    const task = await this.model
+    const task = <Task.ITask>await this.model
       .findOneAndUpdate(
         {
           _id: taskUpdate.taskId,
@@ -118,7 +118,7 @@ export class TaskInstanceMongooseStore extends MongooseStore
   };
 
   get = async (taskId: string): Promise<Task.ITask> => {
-    const taskData = await this.model
+    const taskData = <Task.ITask>await this.model
       .findOne({ _id: taskId })
       .lean({ virtuals: true })
       .exec();
@@ -131,7 +131,7 @@ export class TaskInstanceMongooseStore extends MongooseStore
     return this.model
       .find({ workflowId })
       .lean({ virtuals: true })
-      .exec();
+      .exec() as Promise<Task.ITask[]>;
   };
 
   delete(taskId: string): Promise<any> {

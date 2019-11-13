@@ -40,7 +40,7 @@ export class TransactionInstanceMongooseStore extends MongooseStore
     return this.model
       .findOne({ transactionId })
       .lean({ virtuals: true })
-      .exec();
+      .exec() as Promise<Transaction.ITransaction>;
   };
 
   create = async (
@@ -55,7 +55,7 @@ export class TransactionInstanceMongooseStore extends MongooseStore
   update = async (
     transactionUpdate: Event.ITransactionUpdate,
   ): Promise<Transaction.ITransaction> => {
-    const updatedTransaction = await this.model
+    const updatedTransaction = <Transaction.ITransaction>await this.model
       .findOneAndUpdate(
         {
           transactionId: transactionUpdate.transactionId,
