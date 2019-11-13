@@ -17,6 +17,7 @@
     "start:watch": "nodemon"
   },
   "dependencies": {
+    "@melonade/melonade-declaration": "^0.5.2",
     "@nv4re/node-rdkafka": "^2.7.2-5",
     "dotenv": "^8.2.0",
     "ioredis": "^4.14.1",
@@ -32,7 +33,6 @@
     "uuid": "^3.3.3"
   },
   "devDependencies": {
-    "@melonade/melonade-declaration": "^0.5.2",
     "@types/ioredis": "^4.0.19",
     "@types/jest": "^24.0.23",
     "@types/koa": "^2.0.52",
