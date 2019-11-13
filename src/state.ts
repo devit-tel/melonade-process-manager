@@ -1,18 +1,7 @@
-import {
-  Event,
-  State,
-  Task,
-  Timer,
-  Workflow,
-  WorkflowDefinition,
-} from '@melonade/melonade-declaration';
+import { Event, State, Task, Timer, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import { poll, sendEvent, sendTimer, stateConsumerClient } from './kafka';
-import {
-  taskInstanceStore,
-  transactionInstanceStore,
-  workflowInstanceStore,
-} from './store';
+import { taskInstanceStore, transactionInstanceStore, workflowInstanceStore } from './store';
 import { toObjectByKey } from './utils/common';
 import { mapParametersToValue } from './utils/task';
 
@@ -667,7 +656,7 @@ const handleFailedTask = async (task: Task.ITask) => {
   }
 
   // Check if can retry the task
-  if (task.retries > 0) {
+  if (task.retries > 0 && task.type !== Task.TaskTypes.Compensate) {
     if (task.retryDelay > 0) {
       sendTimer({
         type: Timer.TimerType.delayTask,
