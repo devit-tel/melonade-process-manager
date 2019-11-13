@@ -1,7 +1,7 @@
 import { Event, State, Workflow } from '@melonade/melonade-declaration';
 import * as uuid from 'uuid/v4';
-import { IWorkflowInstanceStore, taskInstanceStore } from '~/store';
-import { MemoryStore } from '~/store/memory';
+import { MemoryStore } from '.';
+import { IWorkflowInstanceStore, taskInstanceStore } from '..';
 
 export class WorkflowInstanceMemoryStore extends MemoryStore
   implements IWorkflowInstanceStore {

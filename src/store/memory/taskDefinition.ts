@@ -1,6 +1,6 @@
 import { TaskDefinition } from '@melonade/melonade-declaration';
-import { ITaskDefinitionStore } from '~/store';
-import { MemoryStore } from '~/store/memory';
+import { MemoryStore } from '.';
+import { ITaskDefinitionStore } from '..';
 
 // This is wrong
 export class TaskDefinitionMemoryStore extends MemoryStore

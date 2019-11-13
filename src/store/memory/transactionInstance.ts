@@ -1,6 +1,6 @@
 import { Event, State, Transaction } from '@melonade/melonade-declaration';
-import { ITransactionInstanceStore, workflowInstanceStore } from '~/store';
-import { MemoryStore } from '~/store/memory';
+import { MemoryStore } from '.';
+import { ITransactionInstanceStore, workflowInstanceStore } from '..';
 
 export class TransactionInstanceMemoryStore extends MemoryStore
   implements ITransactionInstanceStore {

@@ -2,9 +2,9 @@
 import { TaskDefinition } from '@melonade/melonade-declaration';
 import * as nodeZookeeperClient from 'node-zookeeper-client';
 import * as R from 'ramda';
-import { ITaskDefinitionStore } from '~/store';
-import { ZookeeperStore } from '~/store/zookeeper';
-import { jsonTryParse } from '~/utils/common';
+import { ZookeeperStore } from '.';
+import { ITaskDefinitionStore } from '..';
+import { jsonTryParse } from '../../utils/common';
 
 // This is wrong
 export class TaskDefinitionZookeeperStore extends ZookeeperStore

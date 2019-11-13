@@ -1,5 +1,5 @@
 import { Command, State, Task } from '@melonade/melonade-declaration';
-import { commandConsumerClient, poll, sendEvent } from '~/kafka';
+import { commandConsumerClient, poll, sendEvent } from './kafka';
 import {
   taskInstanceStore,
   transactionInstanceStore,

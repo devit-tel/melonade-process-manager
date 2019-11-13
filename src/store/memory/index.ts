@@ -1,5 +1,5 @@
 import * as R from 'ramda';
-import { IStore } from '~/store';
+import { IStore } from '..';
 
 export class MemoryStore implements IStore {
   localStore: { [key: string]: any } = {};

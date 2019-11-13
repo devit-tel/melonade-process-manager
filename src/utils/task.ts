@@ -1,6 +1,6 @@
 import { Task, Workflow } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import { isString } from '~/utils/common';
+import { isString } from './common';
 
 export const mapParametersToValue = (
   parameters: { [key: string]: any },

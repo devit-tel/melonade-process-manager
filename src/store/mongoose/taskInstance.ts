@@ -1,8 +1,8 @@
 import { Event, State, Task } from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
 import * as mongooseLeanVirtuals from 'mongoose-lean-virtuals';
-import { ITaskInstanceStore } from '~/store';
-import { MongooseStore } from '~/store/mongoose';
+import { MongooseStore } from '.';
+import { ITaskInstanceStore } from '..';
 
 const taskSchema = new mongoose.Schema(
   {

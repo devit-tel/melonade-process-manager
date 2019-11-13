@@ -7,7 +7,7 @@ import {
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import { poll, sendEvent, sendTimer, stateConsumerClient } from '~/kafka';
+import { poll, sendEvent, sendTimer, stateConsumerClient } from './kafka';
 import {
   taskInstanceStore,
   transactionInstanceStore,

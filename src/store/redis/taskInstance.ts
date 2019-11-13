@@ -1,9 +1,9 @@
 import { Event, State, Task } from '@melonade/melonade-declaration';
 import ioredis from 'ioredis';
 import * as uuid from 'uuid/v4';
-import { prefix } from '~/config';
-import { ITaskInstanceStore } from '~/store';
-import { RedisStore } from '~/store/redis';
+import { RedisStore } from '.';
+import { ITaskInstanceStore } from '..';
+import { prefix } from '../../config';
 
 export class TaskInstanceRedisStore extends RedisStore
   implements ITaskInstanceStore {

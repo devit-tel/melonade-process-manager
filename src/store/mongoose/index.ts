@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { IStore } from '~/store';
+import { IStore } from '..';
 
 export class MongooseStore implements IStore {
   model: mongoose.Model<mongoose.Document, {}>;

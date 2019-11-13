@@ -1,7 +1,7 @@
 import * as nodeZookeeperClient from 'node-zookeeper-client';
 import * as R from 'ramda';
-import { IStore } from '~/store';
-import { enumToList } from '~/utils/common';
+import { IStore } from '..';
+import { enumToList } from '../../utils/common';
 
 export class ZookeeperStore implements IStore {
   localStore: any = {};

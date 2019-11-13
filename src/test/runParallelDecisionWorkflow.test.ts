@@ -6,8 +6,8 @@ import {
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import * as kafka from '~/kafka';
-import * as state from '~/state';
+import * as kafka from '../kafka';
+import * as state from '../state';
 import {
   ITaskDefinitionStore,
   ITaskInstanceStore,
@@ -19,19 +19,19 @@ import {
   transactionInstanceStore,
   workflowDefinitionStore,
   workflowInstanceStore,
-} from '~/store';
-import { TaskDefinitionMemoryStore } from '~/store/memory/taskDefinition';
-import { TaskInstanceMemoryStore } from '~/store/memory/taskInstance';
-import { TransactionInstanceMemoryStore } from '~/store/memory/transactionInstance';
-import { WorkflowDefinitionMemoryStore } from '~/store/memory/workflowDefinition';
-import { WorkflowInstanceMemoryStore } from '~/store/memory/workflowInstance';
+} from '../store';
+import { TaskDefinitionMemoryStore } from '../store/memory/taskDefinition';
+import { TaskInstanceMemoryStore } from '../store/memory/taskInstance';
+import { TransactionInstanceMemoryStore } from '../store/memory/transactionInstance';
+import { WorkflowDefinitionMemoryStore } from '../store/memory/workflowDefinition';
+import { WorkflowInstanceMemoryStore } from '../store/memory/workflowInstance';
 
 // const mongodbUrl: string = `mongodb://127.0.0.1:51553/melonade-test`;
 
 const TASK_RETRY_LIMIT = 3;
 const WORKFLOW_RETRY_LIMIT = 3;
 
-jest.mock('~/kafka');
+jest.mock('../kafka');
 jest.mock('ioredis', () => {
   const Redis = require('ioredis-mock');
   if (typeof Redis === 'object') {
