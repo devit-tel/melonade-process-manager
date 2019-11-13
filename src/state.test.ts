@@ -4,13 +4,13 @@ import {
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import * as state from '~/state';
+import * as state from './state';
 
 // Don't test async function here, because of they are stores
 // We have to test those on integate test
 
-jest.mock('~/kafka');
-jest.mock('~/store');
+jest.mock('./kafka');
+jest.mock('./store');
 
 describe('isAllCompleted', () => {
   test('All tasks completed', () => {

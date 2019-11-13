@@ -16,8 +16,5 @@ module.exports = {
     '!src/bootstrap.ts',
     '!src/index.ts',
   ],
-  setupFiles: ['./src/store/mongoose/__mocks__/index.ts'],
-  moduleNameMapper: {
-    '~/(.*)': '<rootDir>/src/$1',
-  },
+  setupFiles: ['./src/store/mongoose/__mocks__/index.ts']
 };
