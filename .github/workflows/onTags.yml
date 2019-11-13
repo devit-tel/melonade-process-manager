@@ -9,10 +9,6 @@ jobs:
   push-docker:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [10.x]
-
     steps:
       - uses: actions/checkout@v1
       - name: Publish to Registry
