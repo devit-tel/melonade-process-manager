@@ -1,6 +1,7 @@
-import { Command, State } from '@melonade/melonade-declaration';
+import { Command, State, Task } from '@melonade/melonade-declaration';
 import { commandConsumerClient, poll, sendEvent } from '~/kafka';
 import {
+  taskInstanceStore,
   transactionInstanceStore,
   workflowDefinitionStore,
   workflowInstanceStore,
@@ -41,6 +42,10 @@ const processCancelTransactionCommand = async (
   });
 };
 
+const processReloadTaskCommand = (
+  command: Command.IReloadTaskCommand,
+): Promise<Task.ITask> => taskInstanceStore.reload(command.task);
+
 const processCommands = async (
   commands: Command.AllCommand[],
 ): Promise<void> => {
@@ -53,6 +58,9 @@ const processCommands = async (
           break;
         case Command.CommandTypes.CancelTransaction:
           await processCancelTransactionCommand(command);
+          break;
+        case Command.CommandTypes.ReloadTask:
+          await processReloadTaskCommand(command);
           break;
         default:
           throw new Error(`Command type "${command.type}" is invalid`);
@@ -80,7 +88,7 @@ export const executor = async () => {
       commandConsumerClient.commit();
     }
   } catch (error) {
-    // Handle error here
+    // Handle consume error
     console.log(error);
   }
   setImmediate(executor);

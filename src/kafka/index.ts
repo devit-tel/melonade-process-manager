@@ -9,10 +9,6 @@ export const stateConsumerClient = new KafkaConsumer(
   config.kafkaTaskConfig.config,
   config.kafkaTaskConfig.topic,
 );
-export const systemConsumerClient = new KafkaConsumer(
-  config.kafkaSystemTaskConfig.config,
-  config.kafkaSystemTaskConfig.topic,
-);
 export const commandConsumerClient = new KafkaConsumer(
   config.kafkaCommandConfig.config,
   config.kafkaCommandConfig.topic,
@@ -24,7 +20,6 @@ export const producerClient = new Producer(
 
 export const isHealthy = (): boolean => {
   return R.all(R.equals(true), [
-    systemConsumerClient.isConnected(),
     commandConsumerClient.isConnected(),
     producerClient.isConnected(),
   ]);
@@ -34,12 +29,6 @@ stateConsumerClient.setDefaultConsumeTimeout(5);
 stateConsumerClient.on('ready', () => {
   console.log('State consumer kafka is ready');
   stateConsumerClient.subscribe([config.kafkaTopicName.event]);
-});
-
-systemConsumerClient.setDefaultConsumeTimeout(5);
-systemConsumerClient.on('ready', () => {
-  console.log('System consumer kafka is ready');
-  systemConsumerClient.subscribe([config.kafkaTopicName.systemTask]);
 });
 
 commandConsumerClient.setDefaultConsumeTimeout(5);
