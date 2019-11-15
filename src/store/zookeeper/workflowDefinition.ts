@@ -31,7 +31,9 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
 
     if (melonade.example) {
       for (const workflowDefinition of exampleWorkflow) {
-        this.create(workflowDefinition);
+        this.create(
+          new WorkflowDefinition.WorkflowDefinition(workflowDefinition),
+        );
       }
     }
   }
