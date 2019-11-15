@@ -360,7 +360,6 @@ export class TaskInstanceStore {
     overideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
     // Modeling task instance data
-
     const taskData: Task.ITask = {
       taskId: undefined,
       taskName: '',

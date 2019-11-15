@@ -100,7 +100,7 @@ export const WORKFLOW: WorkflowDefinition.IWorkflowDefinition = {
       taskReferenceName: 'd1',
       type: Task.TaskTypes.Decision,
       inputParameters: {
-        case: '$workflow.input.payment.type',
+        case: '${workflow.input.payment.type}',
       },
       defaultDecision: [
         {

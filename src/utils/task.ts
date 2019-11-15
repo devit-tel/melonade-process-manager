@@ -11,7 +11,7 @@ export const mapParametersToValue = (
     ([key, value]: [string, string | any]): [string, any] => {
       if (
         isString(value) &&
-        /^\${[a-z0-9-_]{1,32}[a-z0-9-_.]+}$/i.test(value)
+        /^\${[a-z0-9-_]{1,64}[a-z0-9-_.]+}$/i.test(value)
       ) {
         return [
           key,
