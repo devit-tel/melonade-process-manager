@@ -166,7 +166,6 @@ describe('isChildOfDecisionDefault', () => {
       type: Task.TaskTypes.Task,
     },
     {
-      name: 'name',
       taskReferenceName: 'taskReferenceName',
       inputParameters: {},
       type: Task.TaskTypes.Decision,
@@ -214,7 +213,6 @@ describe('isChildOfDecisionDefault', () => {
           type: Task.TaskTypes.Task,
         },
         {
-          name: 'name',
           taskReferenceName: 'taskReferenceName',
           inputParameters: {},
           type: Task.TaskTypes.Parallel,
@@ -240,7 +238,6 @@ describe('isChildOfDecisionDefault', () => {
       ],
     },
     {
-      name: 'name',
       taskReferenceName: 'taskReferenceName',
       inputParameters: {},
       type: Task.TaskTypes.Parallel,
@@ -332,7 +329,6 @@ describe('isChildOfDecisionCase', () => {
       type: Task.TaskTypes.Task,
     },
     {
-      name: 'name',
       taskReferenceName: 'taskReferenceName',
       inputParameters: {},
       type: Task.TaskTypes.Decision,
@@ -380,7 +376,6 @@ describe('isChildOfDecisionCase', () => {
           type: Task.TaskTypes.Task,
         },
         {
-          name: 'name',
           taskReferenceName: 'taskReferenceName',
           inputParameters: {},
           type: Task.TaskTypes.Parallel,
@@ -406,7 +401,6 @@ describe('isChildOfDecisionCase', () => {
       ],
     },
     {
-      name: 'name',
       taskReferenceName: 'taskReferenceName',
       inputParameters: {},
       type: Task.TaskTypes.Parallel,
@@ -488,7 +482,6 @@ describe('getNextTaskPath', () => {
       type: Task.TaskTypes.Task,
     },
     {
-      name: 'name',
       taskReferenceName: 't2',
       inputParameters: {},
       type: Task.TaskTypes.Decision,
@@ -536,7 +529,6 @@ describe('getNextTaskPath', () => {
           type: Task.TaskTypes.Task,
         },
         {
-          name: 'name',
           taskReferenceName: 't9',
           inputParameters: {},
           type: Task.TaskTypes.Parallel,
@@ -562,7 +554,6 @@ describe('getNextTaskPath', () => {
       ],
     },
     {
-      name: 'name',
       taskReferenceName: 't12',
       inputParameters: {},
       type: Task.TaskTypes.Parallel,
@@ -744,7 +735,6 @@ describe('findTaskPath', () => {
         type: Task.TaskTypes.Task,
       },
       {
-        name: 'name',
         taskReferenceName: 't2',
         inputParameters: {},
         type: Task.TaskTypes.Decision,
@@ -792,7 +782,6 @@ describe('findTaskPath', () => {
             type: Task.TaskTypes.Task,
           },
           {
-            name: 'name',
             taskReferenceName: 't9',
             inputParameters: {},
             type: Task.TaskTypes.Parallel,
@@ -818,7 +807,6 @@ describe('findTaskPath', () => {
         ],
       },
       {
-        name: 'name',
         taskReferenceName: 't12',
         inputParameters: {},
         type: Task.TaskTypes.Parallel,

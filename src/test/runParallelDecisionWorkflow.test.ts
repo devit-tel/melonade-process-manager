@@ -175,7 +175,6 @@ describe('Run parallel decision workflow', () => {
           type: Task.TaskTypes.Task,
         },
         {
-          name: 'p2',
           taskReferenceName: 'p2',
           inputParameters: {},
           type: Task.TaskTypes.Parallel,
@@ -204,7 +203,6 @@ describe('Run parallel decision workflow', () => {
             ],
             [
               {
-                name: 'p2_2_d1',
                 taskReferenceName: 'p2_2_d1',
                 inputParameters: { case: '${workflow.input.case}' },
                 type: Task.TaskTypes.Decision,
