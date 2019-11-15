@@ -353,15 +353,17 @@ export class TaskInstanceStore {
   // tslint:disable-next-line: max-func-body-length
   private createSystemTask = async (
     workflow: Workflow.IWorkflow,
-    workflowTask: WorkflowDefinition.AllTaskType,
+    workflowTask:
+      | WorkflowDefinition.IDecisionTask
+      | WorkflowDefinition.IParallelTask,
     tasksData: { [taskReferenceName: string]: Task.ITask },
     overideTask: Task.ITask | object = {},
-  ) => {
+  ): Promise<Task.ITask> => {
     // Modeling task instance data
-    const taskDefinition = await taskDefinitionStore.get(workflowTask.name);
+
     const taskData: Task.ITask = {
       taskId: undefined,
-      taskName: workflowTask.name,
+      taskName: '',
       taskReferenceName: workflowTask.taskReferenceName,
       workflowId: workflow.workflowId,
       transactionId: workflow.transactionId,
@@ -388,26 +390,10 @@ export class TaskInstanceStore {
         workflowTask.type === Task.TaskTypes.Decision
           ? workflowTask.defaultDecision
           : undefined,
-      retries: R.pathOr(
-        R.pathOr(0, ['retry', 'limit'], taskDefinition),
-        ['retry', 'limit'],
-        workflowTask,
-      ),
-      retryDelay: R.pathOr(
-        R.pathOr(0, ['retry', 'delay'], taskDefinition),
-        ['retry', 'delay'],
-        workflowTask,
-      ),
-      ackTimeout: R.pathOr(
-        R.propOr(0, 'ackTimeout', taskDefinition),
-        ['ackTimeout'],
-        workflowTask,
-      ),
-      timeout: R.pathOr(
-        R.propOr(0, 'timeout', taskDefinition),
-        ['timeout'],
-        workflowTask,
-      ),
+      retries: 0,
+      retryDelay: 0,
+      ackTimeout: 0,
+      timeout: 0,
       ...overideTask,
     };
 
@@ -475,26 +461,16 @@ export class TaskInstanceStore {
     }
   };
 
-  create = async (
+  private createWorkerTask = async (
     workflow: Workflow.IWorkflow,
-    workflowTask: WorkflowDefinition.AllTaskType,
+    workflowTask:
+      | WorkflowDefinition.ITaskTask
+      | WorkflowDefinition.ICompensateTask,
     tasksData: { [taskReferenceName: string]: Task.ITask },
     overideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
-    if (
-      [Task.TaskTypes.Decision, Task.TaskTypes.Parallel].includes(
-        workflowTask.type,
-      )
-    ) {
-      return this.createSystemTask(
-        workflow,
-        workflowTask,
-        tasksData,
-        overideTask,
-      );
-    }
-
     const taskDefinition = await taskDefinitionStore.get(workflowTask.name);
+
     const task = await this.client.create({
       taskId: undefined,
       taskName: workflowTask.name,
@@ -544,6 +520,31 @@ export class TaskInstanceStore {
       details: task,
     });
     return task;
+  };
+
+  create = async (
+    workflow: Workflow.IWorkflow,
+    workflowTask: WorkflowDefinition.AllTaskType,
+    tasksData: { [taskReferenceName: string]: Task.ITask },
+    overideTask: Task.ITask | object = {},
+  ): Promise<Task.ITask> => {
+    if (
+      workflowTask.type === Task.TaskTypes.Decision ||
+      workflowTask.type === Task.TaskTypes.Parallel
+    ) {
+      return this.createSystemTask(
+        workflow,
+        workflowTask,
+        tasksData,
+        overideTask,
+      );
+    }
+    return this.createWorkerTask(
+      workflow,
+      workflowTask,
+      tasksData,
+      overideTask,
+    );
   };
 
   update = async (taskUpdate: Event.ITaskUpdate): Promise<Task.ITask> => {
