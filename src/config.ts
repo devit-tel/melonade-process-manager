@@ -16,6 +16,7 @@ const pickAndReplaceFromENV = (template: string) =>
 
 export const melonade = {
   namespace: process.env['melonade.namespace'] || 'default',
+  example: process.env['melonade.example'] === 'true',
 };
 
 export const server = {

@@ -4,7 +4,9 @@ import * as nodeZookeeperClient from 'node-zookeeper-client';
 import * as R from 'ramda';
 import { ZookeeperStore } from '.';
 import { IWorkflowDefinitionStore } from '..';
+import { melonade } from '../../config';
 import { jsonTryParse } from '../../utils/common';
+import { workflow as exampleWorkflow } from '../__template__';
 
 export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
   implements IWorkflowDefinitionStore {
@@ -26,6 +28,12 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
         }
       },
     );
+
+    if (melonade.example) {
+      for (const workflowDefinition of exampleWorkflow) {
+        this.create(workflowDefinition);
+      }
+    }
   }
 
   get(

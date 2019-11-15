@@ -4,9 +4,10 @@ import * as nodeZookeeperClient from 'node-zookeeper-client';
 import * as R from 'ramda';
 import { ZookeeperStore } from '.';
 import { ITaskDefinitionStore } from '..';
+import { melonade } from '../../config';
 import { jsonTryParse } from '../../utils/common';
+import { tasks as exampleTasks } from '../__template__';
 
-// This is wrong
 export class TaskDefinitionZookeeperStore extends ZookeeperStore
   implements ITaskDefinitionStore {
   constructor(
@@ -27,6 +28,12 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
         }
       },
     );
+
+    if (melonade.example) {
+      for (const taskDefinition of exampleTasks) {
+        this.create(taskDefinition);
+      }
+    }
   }
 
   get(name: string): Promise<TaskDefinition.ITaskDefinition> {
