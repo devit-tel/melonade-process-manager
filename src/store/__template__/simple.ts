@@ -29,7 +29,7 @@ export const WORKFLOW: WorkflowDefinition.IWorkflowDefinition = {
       inputParameters: {
         hello: '${workflow.input.hello}',
       },
-      ackTimeout: 1000,
+      ackTimeout: 10000,
       timeout: 30000,
     },
     {
@@ -39,7 +39,7 @@ export const WORKFLOW: WorkflowDefinition.IWorkflowDefinition = {
       inputParameters: {
         hello: '${t1.output.hello}',
       },
-      ackTimeout: 1000,
+      ackTimeout: 10000,
       timeout: 30000,
     },
     {
@@ -49,7 +49,7 @@ export const WORKFLOW: WorkflowDefinition.IWorkflowDefinition = {
       inputParameters: {
         hello: '${t2.output.hello}',
       },
-      ackTimeout: 1000,
+      ackTimeout: 10000,
       timeout: 30000,
     },
   ],
