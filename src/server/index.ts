@@ -1,7 +1,8 @@
-import koa = require('koa');
-import koaBodyparser = require('koa-bodyparser');
-import koaCompress = require('koa-compress');
-import koaRouter = require('koa-router');
+import * as koaCors from '@koa/cors';
+import * as koa from 'koa';
+import * as koaBodyparser from 'koa-bodyparser';
+import * as koaCompress from 'koa-compress';
+import * as koaRouter from 'koa-router';
 import errorHandler from './middlewares/errorHandler';
 import responseFormatter from './middlewares/responseFormatter';
 import { router as systemRouter } from './routers/system';
@@ -21,6 +22,7 @@ export class Server {
     this.hostname = hostname;
     this.server = new koa();
 
+    this.server.use(koaCors());
     this.server.use(errorHandler);
     this.server.use(koaBodyparser());
     this.server.use(koaCompress());

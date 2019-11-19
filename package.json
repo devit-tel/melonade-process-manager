@@ -17,6 +17,7 @@
     "start:watch": "nodemon"
   },
   "dependencies": {
+    "@koa/cors": "^3.0.0",
     "@melonade/melonade-declaration": "^0.6.3",
     "@nv4re/node-rdkafka": "^2.7.2-5",
     "dotenv": "^8.2.0",
