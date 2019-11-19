@@ -19,5 +19,9 @@
     "strictNullChecks": false
   },
   "include": ["src/**/*"],
-  "exclude": ["src/**/*.test.ts", "**/__mocks__/**/*.ts"]
+  "exclude": [
+    "src/**/*.test.ts",
+    "**/__mocks__/**/*.ts",
+    "**/__template__/**/*.ts"
+  ]
 }
