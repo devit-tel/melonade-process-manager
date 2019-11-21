@@ -368,7 +368,7 @@ export class TaskInstanceStore {
   ): Promise<Task.ITask> => {
     // Modeling task instance data
 
-    const timestamp = Date.now();
+    const timestampCreate = Date.now();
     const taskData: Task.ITask = {
       taskId: undefined,
       taskName: '',
@@ -383,8 +383,8 @@ export class TaskInstanceStore {
         workflow,
       }),
       output: {},
-      createTime: timestamp,
-      startTime: timestamp,
+      createTime: timestampCreate,
+      startTime: timestampCreate,
       endTime: null,
       parallelTasks:
         workflowTask.type === Task.TaskTypes.Parallel
@@ -404,14 +404,6 @@ export class TaskInstanceStore {
       timeout: 0,
       ...overideTask,
     };
-
-    sendEvent({
-      transactionId: workflow.transactionId,
-      type: 'TASK',
-      isError: false,
-      timestamp,
-      details: taskData,
-    });
 
     try {
       // Dispatch child task(s)
@@ -440,6 +432,17 @@ export class TaskInstanceStore {
       const task = await this.client.create({
         ...taskData,
         status: State.TaskStates.Inprogress,
+      });
+
+      sendEvent({
+        transactionId: workflow.transactionId,
+        type: 'TASK',
+        isError: false,
+        timestamp: timestampCreate,
+        details: {
+          ...task,
+          status: State.TaskStates.Scheduled,
+        },
       });
 
       sendEvent({
