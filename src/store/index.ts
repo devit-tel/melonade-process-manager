@@ -163,20 +163,22 @@ export class TransactionInstanceStore {
     workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
     input: any,
   ): Promise<Transaction.ITransaction> => {
+    const timestamp = Date.now();
     const transaction = await this.client.create({
       transactionId,
       status: State.TransactionStates.Running,
       input,
       output: null,
-      createTime: Date.now(),
+      createTime: timestamp,
       endTime: null,
       workflowDefinition,
     });
+
     sendEvent({
       transactionId,
       type: 'TRANSACTION',
       isError: false,
-      timestamp: Date.now(),
+      timestamp,
       details: transaction,
     });
 
@@ -192,12 +194,13 @@ export class TransactionInstanceStore {
 
   update = async (transactionUpdate: Event.ITransactionUpdate) => {
     try {
+      const timestamp = Date.now();
       const transaction = await this.client.update(transactionUpdate);
       sendEvent({
         transactionId: transactionUpdate.transactionId,
         type: 'TRANSACTION',
         isError: false,
-        timestamp: Date.now(),
+        timestamp,
         details: transaction,
       });
       return transaction;
@@ -238,6 +241,7 @@ export class WorkflowInstanceStore {
     input: any,
     overideWorkflow?: Workflow.IWorkflow | object,
   ): Promise<Workflow.IWorkflow> => {
+    const timestamp = Date.now();
     const workflow = await this.client.create({
       transactionId,
       type,
@@ -246,8 +250,8 @@ export class WorkflowInstanceStore {
       retries: R.pathOr(0, ['retry', 'limit'], workflowDefinition),
       input,
       output: null,
-      createTime: Date.now(),
-      startTime: Date.now(),
+      createTime: timestamp,
+      startTime: timestamp,
       endTime: null,
       workflowDefinition,
       ...overideWorkflow,
@@ -256,7 +260,7 @@ export class WorkflowInstanceStore {
       transactionId: workflow.transactionId,
       type: 'WORKFLOW',
       isError: false,
-      timestamp: Date.now(),
+      timestamp,
       details: workflow,
     });
 
@@ -267,12 +271,13 @@ export class WorkflowInstanceStore {
 
   update = async (workflowUpdate: Event.IWorkflowUpdate) => {
     try {
+      const timestamp = Date.now();
       const workflow = await this.client.update(workflowUpdate);
       sendEvent({
         transactionId: workflow.transactionId,
         type: 'WORKFLOW',
         isError: false,
-        timestamp: Date.now(),
+        timestamp,
         details: workflow,
       });
       return workflow;
@@ -328,14 +333,16 @@ export class TaskInstanceStore {
       throw new Error('WORKFLOW_NOT_RUNNING');
 
     await this.delete(taskData.taskId);
+
+    const timestamp = Date.now();
     const task = await this.client.create(
       R.omit(['_id'], {
         ...taskData,
         taskId: undefined,
         status: State.TaskStates.Scheduled,
         output: {},
-        createTime: Date.now(),
-        startTime: Date.now(),
+        createTime: timestamp,
+        startTime: timestamp,
         endTime: null,
       }),
     );
@@ -344,7 +351,7 @@ export class TaskInstanceStore {
       transactionId: task.transactionId,
       type: 'TASK',
       isError: false,
-      timestamp: Date.now(),
+      timestamp,
       details: task,
     });
     return task;
@@ -360,6 +367,8 @@ export class TaskInstanceStore {
     overideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
     // Modeling task instance data
+
+    const timestamp = Date.now();
     const taskData: Task.ITask = {
       taskId: undefined,
       taskName: '',
@@ -374,8 +383,8 @@ export class TaskInstanceStore {
         workflow,
       }),
       output: {},
-      createTime: Date.now(),
-      startTime: Date.now(),
+      createTime: timestamp,
+      startTime: timestamp,
       endTime: null,
       parallelTasks:
         workflowTask.type === Task.TaskTypes.Parallel
@@ -400,7 +409,7 @@ export class TaskInstanceStore {
       transactionId: workflow.transactionId,
       type: 'TASK',
       isError: false,
-      timestamp: Date.now(),
+      timestamp,
       details: taskData,
     });
 
@@ -426,6 +435,8 @@ export class TaskInstanceStore {
           break;
       }
       // Create task instance
+
+      const timestamp = Date.now();
       const task = await this.client.create({
         ...taskData,
         status: State.TaskStates.Inprogress,
@@ -435,7 +446,7 @@ export class TaskInstanceStore {
         transactionId: workflow.transactionId,
         type: 'TASK',
         isError: false,
-        timestamp: Date.now(),
+        timestamp,
         details: task,
       });
       return task;
@@ -470,6 +481,7 @@ export class TaskInstanceStore {
   ): Promise<Task.ITask> => {
     const taskDefinition = await taskDefinitionStore.get(workflowTask.name);
 
+    const timestamp = Date.now();
     const task = await this.client.create({
       taskId: undefined,
       taskName: workflowTask.name,
@@ -484,8 +496,8 @@ export class TaskInstanceStore {
         workflow,
       }),
       output: {},
-      createTime: Date.now(),
-      startTime: Date.now(),
+      createTime: timestamp,
+      startTime: timestamp,
       endTime: null,
       retries: R.pathOr(
         R.pathOr(0, ['retry', 'limit'], taskDefinition),
@@ -515,7 +527,7 @@ export class TaskInstanceStore {
       transactionId: workflow.transactionId,
       type: 'TASK',
       isError: false,
-      timestamp: Date.now(),
+      timestamp,
       details: task,
     });
     return task;
@@ -548,12 +560,13 @@ export class TaskInstanceStore {
 
   update = async (taskUpdate: Event.ITaskUpdate): Promise<Task.ITask> => {
     try {
+      const timestamp = Date.now();
       const task = await this.client.update(taskUpdate);
       sendEvent({
         transactionId: taskUpdate.transactionId,
         type: 'TASK',
         isError: false,
-        timestamp: Date.now(),
+        timestamp,
         details: task,
       });
       return task;
