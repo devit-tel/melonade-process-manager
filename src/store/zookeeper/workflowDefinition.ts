@@ -16,7 +16,6 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     options?: nodeZookeeperClient.Option,
   ) {
     super(root, connectionString, options);
-
     this.client.mkdirp(
       this.root,
       null,
@@ -70,10 +69,8 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     );
   };
 
-  list(): Promise<{
-    [name: string]: { [rev: string]: WorkflowDefinition.IWorkflowDefinition };
-  }> {
-    return Promise.resolve(this.localStore);
+  list(): Promise<WorkflowDefinition.IWorkflowDefinition[]> {
+    return Promise.resolve(R.flatten(R.values(this.localStore).map(R.values)));
   }
 
   update(

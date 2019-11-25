@@ -26,9 +26,7 @@ export interface IWorkflowDefinitionStore extends IStore {
   update(
     workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
   ): Promise<WorkflowDefinition.IWorkflowDefinition>;
-  list(): Promise<{
-    [name: string]: { [rev: string]: WorkflowDefinition.IWorkflowDefinition };
-  }>;
+  list(): Promise<WorkflowDefinition.IWorkflowDefinition[]>;
   isHealthy(): boolean;
 }
 
@@ -40,7 +38,7 @@ export interface ITaskDefinitionStore extends IStore {
   update(
     taskDefinition: TaskDefinition.ITaskDefinition,
   ): Promise<TaskDefinition.ITaskDefinition>;
-  list(): Promise<{ [name: string]: TaskDefinition.ITaskDefinition }>;
+  list(): Promise<TaskDefinition.ITaskDefinition[]>;
   isHealthy(): boolean;
 }
 
@@ -90,9 +88,7 @@ export class WorkflowDefinitionStore {
     return this.client.get(name, rev);
   }
 
-  list(): Promise<{
-    [name: string]: { [rev: string]: WorkflowDefinition.IWorkflowDefinition };
-  }> {
+  list(): Promise<WorkflowDefinition.IWorkflowDefinition[]> {
     return this.client.list();
   }
 
@@ -125,7 +121,7 @@ export class TaskDefinitionStore {
     return this.client.get(name);
   }
 
-  list(): Promise<{ [name: string]: TaskDefinition.ITaskDefinition }> {
+  list(): Promise<TaskDefinition.ITaskDefinition[]> {
     return this.client.list();
   }
 
