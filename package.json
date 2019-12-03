@@ -18,8 +18,7 @@
   },
   "dependencies": {
     "@koa/cors": "^3.0.0",
-    "@melonade/melonade-declaration": "^0.6.3",
-    "@nv4re/node-rdkafka": "^2.7.2-5",
+    "@melonade/melonade-declaration": "^0.8.1",
     "dotenv": "^8.2.0",
     "ioredis": "^4.14.1",
     "koa": "^2.11.0",
@@ -28,6 +27,7 @@
     "koa-router": "^7.4.0",
     "mongoose": "^5.7.10",
     "mongoose-lean-virtuals": "^0.4.4",
+    "node-rdkafka": "^2.7.4",
     "node-zookeeper-client": "^1.1.0",
     "ramda": "^0.26.1",
     "tslib": "^1.10.0",
