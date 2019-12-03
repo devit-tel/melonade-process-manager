@@ -15,6 +15,7 @@ module.exports = {
     '!src/server/**/*.ts',
     '!src/bootstrap.ts',
     '!src/index.ts',
+    '!src/store/__template__/*',
   ],
-  setupFiles: ['./src/store/mongoose/__mocks__/index.ts']
+  setupFiles: ['./src/store/mongoose/__mocks__/index.ts'],
 };
