@@ -16,11 +16,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Run MongoDB
-        run: sudo docker run --name mongo -d -p 27017:27017 mongo
       - name: npm install and test
         run: |
           npm install
           npm run test
-        env:
-          MONGODB_URI: mongodb://127.0.0.1:27017/melonade
