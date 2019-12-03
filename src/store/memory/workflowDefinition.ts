@@ -39,10 +39,8 @@ export class WorkflowDefinitionMemoryStore extends MemoryStore
     return workflowDefinition;
   };
 
-  list(): Promise<{
-    [name: string]: { [rev: string]: WorkflowDefinition.IWorkflowDefinition };
-  }> {
-    return Promise.resolve(this.localStore);
+  list(): Promise<WorkflowDefinition.IWorkflowDefinition[]> {
+    return Promise.resolve(R.flatten(R.values(this.localStore).map(R.values)));
   }
 
   update(

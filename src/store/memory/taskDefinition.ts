@@ -1,4 +1,5 @@
 import { TaskDefinition } from '@melonade/melonade-declaration';
+import * as R from 'ramda';
 import { MemoryStore } from '.';
 import { ITaskDefinitionStore } from '..';
 
@@ -33,7 +34,7 @@ export class TaskDefinitionMemoryStore extends MemoryStore
     return Promise.resolve(taskDefinition);
   }
 
-  list(): Promise<{ [name: string]: TaskDefinition.ITaskDefinition }> {
-    return Promise.resolve(this.localStore);
+  list(): Promise<TaskDefinition.ITaskDefinition[]> {
+    return Promise.resolve(R.values(this.localStore));
   }
 }
