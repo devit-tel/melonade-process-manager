@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@koa/cors": "^3.0.0",
-    "@melonade/melonade-declaration": "^0.8.3",
+    "@melonade/melonade-declaration": "^0.8.5",
     "dotenv": "^8.2.0",
     "ioredis": "^4.14.1",
     "koa": "^2.11.0",
