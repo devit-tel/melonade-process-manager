@@ -158,6 +158,7 @@ export class TransactionInstanceStore {
     transactionId: string,
     workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
     input: any,
+    tags: string[] = [],
   ): Promise<Transaction.ITransaction> => {
     const timestamp = Date.now();
     const transaction = await this.client.create({
@@ -168,6 +169,7 @@ export class TransactionInstanceStore {
       createTime: timestamp,
       endTime: null,
       workflowDefinition,
+      tags,
     });
 
     sendEvent({

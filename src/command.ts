@@ -1,4 +1,9 @@
-import { Command, State, Task } from '@melonade/melonade-declaration';
+import {
+  Command,
+  State,
+  Task,
+  WorkflowDefinition,
+} from '@melonade/melonade-declaration';
 import { commandConsumerClient, poll, sendEvent } from './kafka';
 import {
   taskInstanceStore,
@@ -10,19 +15,20 @@ import {
 const processStartTransactionCommand = async (
   command: Command.IStartTransactionCommand,
 ): Promise<void> => {
-  const workflowDefinition = await workflowDefinitionStore.get(
-    command.workflow.name,
-    command.workflow.rev,
-  );
-  if (!workflowDefinition)
-    throw new Error(
-      `Workflow definition "${command.workflow.name}:${command.workflow.rev}" is not exists`,
-    );
+  const workflowDefinition = command.workflowDefinition
+    ? new WorkflowDefinition.WorkflowDefinition(command.workflowDefinition)
+    : await workflowDefinitionStore.get(
+        command.workflowRef.name,
+        command.workflowRef.rev,
+      );
+
+  if (!workflowDefinition) throw new Error(`Workflow definition is not exists`);
 
   await transactionInstanceStore.create(
     command.transactionId,
     workflowDefinition,
     command.input,
+    command.tags,
   );
 };
 
