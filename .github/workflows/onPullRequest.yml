@@ -9,7 +9,11 @@ jobs:
     strategy:
       matrix:
         node-version: [10.x]
-
+    services:
+      mongodb:
+        image: mongo:3.6.16
+        ports:
+          - 27017:27017
     steps:
       - uses: actions/checkout@v1
       - name: Use Node.js ${{ matrix.node-version }}
@@ -20,3 +24,5 @@ jobs:
         run: |
           npm install
           npm run test
+        env:
+          MONGODB_URI: mongodb://localhost:27017/dbName
