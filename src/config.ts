@@ -40,6 +40,11 @@ export const kafkaTopicName = {
   timer: `${prefix}.${Kafka.topicSuffix.timer}`,
 };
 
+export const kafkaTopic = {
+  num_partitions: +process.env['topic.kafka.num_partitions'] || 10,
+  replication_factor: +process.env['topic.kafka.replication_factor'] || 1,
+};
+
 export const kafkaAdminConfig = {
   ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
   ...pickAndReplaceFromENV('^admin\\.kafka\\.conf\\.'),

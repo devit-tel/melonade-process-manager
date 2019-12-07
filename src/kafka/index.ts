@@ -30,7 +30,11 @@ stateConsumerClient.on('ready', async () => {
   console.log('State consumer kafka is ready');
 
   try {
-    await createTopic(config.kafkaTopicName.event, 20);
+    await createTopic(
+      config.kafkaTopicName.event,
+      config.kafkaTopic.num_partitions,
+      config.kafkaTopic.replication_factor,
+    );
   } catch (error) {
     console.warn(
       `Create topic "${
@@ -46,7 +50,11 @@ commandConsumerClient.setDefaultConsumeTimeout(5);
 commandConsumerClient.on('ready', async () => {
   console.log('Command consumer kafka is ready');
   try {
-    await createTopic(config.kafkaTopicName.event, 20);
+    await createTopic(
+      config.kafkaTopicName.event,
+      config.kafkaTopic.num_partitions,
+      config.kafkaTopic.replication_factor,
+    );
   } catch (error) {
     console.warn(
       `Create topic "${
@@ -65,8 +73,8 @@ producerClient.on('ready', () => {
 
 export const createTopic = (
   tipicName: string,
-  numPartitions: number = 10,
-  replicationFactor: number = null,
+  numPartitions: number,
+  replicationFactor: number,
   config?: any,
 ): Promise<any> =>
   new Promise((resolve: Function, reject: Function) => {
@@ -91,7 +99,11 @@ export const createTopic = (
   });
 
 export const createTaskTopic = (taskName: string): Promise<any> =>
-  createTopic(`${config.kafkaTopicName.task}.${taskName}`, 10);
+  createTopic(
+    `${config.kafkaTopicName.task}.${taskName}`,
+    config.kafkaTopic.num_partitions,
+    config.kafkaTopic.replication_factor,
+  );
 
 export const poll = (
   consumer: KafkaConsumer,
