@@ -1,6 +1,6 @@
 import koaRouter = require('koa-router');
 import { TaskDefinition } from '@melonade/melonade-declaration';
-import { createTopic } from '../../../../kafka';
+import { createTaskTopic } from '../../../../kafka';
 import { taskDefinitionStore } from '../../../../store';
 
 export const router = new koaRouter();
@@ -8,7 +8,7 @@ export const router = new koaRouter();
 router.post('/', async (ctx: koaRouter.IRouterContext | any) => {
   const taskDefinition = new TaskDefinition.TaskDefinition(ctx.request.body);
   await taskDefinitionStore.create(taskDefinition);
-  await createTopic(taskDefinition.name);
+  await createTaskTopic(taskDefinition.name);
   return taskDefinition;
 });
 

@@ -5,7 +5,7 @@ import * as R from 'ramda';
 import { ZookeeperStore } from '.';
 import { ITaskDefinitionStore } from '..';
 import { melonade } from '../../config';
-import { createTopic } from '../../kafka';
+import { createTaskTopic } from '../../kafka';
 import { jsonTryParse } from '../../utils/common';
 import { tasks as exampleTasks } from '../__template__';
 
@@ -33,7 +33,7 @@ export class TaskDefinitionZookeeperStore extends ZookeeperStore
     if (melonade.example) {
       for (const taskDefinition of exampleTasks) {
         this.create(new TaskDefinition.TaskDefinition(taskDefinition));
-        createTopic(taskDefinition.name);
+        createTaskTopic(taskDefinition.name);
       }
     }
   }
