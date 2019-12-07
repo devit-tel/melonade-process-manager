@@ -51,7 +51,7 @@ commandConsumerClient.on('ready', async () => {
   console.log('Command consumer kafka is ready');
   try {
     await createTopic(
-      config.kafkaTopicName.event,
+      config.kafkaTopicName.command,
       config.kafkaTopic.num_partitions,
       config.kafkaTopic.replication_factor,
     );
