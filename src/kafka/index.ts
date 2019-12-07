@@ -30,7 +30,7 @@ stateConsumerClient.on('ready', async () => {
   console.log('State consumer kafka is ready');
 
   try {
-    await createTopic(config.kafkaTopicName.event, 20, 1);
+    await createTopic(config.kafkaTopicName.event, 20);
   } catch (error) {
     console.warn(
       `Create topic "${
@@ -46,7 +46,7 @@ commandConsumerClient.setDefaultConsumeTimeout(5);
 commandConsumerClient.on('ready', async () => {
   console.log('Command consumer kafka is ready');
   try {
-    await createTopic(config.kafkaTopicName.event, 20, 1);
+    await createTopic(config.kafkaTopicName.event, 20);
   } catch (error) {
     console.warn(
       `Create topic "${
@@ -91,7 +91,7 @@ export const createTopic = (
   });
 
 export const createTaskTopic = (taskName: string): Promise<any> =>
-  createTopic(`${config.kafkaTopicName.task}.${taskName}`, 10, 1);
+  createTopic(`${config.kafkaTopicName.task}.${taskName}`, 10);
 
 export const poll = (
   consumer: KafkaConsumer,
