@@ -66,7 +66,7 @@ producerClient.on('ready', () => {
 export const createTopic = (
   tipicName: string,
   numPartitions: number = 10,
-  replicationFactor: number = 1,
+  replicationFactor?: number,
   config?: any,
 ): Promise<any> =>
   new Promise((resolve: Function, reject: Function) => {
