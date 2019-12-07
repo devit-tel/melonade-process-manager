@@ -26,15 +26,36 @@ export const isHealthy = (): boolean => {
 };
 
 stateConsumerClient.setDefaultConsumeTimeout(5);
-stateConsumerClient.on('ready', () => {
+stateConsumerClient.on('ready', async () => {
   console.log('State consumer kafka is ready');
-  stateConsumerClient.subscribe([config.kafkaTopicName.event]);
+
+  try {
+    await createTopic(config.kafkaTopicName.event, 20, 1);
+  } catch (error) {
+    console.warn(
+      `Create topic "${
+        config.kafkaTopicName.event
+      }" error: ${error.toString()}`,
+    );
+  } finally {
+    stateConsumerClient.subscribe([config.kafkaTopicName.event]);
+  }
 });
 
 commandConsumerClient.setDefaultConsumeTimeout(5);
-commandConsumerClient.on('ready', () => {
+commandConsumerClient.on('ready', async () => {
   console.log('Command consumer kafka is ready');
-  commandConsumerClient.subscribe([config.kafkaTopicName.command]);
+  try {
+    await createTopic(config.kafkaTopicName.event, 20, 1);
+  } catch (error) {
+    console.warn(
+      `Create topic "${
+        config.kafkaTopicName.command
+      }" error: ${error.toString()}`,
+    );
+  } finally {
+    commandConsumerClient.subscribe([config.kafkaTopicName.command]);
+  }
 });
 
 producerClient.setPollInterval(100);
@@ -42,18 +63,24 @@ producerClient.on('ready', () => {
   console.log('Producer kafka is ready');
 });
 
-export const createTopic = (topicName: string): Promise<any> =>
+export const createTopic = (
+  tipicName: string,
+  numPartitions: number = 10,
+  replicationFactor: number = 1,
+  config?: any,
+): Promise<any> =>
   new Promise((resolve: Function, reject: Function) => {
     adminClient.createTopic(
       {
-        topic: `${config.kafkaTopicName.task}.${topicName}`,
-        num_partitions: 10,
-        replication_factor: 1,
+        topic: tipicName,
+        num_partitions: numPartitions,
+        replication_factor: replicationFactor,
         config: {
           'cleanup.policy': 'compact',
           'compression.type': 'snappy',
           'delete.retention.ms': '86400000',
           'file.delete.delay.ms': '60000',
+          ...config,
         },
       },
       (error: Error, data: any) => {
@@ -62,6 +89,9 @@ export const createTopic = (topicName: string): Promise<any> =>
       },
     );
   });
+
+export const createTaskTopic = (taskName: string): Promise<any> =>
+  createTopic(`${config.kafkaTopicName.task}.${taskName}`, 10, 1);
 
 export const poll = (
   consumer: KafkaConsumer,
