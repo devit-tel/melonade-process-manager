@@ -123,12 +123,12 @@ export const poll = (
     );
   });
 
-export const sendTimer = (timer: Timer.AllTimerType) =>
+export const sendTimer = (timer: Timer.IDelayTaskTimer) =>
   producerClient.produce(
     config.kafkaTopicName.timer,
     null,
     Buffer.from(JSON.stringify(timer)),
-    null,
+    timer.task.transactionId,
     Date.now(),
   );
 
