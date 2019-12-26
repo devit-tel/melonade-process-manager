@@ -1,12 +1,17 @@
 import koaRouter = require('koa-router');
 import { WorkflowDefinition } from '@melonade/melonade-declaration';
 import * as uuid from 'uuid/v4';
-import { transactionInstanceStore, workflowDefinitionStore } from '../../../../store';
+import { processCancelTransactionCommand } from '../../../../command';
+import {
+  transactionInstanceStore,
+  workflowDefinitionStore,
+} from '../../../../store';
 
 export const router = new koaRouter();
 
-router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext | any) => {
-  const { name, rev, transactionId } = ctx.params;
+router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext & any) => {
+  const { name, rev } = ctx.params;
+  const { transactionId } = ctx.query;
   const workflowDefinition: WorkflowDefinition.IWorkflowDefinition = await workflowDefinitionStore.get(
     name,
     rev,
@@ -19,4 +24,9 @@ router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext | any) => {
     workflowDefinition,
     ctx.request.body,
   );
+});
+
+router.delete('/cancel/:transactionId', (ctx: koaRouter.IRouterContext) => {
+  const { transactionId } = ctx.params;
+  return processCancelTransactionCommand(transactionId);
 });

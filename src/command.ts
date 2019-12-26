@@ -32,7 +32,7 @@ const processStartTransactionCommand = async (
   );
 };
 
-const processCancelTransactionCommand = async (
+export const processCancelTransactionCommand = async (
   command: Command.ICancelTransactionCommand,
 ): Promise<void> => {
   const workflow = await workflowInstanceStore.getByTransactionId(

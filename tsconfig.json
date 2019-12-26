@@ -23,5 +23,7 @@
     "src/**/*.test.ts",
     "**/__mocks__/**/*.ts",
     "**/__template__/**/*.ts"
-  ]
+  ],
+  "baseUrl": "types",
+  "typeRoots": ["types"]
 }
