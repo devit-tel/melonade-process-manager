@@ -1,9 +1,4 @@
-import {
-  Event,
-  State,
-  Store,
-  Transaction,
-} from '@melonade/melonade-declaration';
+import { Event, State, Store, Transaction } from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
 import { MongooseStore } from '.';
 import { ITransactionInstanceStore, workflowInstanceStore } from '..';
@@ -24,6 +19,7 @@ const transacationSchema = new mongoose.Schema(
     createTime: Number,
     endTime: Number,
     workflowDefinition: mongoose.Schema.Types.Mixed,
+    tags: [String]
   },
   {
     toObject: {
