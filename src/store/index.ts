@@ -1,4 +1,13 @@
-import { Event, State, Task, TaskDefinition, Transaction, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Store,
+  Task,
+  TaskDefinition,
+  Transaction,
+  Workflow,
+  WorkflowDefinition,
+} from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import { dispatch, sendEvent } from '../kafka';
 import { mapParametersToValue } from '../utils/task';
@@ -42,6 +51,7 @@ export interface ITransactionInstanceStore extends IStore {
   update(
     transactionUpdate: Event.ITransactionUpdate,
   ): Promise<Transaction.ITransaction>;
+  list(from?: number, size?: number): Promise<Store.ITransactionPaginate>;
   isHealthy(): boolean;
 }
 
@@ -206,6 +216,10 @@ export class TransactionInstanceStore {
       return null;
     }
   };
+
+  list(from?: number, size?: number): Promise<Store.ITransactionPaginate> {
+    return this.client.list(from, size);
+  }
 
   isHealthy(): boolean {
     return this.client.isHealthy();

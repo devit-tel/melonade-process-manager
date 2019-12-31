@@ -30,3 +30,8 @@ router.delete('/cancel/:transactionId', (ctx: koaRouter.IRouterContext) => {
   const { transactionId } = ctx.params;
   return processCancelTransactionCommand(transactionId);
 });
+
+router.get('/', (ctx: koaRouter.IRouterContext) => {
+  const { from = 0, size = 50 } = ctx.query;
+  return transactionInstanceStore.list(+from, +size);
+});

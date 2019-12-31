@@ -1,4 +1,9 @@
-import { Event, State, Transaction } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Store,
+  Transaction,
+} from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
 import { MongooseStore } from '.';
 import { ITransactionInstanceStore, workflowInstanceStore } from '..';
@@ -95,5 +100,28 @@ export class TransactionInstanceMongooseStore extends MongooseStore
     }
 
     return updatedTransaction;
+  };
+
+  list = async (
+    from: number = 0,
+    size: number = 50,
+  ): Promise<Store.ITransactionPaginate> => {
+    const [total, transactions] = await Promise.all([
+      this.model
+        .count({})
+        .lean()
+        .exec(),
+      this.model
+        .find({})
+        .limit(size)
+        .skip(from)
+        .lean()
+        .exec(),
+    ]);
+
+    return {
+      total: total as number,
+      transactions: transactions as Transaction.ITransaction[],
+    };
   };
 }

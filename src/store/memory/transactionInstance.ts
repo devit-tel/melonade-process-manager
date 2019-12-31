@@ -1,4 +1,10 @@
-import { Event, State, Transaction } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Store,
+  Transaction,
+} from '@melonade/melonade-declaration';
+import * as R from 'ramda';
 import { MemoryStore } from '.';
 import { ITransactionInstanceStore, workflowInstanceStore } from '..';
 
@@ -81,4 +87,19 @@ export class TransactionInstanceMemoryStore extends MemoryStore
   delete(transactionId: string): Promise<any> {
     return this.unsetValue(transactionId);
   }
+
+  list = async (
+    from: number = 0,
+    size: number = 50,
+  ): Promise<Store.ITransactionPaginate> => {
+    return {
+      // This is bad performance we should use Map instread of object since we have to know number of keys
+      total: Object.keys(this.localStore).length,
+      transactions: R.slice(
+        from,
+        size,
+        R.values(this.localStore),
+      ) as Transaction.ITransaction[],
+    };
+  };
 }
