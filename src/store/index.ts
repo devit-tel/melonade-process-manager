@@ -1,6 +1,7 @@
 import {
   Event,
   State,
+  Store,
   Task,
   TaskDefinition,
   Transaction,
@@ -43,19 +44,20 @@ export interface ITaskDefinitionStore extends IStore {
 }
 
 export interface ITransactionInstanceStore extends IStore {
-  get(workflowId: string): Promise<Transaction.ITransaction>;
+  get(transactionId: string): Promise<Transaction.ITransaction>;
   create(
-    wofkflowData: Transaction.ITransaction,
+    transactionData: Transaction.ITransaction,
   ): Promise<Transaction.ITransaction>;
   update(
-    workflowUpdate: Event.ITransactionUpdate,
+    transactionUpdate: Event.ITransactionUpdate,
   ): Promise<Transaction.ITransaction>;
+  list(from?: number, size?: number): Promise<Store.ITransactionPaginate>;
   isHealthy(): boolean;
 }
 
 export interface IWorkflowInstanceStore extends IStore {
   get(workflowId: string): Promise<Workflow.IWorkflow>;
-  create(wofkflowData: Workflow.IWorkflow): Promise<Workflow.IWorkflow>;
+  create(workflowData: Workflow.IWorkflow): Promise<Workflow.IWorkflow>;
   update(workflowUpdate: Event.IWorkflowUpdate): Promise<Workflow.IWorkflow>;
   delete(workflowId: string): Promise<any>;
   getByTransactionId(transactionId: string): Promise<Workflow.IWorkflow>;
@@ -214,6 +216,10 @@ export class TransactionInstanceStore {
       return null;
     }
   };
+
+  list(from?: number, size?: number): Promise<Store.ITransactionPaginate> {
+    return this.client.list(from, size);
+  }
 
   isHealthy(): boolean {
     return this.client.isHealthy();

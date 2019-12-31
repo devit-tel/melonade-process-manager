@@ -1,8 +1,15 @@
-import { Event, State, Transaction } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Store,
+  Transaction,
+} from '@melonade/melonade-declaration';
 import ioredis from 'ioredis';
+import * as R from 'ramda';
 import { RedisStore } from '.';
 import { ITransactionInstanceStore, workflowInstanceStore } from '..';
 import { prefix } from '../../config';
+import { jsonTryParse } from '../../utils/common';
 
 export class TransactionInstanceRedisStore extends RedisStore
   implements ITransactionInstanceStore {
@@ -92,4 +99,30 @@ export class TransactionInstanceRedisStore extends RedisStore
   delete(transactionId: string): Promise<any> {
     return this.client.del(`${prefix}.transaction.${transactionId}`);
   }
+
+  list = async (
+    from: number = 0,
+    size: number = 50,
+  ): Promise<Store.ITransactionPaginate> => {
+    const results = await this.client
+      .pipeline()
+      // DBSIZE return all keys from DB so this not always corrects number of transaction if there are other data in current DB
+      .dbsize()
+      // We should change "from" to "cursor", to make the paging works
+      .scan(from, 'match', `${prefix}.transaction.*`, 'count', size)
+      .exec();
+
+    const keys = R.pathOr([], [1, 1, 1], results);
+
+    const transactionStrings = await Promise.all(
+      keys.map((key: string) => this.client.get(key)),
+    );
+
+    return {
+      total: R.pathOr(0, [0, 1], results),
+      transactions: transactionStrings.map(
+        jsonTryParse,
+      ) as Transaction.ITransaction[],
+    };
+  };
 }
