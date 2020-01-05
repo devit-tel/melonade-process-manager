@@ -1,5 +1,6 @@
 import { Event, State, Workflow } from '@melonade/melonade-declaration';
 import ioredis from 'ioredis';
+import * as R from 'ramda';
 import * as uuid from 'uuid/v4';
 import { RedisStore } from '.';
 import { IWorkflowInstanceStore, taskInstanceStore } from '..';
@@ -97,11 +98,11 @@ export class WorkflowInstanceRedisStore extends RedisStore
   getByTransactionId = async (
     transactionId: string,
   ): Promise<Workflow.IWorkflow> => {
-    const workflowKeys = await this.client.smembers(
+    const workflowKeys: string[] = await this.client.smembers(
       `${prefix}.transaction-workflow.${transactionId}`,
     );
     const workflowString = await this.client.get(
-      `${prefix}.workflow.${workflowKeys[0]}`,
+      `${prefix}.workflow.${R.last(workflowKeys)}`,
     );
 
     if (workflowString) return JSON.parse(workflowString);
