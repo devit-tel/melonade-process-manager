@@ -1,18 +1,7 @@
-import {
-  Event,
-  State,
-  Task,
-  Timer,
-  Workflow,
-  WorkflowDefinition,
-} from '@melonade/melonade-declaration';
+import { Event, State, Task, Timer, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import { poll, sendEvent, sendTimer, stateConsumerClient } from './kafka';
-import {
-  taskInstanceStore,
-  transactionInstanceStore,
-  workflowInstanceStore,
-} from './store';
+import { taskInstanceStore, transactionInstanceStore, workflowInstanceStore } from './store';
 import { toObjectByKey } from './utils/common';
 import { mapParametersToValue } from './utils/task';
 
@@ -392,7 +381,17 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow cancelled
   if (workflow.status === State.WorkflowStates.Cancelled) {
+    if (nextTaskPath.parentTask) {
+      await processUpdateTask({
+        taskId: nextTaskPath.parentTask.taskId,
+        transactionId: nextTaskPath.parentTask.transactionId,
+        status: State.TaskStates.Completed,
+        isSystem: true,
+      });
+    }
+
     await handleCancelWorkflow(workflow, tasksData);
+
     return;
   }
 
