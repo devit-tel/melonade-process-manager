@@ -381,7 +381,7 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow cancelled
   if (workflow.status === State.WorkflowStates.Cancelled) {
-    if (!nextTaskPath.isCompleted && nextTaskPath.taskPath && nextTaskPath.parentTask) {
+    if (nextTaskPath.parentTask) {
       await processUpdateTask({
         taskId: nextTaskPath.parentTask.taskId,
         transactionId: nextTaskPath.parentTask.transactionId,
