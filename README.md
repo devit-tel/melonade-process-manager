@@ -36,9 +36,9 @@ Workflow manager that implemented SAGA, written in typescript
 - [x] Use json schema
 - [x] Document
 - [x] Remove sub-workflow
-- [ ] Test parallel task inside another parallel task
+- [x] Test parallel task inside another parallel task
 - [ ] Standardise the error, so it easilier to summary.
-- [ ] List running transaction redis not work correctly
+- [ ] List running transaction redis not work correctly (paginates)
 - [ ] Pause workflow
 
 ## Known issues
