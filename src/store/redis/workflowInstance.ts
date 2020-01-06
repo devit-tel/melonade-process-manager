@@ -27,14 +27,15 @@ export class WorkflowInstanceRedisStore extends RedisStore
         `${prefix}.workflow.${workflow.workflowId}`,
         JSON.stringify(workflow),
       )
-      .sadd(
+      .lpush(
         `${prefix}.transaction-workflow.${workflow.transactionId}`,
         workflow.workflowId,
       );
 
     if (oldWorkflowId)
-      pipeline.srem(
+      pipeline.lrem(
         `${prefix}.transaction-workflow.${workflow.transactionId}`,
+        0,
         oldWorkflowId,
       );
 
@@ -98,11 +99,13 @@ export class WorkflowInstanceRedisStore extends RedisStore
   getByTransactionId = async (
     transactionId: string,
   ): Promise<Workflow.IWorkflow> => {
-    const workflowKeys: string[] = await this.client.smembers(
+    const workflowKeys: string[] = await this.client.lrange(
       `${prefix}.transaction-workflow.${transactionId}`,
+      0,
+      0,
     );
     const workflowString = await this.client.get(
-      `${prefix}.workflow.${R.last(workflowKeys)}`,
+      `${prefix}.workflow.${R.head(workflowKeys)}`,
     );
 
     if (workflowString) return JSON.parse(workflowString);
@@ -115,7 +118,7 @@ export class WorkflowInstanceRedisStore extends RedisStore
 
   deleteAll = async (transactionId: string): Promise<void> => {
     const key = `${prefix}.transaction-workflow.${transactionId}`;
-    const workflowKeys = await this.client.smembers(key);
+    const workflowKeys = await this.client.lrange(key, 0, -1);
     await Promise.all([
       this.client.del(
         ...workflowKeys.map(
