@@ -1,7 +1,17 @@
-import { Event, State, Task, Timer, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Task,
+  Workflow,
+  WorkflowDefinition,
+} from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import { poll, sendEvent, sendTimer, stateConsumerClient } from './kafka';
-import { taskInstanceStore, transactionInstanceStore, workflowInstanceStore } from './store';
+import { poll, sendEvent, stateConsumerClient } from './kafka';
+import {
+  taskInstanceStore,
+  transactionInstanceStore,
+  workflowInstanceStore,
+} from './store';
 import { toObjectByKey } from './utils/common';
 import { mapParametersToValue } from './utils/task';
 
@@ -365,7 +375,6 @@ const handleCancelWorkflow = async (
       case State.WorkflowFailureStrategies.Compensate:
       case State.WorkflowFailureStrategies.CompensateThenRetry:
         await handleCompensateWorkflow(workflow, tasksDataList, true);
-
         break;
       case State.WorkflowFailureStrategies.Retry:
       case State.WorkflowFailureStrategies.Failed:
@@ -391,7 +400,21 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
     }
 
     await handleCancelWorkflow(workflow, tasksData);
+    return;
+  }
 
+  // For siblin of child of parallel are failed but the task is completed
+  const tasksDataList = R.values(tasksData);
+  const failedTasks = tasksDataList.filter((task: Task.ITask) =>
+    [
+      State.TaskStates.Failed,
+      State.TaskStates.AckTimeOut,
+      State.TaskStates.Timeout,
+    ].includes(task.status),
+  );
+
+  if (failedTasks.length) {
+    await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
     return;
   }
 
@@ -414,24 +437,6 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       tasksData,
     );
     return;
-  }
-
-  // For siblin of child of parallel are failed but the task is completed
-  if (!nextTaskPath.isCompleted && !nextTaskPath.taskPath) {
-    const tasksDataList = R.values(tasksData);
-
-    const failedTasks = tasksDataList.filter((task: Task.ITask) =>
-      [
-        State.TaskStates.Failed,
-        State.TaskStates.AckTimeOut,
-        State.TaskStates.Timeout,
-      ].includes(task.status),
-    );
-
-    if (failedTasks.length) {
-      await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
-      return;
-    }
   }
 
   // All tasks's complated update workflow
@@ -610,23 +615,21 @@ const getWorkflowStatusFromTaskStatus = (
   }
 };
 
+const isHaveRunningTasks = (tasks: Task.ITask[]): boolean =>
+  tasks.filter(
+    (taskData: Task.ITask) =>
+      [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
+        taskData.status,
+      ) && taskData.type === Task.TaskTypes.Task,
+  ).length > 0;
+
 const handleWorkflowFailureStrategy = async (
   task: Task.ITask,
   tasksDataList: Task.ITask[],
 ) => {
-  const runningTasks = tasksDataList.filter((taskData: Task.ITask) => {
-    return (
-      [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
-        taskData.status,
-      ) &&
-      taskData.taskReferenceName !== task.taskReferenceName &&
-      taskData.type === Task.TaskTypes.Task
-    );
-  });
-
   // No running task, start recovery
   // If there are running task wait for them first
-  if (runningTasks.length === 0) {
+  if (!isHaveRunningTasks(tasksDataList)) {
     const workflow = await workflowInstanceStore.update({
       transactionId: task.transactionId,
       workflowId: task.workflowId,
@@ -657,8 +660,8 @@ const handleWorkflowFailureStrategy = async (
   }
 };
 
-const handleFailedTask = async (task: Task.ITask) => {
-  const { workflow, tasksData } = await getTaskInfo(task);
+const handleFailedTask = async (task: Task.ITask, isRoot: boolean = false) => {
+  const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow oncancle do not retry or anything
   if (workflow.status === State.WorkflowStates.Cancelled) {
     await handleCancelWorkflow(workflow, tasksData);
@@ -667,29 +670,35 @@ const handleFailedTask = async (task: Task.ITask) => {
 
   // Check if can retry the task
   if (task.retries > 0 && task.type !== Task.TaskTypes.Compensate) {
-    if (task.retryDelay > 0) {
-      sendTimer({
-        type: Timer.TimerType.delayTask,
-        task: {
-          ...task,
-          retries: task.retries - 1,
-        },
-      });
-    } else {
-      await taskInstanceStore.reload({
+    await taskInstanceStore.reload(
+      {
         ...task,
         retries: task.retries - 1,
         isRetried: true,
+      },
+      task.retryDelay <= 0,
+    );
+  } else {
+    // For all childs of system task completed => update system task to completed too
+    if (nextTaskPath.parentTask) {
+      await processUpdateTask({
+        taskId: nextTaskPath.parentTask.taskId,
+        transactionId: nextTaskPath.parentTask.transactionId,
+        status: State.TaskStates.Failed,
+        isSystem: true,
       });
     }
-  } else {
-    const tasksDataList = R.values(tasksData);
-    await handleWorkflowFailureStrategy(task, tasksDataList);
+
+    if (isRoot) {
+      const tasksDataList = R.values(tasksData);
+      await handleWorkflowFailureStrategy(task, tasksDataList);
+    }
   }
 };
 
 export const processUpdateTask = async (
   taskUpdate: Event.ITaskUpdate,
+  isRoot: boolean = false,
 ): Promise<void> => {
   try {
     const task = await taskInstanceStore.update(taskUpdate);
@@ -702,7 +711,7 @@ export const processUpdateTask = async (
       case State.TaskStates.Failed:
       case State.TaskStates.Timeout:
       case State.TaskStates.AckTimeOut:
-        await handleFailedTask(task);
+        await handleFailedTask(task, isRoot);
         break;
       default:
         // Case Inprogress we did't need to do anything except update the status
@@ -725,7 +734,7 @@ export const processUpdateTasks = async (
 ): Promise<any> => {
   for (const taskUpdate of tasksUpdate) {
     // console.time(`${taskUpdate.taskId}-${taskUpdate.status}`);
-    await processUpdateTask(taskUpdate);
+    await processUpdateTask(taskUpdate, true);
     // console.timeEnd(`${taskUpdate.taskId}-${taskUpdate.status}`);
   }
 };
