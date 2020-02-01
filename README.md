@@ -49,5 +49,5 @@ Workflow manager that implemented SAGA, written in typescript
 - [ ] Workflow Definition can have task that not existed
 - [x] MongoDB not fast enough for 5000 concurent (Lag about 1 min before task updated) => Added redis store
 - [x] Transaction did not cancelled if compensating
-- [ ] Parent task did not failed if child failed
-- [ ] Delay retry task sometime did not retry until limit
+- [x] Parent task did not failed if child failed
+- [x] Delay retry task sometime did not retry until limit
