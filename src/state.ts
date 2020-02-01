@@ -676,7 +676,7 @@ const handleFailedTask = async (task: Task.ITask, isRoot: boolean = false) => {
         retries: task.retries - 1,
         isRetried: true,
       },
-      task.retryDelay > 0,
+      task.retryDelay <= 0,
     );
   } else {
     // For all childs of system task completed => update system task to completed too
