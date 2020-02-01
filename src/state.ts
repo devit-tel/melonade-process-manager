@@ -660,7 +660,7 @@ const handleWorkflowFailureStrategy = async (
   }
 };
 
-const handleFailedTask = async (task: Task.ITask) => {
+const handleFailedTask = async (task: Task.ITask, isRoot: boolean = false) => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow oncancle do not retry or anything
   if (workflow.status === State.WorkflowStates.Cancelled) {
@@ -689,13 +689,16 @@ const handleFailedTask = async (task: Task.ITask) => {
       });
     }
 
-    const tasksDataList = R.values(tasksData);
-    await handleWorkflowFailureStrategy(task, tasksDataList);
+    if (isRoot) {
+      const tasksDataList = R.values(tasksData);
+      await handleWorkflowFailureStrategy(task, tasksDataList);
+    }
   }
 };
 
 export const processUpdateTask = async (
   taskUpdate: Event.ITaskUpdate,
+  isRoot: boolean = false,
 ): Promise<void> => {
   try {
     const task = await taskInstanceStore.update(taskUpdate);
@@ -708,7 +711,7 @@ export const processUpdateTask = async (
       case State.TaskStates.Failed:
       case State.TaskStates.Timeout:
       case State.TaskStates.AckTimeOut:
-        await handleFailedTask(task);
+        await handleFailedTask(task, isRoot);
         break;
       default:
         // Case Inprogress we did't need to do anything except update the status
@@ -731,7 +734,7 @@ export const processUpdateTasks = async (
 ): Promise<any> => {
   for (const taskUpdate of tasksUpdate) {
     // console.time(`${taskUpdate.taskId}-${taskUpdate.status}`);
-    await processUpdateTask(taskUpdate);
+    await processUpdateTask(taskUpdate, true);
     // console.timeEnd(`${taskUpdate.taskId}-${taskUpdate.status}`);
   }
 };
