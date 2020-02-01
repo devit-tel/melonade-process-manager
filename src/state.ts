@@ -1,7 +1,18 @@
-import { Event, State, Task, Timer, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Task,
+  Timer,
+  Workflow,
+  WorkflowDefinition,
+} from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import { poll, sendEvent, sendTimer, stateConsumerClient } from './kafka';
-import { taskInstanceStore, transactionInstanceStore, workflowInstanceStore } from './store';
+import {
+  taskInstanceStore,
+  transactionInstanceStore,
+  workflowInstanceStore,
+} from './store';
 import { toObjectByKey } from './utils/common';
 import { mapParametersToValue } from './utils/task';
 
@@ -365,7 +376,6 @@ const handleCancelWorkflow = async (
       case State.WorkflowFailureStrategies.Compensate:
       case State.WorkflowFailureStrategies.CompensateThenRetry:
         await handleCompensateWorkflow(workflow, tasksDataList, true);
-
         break;
       case State.WorkflowFailureStrategies.Retry:
       case State.WorkflowFailureStrategies.Failed:
@@ -395,6 +405,24 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
     return;
   }
 
+  // For siblin of child of parallel are failed but the task is completed
+  if (!nextTaskPath.isCompleted && !nextTaskPath.taskPath) {
+    const tasksDataList = R.values(tasksData);
+
+    const failedTasks = tasksDataList.filter((task: Task.ITask) =>
+      [
+        State.TaskStates.Failed,
+        State.TaskStates.AckTimeOut,
+        State.TaskStates.Timeout,
+      ].includes(task.status),
+    );
+
+    if (failedTasks.length) {
+      await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
+      return;
+    }
+  }
+
   // For all childs of system task completed => update system task to completed too
   if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
     await processUpdateTask({
@@ -414,24 +442,6 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       tasksData,
     );
     return;
-  }
-
-  // For siblin of child of parallel are failed but the task is completed
-  if (!nextTaskPath.isCompleted && !nextTaskPath.taskPath) {
-    const tasksDataList = R.values(tasksData);
-
-    const failedTasks = tasksDataList.filter((task: Task.ITask) =>
-      [
-        State.TaskStates.Failed,
-        State.TaskStates.AckTimeOut,
-        State.TaskStates.Timeout,
-      ].includes(task.status),
-    );
-
-    if (failedTasks.length) {
-      await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
-      return;
-    }
   }
 
   // All tasks's complated update workflow
@@ -610,23 +620,21 @@ const getWorkflowStatusFromTaskStatus = (
   }
 };
 
+const isHaveRunningTasks = (tasks: Task.ITask[]): boolean =>
+  tasks.filter(
+    (taskData: Task.ITask) =>
+      [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
+        taskData.status,
+      ) && taskData.type === Task.TaskTypes.Task,
+  ).length > 0;
+
 const handleWorkflowFailureStrategy = async (
   task: Task.ITask,
   tasksDataList: Task.ITask[],
 ) => {
-  const runningTasks = tasksDataList.filter((taskData: Task.ITask) => {
-    return (
-      [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
-        taskData.status,
-      ) &&
-      taskData.taskReferenceName !== task.taskReferenceName &&
-      taskData.type === Task.TaskTypes.Task
-    );
-  });
-
   // No running task, start recovery
   // If there are running task wait for them first
-  if (runningTasks.length === 0) {
+  if (!isHaveRunningTasks(tasksDataList)) {
     const workflow = await workflowInstanceStore.update({
       transactionId: task.transactionId,
       workflowId: task.workflowId,
