@@ -4,12 +4,13 @@ import {
   Store,
   Task,
   TaskDefinition,
+  Timer,
   Transaction,
   Workflow,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import { dispatch, sendEvent } from '../kafka';
+import { dispatch, sendEvent, sendTimer } from '../kafka';
 import { mapParametersToValue } from '../utils/task';
 
 export interface IStore {
@@ -331,14 +332,17 @@ export class TaskInstanceStore {
     return this.client.getAll(workflowId);
   }
 
-  reload = async (taskData: Task.ITask): Promise<Task.ITask> => {
+  reload = async (
+    taskData: Task.ITask,
+    willDispatch: boolean = false,
+  ): Promise<Task.ITask> => {
     const workflow = await workflowInstanceStore.get(taskData.workflowId);
     if (!R.propEq('status', State.WorkflowStates.Running, workflow))
       throw new Error('WORKFLOW_NOT_RUNNING');
 
     await this.delete(taskData.taskId);
 
-    const timestamp = Date.now();
+    const timestamp = Date.now() + (taskData.retryDelay || 0);
     const task = await this.client.create(
       R.omit(['_id'], {
         ...taskData,
@@ -350,14 +354,23 @@ export class TaskInstanceStore {
         endTime: null,
       }),
     );
-    dispatch(task);
-    sendEvent({
-      transactionId: task.transactionId,
-      type: 'TASK',
-      isError: false,
-      timestamp,
-      details: task,
-    });
+
+    if (willDispatch) {
+      dispatch(task);
+      sendEvent({
+        transactionId: task.transactionId,
+        type: 'TASK',
+        isError: false,
+        timestamp,
+        details: task,
+      });
+    } else {
+      sendTimer({
+        type: Timer.TimerType.delayTask,
+        task,
+      });
+    }
+
     return task;
   };
 

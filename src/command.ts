@@ -4,9 +4,8 @@ import {
   Task,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
-import { commandConsumerClient, poll, sendEvent } from './kafka';
+import { commandConsumerClient, dispatch, poll, sendEvent } from './kafka';
 import {
-  taskInstanceStore,
   transactionInstanceStore,
   workflowDefinitionStore,
   workflowInstanceStore,
@@ -50,7 +49,18 @@ export const processCancelTransactionCommand = async (
 
 const processReloadTaskCommand = (
   command: Command.IReloadTaskCommand,
-): Promise<Task.ITask> => taskInstanceStore.reload(command.task);
+): Task.ITask => {
+  dispatch(command.task);
+  sendEvent({
+    transactionId: command.task.transactionId,
+    type: 'TASK',
+    isError: false,
+    timestamp: Date.now(),
+    details: command.task,
+  });
+
+  return command.task;
+};
 
 const processCommands = async (
   commands: Command.AllCommand[],

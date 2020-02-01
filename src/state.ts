@@ -2,12 +2,11 @@ import {
   Event,
   State,
   Task,
-  Timer,
   Workflow,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import { poll, sendEvent, sendTimer, stateConsumerClient } from './kafka';
+import { poll, sendEvent, stateConsumerClient } from './kafka';
 import {
   taskInstanceStore,
   transactionInstanceStore,
@@ -401,26 +400,22 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
     }
 
     await handleCancelWorkflow(workflow, tasksData);
-
     return;
   }
 
   // For siblin of child of parallel are failed but the task is completed
-  if (!nextTaskPath.isCompleted && !nextTaskPath.taskPath) {
-    const tasksDataList = R.values(tasksData);
+  const tasksDataList = R.values(tasksData);
+  const failedTasks = tasksDataList.filter((task: Task.ITask) =>
+    [
+      State.TaskStates.Failed,
+      State.TaskStates.AckTimeOut,
+      State.TaskStates.Timeout,
+    ].includes(task.status),
+  );
 
-    const failedTasks = tasksDataList.filter((task: Task.ITask) =>
-      [
-        State.TaskStates.Failed,
-        State.TaskStates.AckTimeOut,
-        State.TaskStates.Timeout,
-      ].includes(task.status),
-    );
-
-    if (failedTasks.length) {
-      await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
-      return;
-    }
+  if (failedTasks.length) {
+    await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
+    return;
   }
 
   // For all childs of system task completed => update system task to completed too
@@ -666,7 +661,7 @@ const handleWorkflowFailureStrategy = async (
 };
 
 const handleFailedTask = async (task: Task.ITask) => {
-  const { workflow, tasksData } = await getTaskInfo(task);
+  const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow oncancle do not retry or anything
   if (workflow.status === State.WorkflowStates.Cancelled) {
     await handleCancelWorkflow(workflow, tasksData);
@@ -675,22 +670,25 @@ const handleFailedTask = async (task: Task.ITask) => {
 
   // Check if can retry the task
   if (task.retries > 0 && task.type !== Task.TaskTypes.Compensate) {
-    if (task.retryDelay > 0) {
-      sendTimer({
-        type: Timer.TimerType.delayTask,
-        task: {
-          ...task,
-          retries: task.retries - 1,
-        },
-      });
-    } else {
-      await taskInstanceStore.reload({
+    await taskInstanceStore.reload(
+      {
         ...task,
         retries: task.retries - 1,
         isRetried: true,
+      },
+      task.retryDelay > 0,
+    );
+  } else {
+    // For all childs of system task completed => update system task to completed too
+    if (nextTaskPath.parentTask) {
+      await processUpdateTask({
+        taskId: nextTaskPath.parentTask.taskId,
+        transactionId: nextTaskPath.parentTask.transactionId,
+        status: State.TaskStates.Failed,
+        isSystem: true,
       });
     }
-  } else {
+
     const tasksDataList = R.values(tasksData);
     await handleWorkflowFailureStrategy(task, tasksDataList);
   }
