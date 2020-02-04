@@ -12,7 +12,7 @@ import {
   transactionInstanceStore,
   workflowInstanceStore,
 } from './store';
-import { toObjectByKey } from './utils/common';
+import { sleep, toObjectByKey } from './utils/common';
 import { mapParametersToValue } from './utils/task';
 
 export const isAllCompleted = R.all(
@@ -761,7 +761,8 @@ export const executor = async () => {
     }
   } catch (error) {
     // Handle error here
-    console.log(error);
+    console.warn(error);
+    await sleep(1000);
   } finally {
     setImmediate(executor);
   }
