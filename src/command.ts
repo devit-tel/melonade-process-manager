@@ -10,6 +10,7 @@ import {
   workflowDefinitionStore,
   workflowInstanceStore,
 } from './store';
+import { sleep } from './utils/common';
 
 const processStartTransactionCommand = async (
   command: Command.IStartTransactionCommand,
@@ -105,7 +106,8 @@ export const executor = async () => {
     }
   } catch (error) {
     // Handle consume error
-    console.log(error);
+    console.warn(error);
+    await sleep(1000);
   }
   setImmediate(executor);
 };
