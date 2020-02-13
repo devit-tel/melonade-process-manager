@@ -2,6 +2,15 @@
 
 Workflow manager that implemented SAGA, written in typescript
 
+## Recomended kafka's brokers config
+
+offsets.topic.replication.factor=3
+default.replication.factor=3
+min.insync.replicas=2
+offsets.retention.minutes=5000000
+unclean.leader.election.enable=false
+auto.create.topics.enable=false
+
 ## Tasks
 
 - [x] Workflow Definition

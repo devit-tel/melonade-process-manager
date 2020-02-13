@@ -84,10 +84,10 @@ export const createTopic = (
         num_partitions: numPartitions,
         replication_factor: replicationFactor,
         config: {
-          'cleanup.policy': 'compact',
+          'cleanup.policy': 'delete',
           'compression.type': 'snappy',
-          'delete.retention.ms': '86400000',
-          'file.delete.delay.ms': '60000',
+          'retention.ms': '604800000', // '604800000' 7 days // '2592000000' 30 days
+          'unclean.leader.election.enable': 'false',
           ...config,
         },
       },
