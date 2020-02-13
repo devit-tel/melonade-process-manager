@@ -96,8 +96,7 @@ export const kafkaProducerConfig = {
   config: {
     'compression.type': 'snappy',
     'enable.idempotence': 'true',
-    retries: '2147483647',
-    'batch.size': '16384',
+    retries: '10000000',
     'socket.keepalive.enable': 'true',
     'queue.buffering.max.messages': '100000',
     'queue.buffering.max.ms': '10',

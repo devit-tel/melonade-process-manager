@@ -1,25 +1,10 @@
 /* tslint:disable: max-func-body-length */
 
-import {
-  State,
-  Task,
-  WorkflowDefinition,
-} from '@melonade/melonade-declaration';
+import { State, Task, WorkflowDefinition } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import * as kafka from '../kafka';
 import * as state from '../state';
-import {
-  ITaskDefinitionStore,
-  ITaskInstanceStore,
-  ITransactionInstanceStore,
-  IWorkflowDefinitionStore,
-  IWorkflowInstanceStore,
-  taskDefinitionStore,
-  taskInstanceStore,
-  transactionInstanceStore,
-  workflowDefinitionStore,
-  workflowInstanceStore,
-} from '../store';
+import { ITaskDefinitionStore, ITaskInstanceStore, ITransactionInstanceStore, IWorkflowDefinitionStore, IWorkflowInstanceStore, taskDefinitionStore, taskInstanceStore, transactionInstanceStore, workflowDefinitionStore, workflowInstanceStore } from '../store';
 import { TaskDefinitionMemoryStore } from '../store/memory/taskDefinition';
 import { TaskInstanceMemoryStore } from '../store/memory/taskInstance';
 import { TransactionInstanceMemoryStore } from '../store/memory/transactionInstance';
@@ -872,7 +857,11 @@ describe('Run parallel decision workflow', () => {
       cleanMock();
       // ----------------------------------------------------------------
 
-      await updateTask(currentTasks[1]);
+      await updateTask(
+        currentTasks.find(
+          (task: Task.ITask) => task.taskReferenceName === 'p2_2_d1_case1_t1',
+        ),
+      );
 
       expect(mockedSendEvent).toBeCalledTimes(3);
       expect(mockedSendEvent).toBeCalledWith(
@@ -923,7 +912,11 @@ describe('Run parallel decision workflow', () => {
       cleanMock();
       // ----------------------------------------------------------------
 
-      await updateTask(currentTasks[0]);
+      await updateTask(
+        currentTasks.find(
+          (task: Task.ITask) => task.taskReferenceName === 'p2_1_t1',
+        ),
+      );
 
       expect(mockedSendEvent).toBeCalledTimes(3);
       expect(mockedSendEvent).toBeCalledWith(
