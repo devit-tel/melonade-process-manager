@@ -660,7 +660,11 @@ const handleWorkflowFailureStrategy = async (
   }
 };
 
-const handleFailedTask = async (task: Task.ITask, isRoot: boolean = false) => {
+const handleFailedTask = async (
+  task: Task.ITask,
+  isRoot: boolean = false,
+  doNotRetry: boolean = false,
+) => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow oncancle do not retry or anything
   if (workflow.status === State.WorkflowStates.Cancelled) {
@@ -669,7 +673,11 @@ const handleFailedTask = async (task: Task.ITask, isRoot: boolean = false) => {
   }
 
   // Check if can retry the task
-  if (task.retries > 0 && task.type !== Task.TaskTypes.Compensate) {
+  if (
+    task.retries > 0 &&
+    task.type !== Task.TaskTypes.Compensate &&
+    !doNotRetry
+  ) {
     await taskInstanceStore.reload(
       {
         ...task,
@@ -711,7 +719,7 @@ export const processUpdateTask = async (
       case State.TaskStates.Failed:
       case State.TaskStates.Timeout:
       case State.TaskStates.AckTimeOut:
-        await handleFailedTask(task, isRoot);
+        await handleFailedTask(task, isRoot, taskUpdate.doNotRetry);
         break;
       default:
         // Case Inprogress we did't need to do anything except update the status
