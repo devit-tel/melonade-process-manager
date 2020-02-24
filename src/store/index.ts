@@ -366,7 +366,7 @@ export class TaskInstanceStore {
       });
     } else {
       sendTimer({
-        type: Timer.TimerType.delayTask,
+        type: Timer.TimerTypes.delayTask,
         task,
       });
     }
