@@ -15,6 +15,11 @@ router.get('/:name/:rev', (ctx: koaRouter.IRouterContext) => {
   return workflowDefinitionStore.get(name, rev);
 });
 
+router.delete('/:name/:rev', (ctx: koaRouter.IRouterContext) => {
+  const { name, rev } = ctx.params;
+  return workflowDefinitionStore.delete(name, rev);
+});
+
 router.put('/', (ctx: koaRouter.IRouterContext | any) => {
   return workflowDefinitionStore.update(
     new WorkflowDefinition.WorkflowDefinition(ctx.request.body),

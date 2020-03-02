@@ -89,6 +89,15 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     );
   }
 
+  delete(name: string, rev: string): Promise<void> {
+    return new Promise((resolve: Function, reject: Function) =>
+      this.client.remove(`${this.root}/${name}/${rev}`, (error: Error) => {
+        if (error) return reject(error);
+        resolve();
+      }),
+    );
+  }
+
   private getAndWatchWorkflows = () => {
     this.client.getChildren(
       this.root,
