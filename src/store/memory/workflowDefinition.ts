@@ -54,4 +54,14 @@ export class WorkflowDefinitionMemoryStore extends MemoryStore
 
     return Promise.resolve(workflowDefinition);
   }
+
+  delete(name: string, rev: string): Promise<void> {
+    this.localStore[name] = R.set(
+      R.lensPath([rev]),
+      undefined,
+      this.localStore[name],
+    );
+
+    return Promise.resolve();
+  }
 }

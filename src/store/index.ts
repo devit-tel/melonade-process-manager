@@ -29,6 +29,7 @@ export interface IWorkflowDefinitionStore extends IStore {
     workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
   ): Promise<WorkflowDefinition.IWorkflowDefinition>;
   list(): Promise<WorkflowDefinition.IWorkflowDefinition[]>;
+  delete(name: string, rev: string): Promise<void>;
   isHealthy(): boolean;
 }
 
@@ -105,6 +106,10 @@ export class WorkflowDefinitionStore {
     workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
   ): Promise<WorkflowDefinition.IWorkflowDefinition> {
     return this.client.update(workflowDefinition);
+  }
+
+  delete(name: string, rev: string): Promise<void> {
+    return this.client.delete(name, rev);
   }
 
   isHealthy(): boolean {

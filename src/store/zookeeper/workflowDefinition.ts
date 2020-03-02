@@ -89,6 +89,15 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
     );
   }
 
+  delete(name: string, rev: string): Promise<void> {
+    return new Promise((resolve: Function, reject: Function) =>
+      this.client.remove(`${this.root}/${name}/${rev}`, (error: Error) => {
+        if (error) return reject(error);
+        resolve();
+      }),
+    );
+  }
+
   private getAndWatchWorkflows = () => {
     this.client.getChildren(
       this.root,
@@ -126,21 +135,32 @@ export class WorkflowDefinitionZookeeperStore extends ZookeeperStore
       (workflowError: Error, revs: string[]) => {
         if (!workflowError) {
           for (const rev of revs) {
-            this.getAndWatchRef(workflow, rev);
+            this.getAndWatchRev(workflow, rev);
           }
         }
       },
     );
   };
 
-  private getAndWatchRef = (workflow: string, rev: string) => {
+  private onNodeDeleted = (workflow: string, rev: string) => {
+    this.localStore = R.set(
+      R.lensPath([workflow]),
+      R.omit([rev], R.pathOr({}, [workflow], this.localStore)),
+      this.localStore,
+    );
+  };
+
+  private getAndWatchRev = (workflow: string, rev: string) => {
     this.client.getData(
       `${this.root}/${workflow}/${rev}`,
       (event: nodeZookeeperClient.Event) => {
         switch (event.type) {
           case nodeZookeeperClient.Event.NODE_DATA_CHANGED:
             // When rev's data change
-            this.getAndWatchRef(workflow, rev);
+            this.getAndWatchRev(workflow, rev);
+            break;
+          case nodeZookeeperClient.Event.NODE_DELETED:
+            this.onNodeDeleted(workflow, rev);
             break;
           default:
             break;
