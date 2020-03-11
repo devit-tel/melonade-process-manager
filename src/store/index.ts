@@ -11,7 +11,7 @@ import {
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import { dispatch, sendEvent, sendTimer } from '../kafka';
-import { mapParametersToValue } from '../utils/task';
+import { getCompltedAt, mapParametersToValue } from '../utils/task';
 
 export interface IStore {
   isHealthy(): boolean;
@@ -384,7 +384,8 @@ export class TaskInstanceStore {
     workflow: Workflow.IWorkflow,
     workflowTask:
       | WorkflowDefinition.IDecisionTask
-      | WorkflowDefinition.IParallelTask,
+      | WorkflowDefinition.IParallelTask
+      | WorkflowDefinition.IScheduleTask,
     tasksData: { [taskReferenceName: string]: Task.ITask },
     overideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
@@ -428,53 +429,76 @@ export class TaskInstanceStore {
     };
 
     try {
-      // Dispatch child task(s)
-      switch (workflowTask.type) {
-        case Task.TaskTypes.Decision:
-          await taskInstanceStore.create(
-            workflow,
-            workflowTask.decisions[taskData.input.case]
-              ? workflowTask.decisions[taskData.input.case][0]
-              : workflowTask.defaultDecision[0],
-            tasksData,
-          );
-          break;
-        case Task.TaskTypes.Parallel:
-          await Promise.all(
-            taskData.parallelTasks.map(
-              (tasks: WorkflowDefinition.AllTaskType[]) =>
-                taskInstanceStore.create(workflow, tasks[0], tasksData),
-            ),
-          );
-          break;
+      if (workflowTask.type === Task.TaskTypes.Schedule) {
+        // Send to time keeper
+        const task = await this.client.create(taskData);
+        sendEvent({
+          transactionId: workflow.transactionId,
+          type: 'TASK',
+          isError: false,
+          timestamp: timestampCreate,
+          details: {
+            ...task,
+            status: State.TaskStates.Scheduled,
+          },
+        });
+        sendTimer({
+          type: Timer.TimerTypes.scheduleTask,
+          taskId: task.taskId,
+          transactionId: task.transactionId,
+          completedAt: getCompltedAt(task),
+        });
+
+        return task;
+      } else {
+        // Dispatch child task(s)
+        switch (workflowTask.type) {
+          case Task.TaskTypes.Decision:
+            await taskInstanceStore.create(
+              workflow,
+              workflowTask.decisions[taskData.input.case]
+                ? workflowTask.decisions[taskData.input.case][0]
+                : workflowTask.defaultDecision[0],
+              tasksData,
+            );
+            break;
+          case Task.TaskTypes.Parallel:
+            await Promise.all(
+              taskData.parallelTasks.map(
+                (tasks: WorkflowDefinition.AllTaskType[]) =>
+                  taskInstanceStore.create(workflow, tasks[0], tasksData),
+              ),
+            );
+            break;
+        }
+        // Create task instance
+
+        const timestamp = Date.now();
+        const task = await this.client.create({
+          ...taskData,
+          status: State.TaskStates.Inprogress,
+        });
+
+        sendEvent({
+          transactionId: workflow.transactionId,
+          type: 'TASK',
+          isError: false,
+          timestamp: timestampCreate,
+          details: {
+            ...task,
+            status: State.TaskStates.Scheduled,
+          },
+        });
+
+        sendEvent({
+          transactionId: workflow.transactionId,
+          type: 'TASK',
+          isError: false,
+          timestamp,
+          details: task,
+        });
+        return task;
       }
-      // Create task instance
-
-      const timestamp = Date.now();
-      const task = await this.client.create({
-        ...taskData,
-        status: State.TaskStates.Inprogress,
-      });
-
-      sendEvent({
-        transactionId: workflow.transactionId,
-        type: 'TASK',
-        isError: false,
-        timestamp: timestampCreate,
-        details: {
-          ...task,
-          status: State.TaskStates.Scheduled,
-        },
-      });
-
-      sendEvent({
-        transactionId: workflow.transactionId,
-        type: 'TASK',
-        isError: false,
-        timestamp,
-        details: task,
-      });
-      return task;
     } catch (error) {
       const task = await this.client.create({
         ...taskData,
@@ -564,23 +588,27 @@ export class TaskInstanceStore {
     tasksData: { [taskReferenceName: string]: Task.ITask },
     overideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
-    if (
-      workflowTask.type === Task.TaskTypes.Decision ||
-      workflowTask.type === Task.TaskTypes.Parallel
-    ) {
-      return this.createSystemTask(
-        workflow,
-        workflowTask,
-        tasksData,
-        overideTask,
-      );
+    switch (workflowTask.type) {
+      case Task.TaskTypes.Decision:
+      case Task.TaskTypes.Parallel:
+      case Task.TaskTypes.Schedule:
+        return this.createSystemTask(
+          workflow,
+          workflowTask,
+          tasksData,
+          overideTask,
+        );
+      case Task.TaskTypes.Task:
+      case Task.TaskTypes.Compensate:
+      default:
+        return this.createWorkerTask(
+          workflow,
+          workflowTask,
+          tasksData,
+          overideTask,
+        );
+        break;
     }
-    return this.createWorkerTask(
-      workflow,
-      workflowTask,
-      tasksData,
-      overideTask,
-    );
   };
 
   update = async (taskUpdate: Event.ITaskUpdate): Promise<Task.ITask> => {

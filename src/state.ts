@@ -265,6 +265,7 @@ export const findTaskPath = (
           );
         case Task.TaskTypes.Task:
         case Task.TaskTypes.Compensate:
+        case Task.TaskTypes.Schedule:
         default:
           return findTaskPath(
             taskReferenceName,

@@ -1,4 +1,5 @@
 import { Task, Workflow } from '@melonade/melonade-declaration';
+import { parseExpression } from 'cron-parser';
 import * as R from 'ramda';
 import { isString } from './common';
 
@@ -22,4 +23,24 @@ export const mapParametersToValue = (
     },
   );
   return R.fromPairs(valuePairs);
+};
+
+export const getCompltedAt = (task: Task.ITask): number => {
+  try {
+    const completedAfter = R.path(['input', 'completedAfter'], task) as number;
+    if (Number.isFinite(completedAfter)) {
+      return Date.now() + completedAfter;
+    }
+    const completedAt = new Date(R.path(['input', 'completedAt'], task));
+    if (!Number.isNaN(completedAt.getTime())) {
+      return completedAt.getTime();
+    }
+
+    return parseExpression(R.path(['input', 'completedWhen'], task))
+      .next()
+      .getTime();
+  } catch (error) {
+    console.log(error);
+    return 0;
+  }
 };
