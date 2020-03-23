@@ -433,14 +433,7 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
 
   // For child of system task completed but have next siblin to run
   if (!nextTaskPath.isCompleted && nextTaskPath.taskPath) {
-    await taskInstanceStore.create(
-      workflow,
-      R.path(nextTaskPath.taskPath, workflow.workflowDefinition.tasks),
-      tasksData,
-      {
-        taskPath: nextTaskPath.taskPath,
-      },
-    );
+    await taskInstanceStore.create(workflow, nextTaskPath.taskPath, tasksData);
     return;
   }
 
