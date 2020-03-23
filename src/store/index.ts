@@ -274,7 +274,12 @@ export class WorkflowInstanceStore {
       details: workflow,
     });
 
-    await taskInstanceStore.create(workflow, workflowDefinition.tasks[0], {});
+    await taskInstanceStore.create(
+      workflow,
+      workflowDefinition.tasks[0],
+      {},
+      { taskPath: [0] },
+    );
 
     return workflow;
   };
@@ -425,6 +430,7 @@ export class TaskInstanceStore {
       retryDelay: 0,
       ackTimeout: 0,
       timeout: 0,
+      taskPath: [0], // taskPath must defined on overideTask
       ...overideTask,
     };
 
@@ -454,7 +460,7 @@ export class TaskInstanceStore {
         // Dispatch child task(s)
         switch (workflowTask.type) {
           case Task.TaskTypes.Decision:
-            await taskInstanceStore.create(
+            await this.create(
               workflow,
               workflowTask.decisions[taskData.input.case]
                 ? workflowTask.decisions[taskData.input.case][0]
@@ -466,7 +472,7 @@ export class TaskInstanceStore {
             await Promise.all(
               taskData.parallelTasks.map(
                 (tasks: WorkflowDefinition.AllTaskType[]) =>
-                  taskInstanceStore.create(workflow, tasks[0], tasksData),
+                  this.create(workflow, tasks[0], tasksData),
               ),
             );
             break;
@@ -568,6 +574,7 @@ export class TaskInstanceStore {
         ['timeout'],
         workflowTask,
       ),
+      taskPath: [0], // taskPath must defined on overideTask
       ...overideTask,
     });
 
@@ -607,7 +614,6 @@ export class TaskInstanceStore {
           tasksData,
           overideTask,
         );
-        break;
     }
   };
 

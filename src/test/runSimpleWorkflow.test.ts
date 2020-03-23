@@ -1,25 +1,9 @@
 /* tslint:disable: max-func-body-length */
 
-import {
-  State,
-  Task,
-  Workflow,
-  WorkflowDefinition,
-} from '@melonade/melonade-declaration';
+import { State, Task, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
 import * as kafka from '../kafka';
 import * as state from '../state';
-import {
-  ITaskDefinitionStore,
-  ITaskInstanceStore,
-  ITransactionInstanceStore,
-  IWorkflowDefinitionStore,
-  IWorkflowInstanceStore,
-  taskDefinitionStore,
-  taskInstanceStore,
-  transactionInstanceStore,
-  workflowDefinitionStore,
-  workflowInstanceStore,
-} from '../store';
+import { ITaskDefinitionStore, ITaskInstanceStore, ITransactionInstanceStore, IWorkflowDefinitionStore, IWorkflowInstanceStore, taskDefinitionStore, taskInstanceStore, transactionInstanceStore, workflowDefinitionStore, workflowInstanceStore } from '../store';
 import { TaskDefinitionMemoryStore } from '../store/memory/taskDefinition';
 import { TaskInstanceMemoryStore } from '../store/memory/taskInstance';
 import { TransactionInstanceMemoryStore } from '../store/memory/transactionInstance';

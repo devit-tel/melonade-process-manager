@@ -295,10 +295,11 @@ const getTaskInfo = async (task: Task.ITask) => {
   );
 
   const tasksData = await getTaskData(workflow);
-  const currentTaskPath = findTaskPath(
-    task.taskReferenceName,
-    workflow.workflowDefinition.tasks,
-  );
+  // Compatibility for previous version.
+  // findTaskPath should be remove whenever we can.
+  const currentTaskPath =
+    task.taskPath ||
+    findTaskPath(task.taskReferenceName, workflow.workflowDefinition.tasks);
   const nextTaskPath = getNextTaskPath(
     workflow.workflowDefinition.tasks,
     currentTaskPath,
@@ -436,6 +437,9 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       workflow,
       R.path(nextTaskPath.taskPath, workflow.workflowDefinition.tasks),
       tasksData,
+      {
+        taskPath: nextTaskPath.taskPath,
+      },
     );
     return;
   }

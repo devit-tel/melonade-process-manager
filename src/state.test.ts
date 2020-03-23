@@ -581,6 +581,7 @@ describe('getNextTaskPath', () => {
   const getTaskData = (
     taskReferenceName: string,
     type: Task.TaskTypes,
+    taskPath: (string | number)[],
     status: State.TaskStates = State.TaskStates.Completed,
   ): Task.ITask => ({
     taskName: 'task',
@@ -600,23 +601,36 @@ describe('getNextTaskPath', () => {
     ackTimeout: 0,
     timeout: 0,
     type,
+    taskPath,
   });
 
   const mockTasksData = {
-    t1: getTaskData('t1', Task.TaskTypes.Task),
-    t2: getTaskData('t2', Task.TaskTypes.Decision),
-    t3: getTaskData('t3', Task.TaskTypes.Task),
-    t4: getTaskData('t4', Task.TaskTypes.Task),
-    t5: getTaskData('t5', Task.TaskTypes.Task),
-    t6: getTaskData('t6', Task.TaskTypes.Task),
-    t7: getTaskData('t7', Task.TaskTypes.Task),
-    t8: getTaskData('t8', Task.TaskTypes.Task),
-    t9: getTaskData('t9', Task.TaskTypes.Parallel),
-    t10: getTaskData('t10', Task.TaskTypes.Task),
-    t11: getTaskData('t11', Task.TaskTypes.Task),
-    t12: getTaskData('t12', Task.TaskTypes.Parallel),
-    t13: getTaskData('t13', Task.TaskTypes.Task),
-    t14: getTaskData('t14', Task.TaskTypes.Task),
+    t1: getTaskData('t1', Task.TaskTypes.Task, [0]),
+    t2: getTaskData('t2', Task.TaskTypes.Decision, [1]),
+    t3: getTaskData('t3', Task.TaskTypes.Task, [1, 'decisions', 'case1', 0]),
+    t4: getTaskData('t4', Task.TaskTypes.Task, [1, 'decisions', 'case1', 1]),
+    t5: getTaskData('t5', Task.TaskTypes.Task, [1, 'decisions', 'case2', 0]),
+    t6: getTaskData('t6', Task.TaskTypes.Task, [1, 'decisions', 'case1', 1]),
+    t7: getTaskData('t7', Task.TaskTypes.Task, [1, 'defaultDecision', 0]),
+    t8: getTaskData('t8', Task.TaskTypes.Task, [1, 'defaultDecision', 1]),
+    t9: getTaskData('t9', Task.TaskTypes.Parallel, [1, 'defaultDecision', 2]),
+    t10: getTaskData('t10', Task.TaskTypes.Task, [
+      1,
+      'defaultDecision',
+      2,
+      'parallelTasks',
+      0,
+    ]),
+    t11: getTaskData('t11', Task.TaskTypes.Task, [
+      1,
+      'defaultDecision',
+      2,
+      'parallelTasks',
+      1,
+    ]),
+    t12: getTaskData('t12', Task.TaskTypes.Parallel, [2]),
+    t13: getTaskData('t13', Task.TaskTypes.Task, [2, 'parallelTasks', 0]),
+    t14: getTaskData('t14', Task.TaskTypes.Task, [2, 'parallelTasks', 1]),
   };
 
   test('First task finished', () => {
@@ -689,6 +703,7 @@ describe('getNextTaskPath', () => {
         t14: getTaskData(
           't14',
           Task.TaskTypes.Task,
+          [2, 'parallelTasks', 1],
           State.TaskStates.Inprogress,
         ),
       }),
