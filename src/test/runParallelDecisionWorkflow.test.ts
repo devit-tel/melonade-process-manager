@@ -1,10 +1,25 @@
 /* tslint:disable: max-func-body-length */
 
-import { State, Task, WorkflowDefinition } from '@melonade/melonade-declaration';
+import {
+  State,
+  Task,
+  WorkflowDefinition,
+} from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import * as kafka from '../kafka';
 import * as state from '../state';
-import { ITaskDefinitionStore, ITaskInstanceStore, ITransactionInstanceStore, IWorkflowDefinitionStore, IWorkflowInstanceStore, taskDefinitionStore, taskInstanceStore, transactionInstanceStore, workflowDefinitionStore, workflowInstanceStore } from '../store';
+import {
+  ITaskDefinitionStore,
+  ITaskInstanceStore,
+  ITransactionInstanceStore,
+  IWorkflowDefinitionStore,
+  IWorkflowInstanceStore,
+  taskDefinitionStore,
+  taskInstanceStore,
+  transactionInstanceStore,
+  workflowDefinitionStore,
+  workflowInstanceStore,
+} from '../store';
 import { TaskDefinitionMemoryStore } from '../store/memory/taskDefinition';
 import { TaskInstanceMemoryStore } from '../store/memory/taskInstance';
 import { TransactionInstanceMemoryStore } from '../store/memory/transactionInstance';
@@ -18,7 +33,7 @@ import { TransactionInstanceRedisStore } from '../store/redis/transactionInstanc
 import { WorkflowInstanceRedisStore } from '../store/redis/workflowInstance';
 
 const MONGODB_URL: string =
-  process.env['MONGODB_URI'] || 'mongodb://127.0.0.1:51553/melonade-test';
+  process.env['MONGODB_URI'] || 'mongodb://127.0.0.1:27017/melonade-test';
 
 const TASK_RETRY_LIMIT = 3;
 const WORKFLOW_RETRY_LIMIT = 3;
@@ -53,6 +68,7 @@ const mockedSendTimer = <jest.Mock<typeof kafka.sendTimer>>kafka.sendTimer;
 
 const cleanMock = () => {
   storeSpies.map((spy: jest.SpyInstance<any>) => spy.mockClear());
+  jest.clearAllMocks();
   mockedDispatch.mockClear();
   mockedSendEvent.mockClear();
   mockedSendTimer.mockClear();

@@ -39,6 +39,7 @@ const taskSchema = new mongoose.Schema(
     retryDelay: Number,
     ackTimeout: Number,
     timeout: Number,
+    taskPath: [mongoose.Schema.Types.Mixed],
   },
   {
     toObject: {

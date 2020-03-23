@@ -274,7 +274,7 @@ export class WorkflowInstanceStore {
       details: workflow,
     });
 
-    await taskInstanceStore.create(workflow, workflowDefinition.tasks[0], {});
+    await taskInstanceStore.create(workflow, [0], {}, { taskPath: [0] });
 
     return workflow;
   };
@@ -382,15 +382,18 @@ export class TaskInstanceStore {
   // tslint:disable-next-line: max-func-body-length
   private createSystemTask = async (
     workflow: Workflow.IWorkflow,
-    workflowTask:
-      | WorkflowDefinition.IDecisionTask
-      | WorkflowDefinition.IParallelTask
-      | WorkflowDefinition.IScheduleTask,
+    taskPath: (string | number)[],
     tasksData: { [taskReferenceName: string]: Task.ITask },
     overideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
     // Modeling task instance data
-
+    const workflowTask:
+      | WorkflowDefinition.IDecisionTask
+      | WorkflowDefinition.IParallelTask
+      | WorkflowDefinition.IScheduleTask = R.path(
+      ['workflowDefinition', 'tasks', ...taskPath],
+      workflow,
+    );
     const timestampCreate = Date.now();
     const taskData: Task.ITask = {
       taskId: undefined,
@@ -425,6 +428,7 @@ export class TaskInstanceStore {
       retryDelay: 0,
       ackTimeout: 0,
       timeout: 0,
+      taskPath,
       ...overideTask,
     };
 
@@ -454,19 +458,23 @@ export class TaskInstanceStore {
         // Dispatch child task(s)
         switch (workflowTask.type) {
           case Task.TaskTypes.Decision:
-            await taskInstanceStore.create(
+            await this.create(
               workflow,
               workflowTask.decisions[taskData.input.case]
-                ? workflowTask.decisions[taskData.input.case][0]
-                : workflowTask.defaultDecision[0],
+                ? [...taskPath, 'decisions', taskData.input.case, 0]
+                : [...taskPath, 'defaultDecision', 0],
               tasksData,
             );
             break;
           case Task.TaskTypes.Parallel:
             await Promise.all(
               taskData.parallelTasks.map(
-                (tasks: WorkflowDefinition.AllTaskType[]) =>
-                  taskInstanceStore.create(workflow, tasks[0], tasksData),
+                (_tasks: WorkflowDefinition.AllTaskType[], index: number) =>
+                  this.create(
+                    workflow,
+                    [...taskPath, 'parallelTasks', index, 0],
+                    tasksData,
+                  ),
               ),
             );
             break;
@@ -522,12 +530,16 @@ export class TaskInstanceStore {
 
   private createWorkerTask = async (
     workflow: Workflow.IWorkflow,
-    workflowTask:
-      | WorkflowDefinition.ITaskTask
-      | WorkflowDefinition.ICompensateTask,
+    taskPath: (string | number)[],
     tasksData: { [taskReferenceName: string]: Task.ITask },
     overideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
+    const workflowTask:
+      | WorkflowDefinition.ICompensateTask
+      | WorkflowDefinition.ITaskTask = R.path(
+      ['workflowDefinition', 'tasks', ...taskPath],
+      workflow,
+    );
     const taskDefinition = await taskDefinitionStore.get(workflowTask.name);
 
     const timestamp = Date.now();
@@ -568,6 +580,7 @@ export class TaskInstanceStore {
         ['timeout'],
         workflowTask,
       ),
+      taskPath,
       ...overideTask,
     });
 
@@ -584,17 +597,19 @@ export class TaskInstanceStore {
 
   create = async (
     workflow: Workflow.IWorkflow,
-    workflowTask: WorkflowDefinition.AllTaskType,
+    taskPath: (string | number)[],
     tasksData: { [taskReferenceName: string]: Task.ITask },
     overideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
-    switch (workflowTask.type) {
+    switch (
+      R.path(['workflowDefinition', 'tasks', ...taskPath, 'type'], workflow)
+    ) {
       case Task.TaskTypes.Decision:
       case Task.TaskTypes.Parallel:
       case Task.TaskTypes.Schedule:
         return this.createSystemTask(
           workflow,
-          workflowTask,
+          taskPath,
           tasksData,
           overideTask,
         );
@@ -603,11 +618,10 @@ export class TaskInstanceStore {
       default:
         return this.createWorkerTask(
           workflow,
-          workflowTask,
+          taskPath,
           tasksData,
           overideTask,
         );
-        break;
     }
   };
 

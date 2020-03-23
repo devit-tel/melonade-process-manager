@@ -33,7 +33,7 @@ import { TransactionInstanceRedisStore } from '../store/redis/transactionInstanc
 import { WorkflowInstanceRedisStore } from '../store/redis/workflowInstance';
 
 const MONGODB_URL: string =
-  process.env['MONGODB_URI'] || 'mongodb://127.0.0.1:51553/melonade-test';
+  process.env['MONGODB_URI'] || 'mongodb://127.0.0.1:27017/melonade-test';
 
 const TASK_RETRY_LIMIT = 3;
 const WORKFLOW_RETRY_LIMIT = 3;

@@ -295,10 +295,11 @@ const getTaskInfo = async (task: Task.ITask) => {
   );
 
   const tasksData = await getTaskData(workflow);
-  const currentTaskPath = findTaskPath(
-    task.taskReferenceName,
-    workflow.workflowDefinition.tasks,
-  );
+  // Compatibility for previous version.
+  // findTaskPath should be remove whenever we can.
+  const currentTaskPath =
+    task.taskPath ||
+    findTaskPath(task.taskReferenceName, workflow.workflowDefinition.tasks);
   const nextTaskPath = getNextTaskPath(
     workflow.workflowDefinition.tasks,
     currentTaskPath,
@@ -432,11 +433,7 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
 
   // For child of system task completed but have next siblin to run
   if (!nextTaskPath.isCompleted && nextTaskPath.taskPath) {
-    await taskInstanceStore.create(
-      workflow,
-      R.path(nextTaskPath.taskPath, workflow.workflowDefinition.tasks),
-      tasksData,
-    );
+    await taskInstanceStore.create(workflow, nextTaskPath.taskPath, tasksData);
     return;
   }
 
