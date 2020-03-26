@@ -630,7 +630,7 @@ export class TaskInstanceStore {
       const timestamp = Date.now();
       const task = await this.client.update(taskUpdate);
       sendEvent({
-        transactionId: taskUpdate.transactionId,
+        transactionId: task.transactionId,
         type: 'TASK',
         isError: false,
         timestamp,
