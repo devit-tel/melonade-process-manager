@@ -266,6 +266,7 @@ export const findTaskPath = (
         case Task.TaskTypes.Task:
         case Task.TaskTypes.Compensate:
         case Task.TaskTypes.Schedule:
+        case Task.TaskTypes.SubTransaction:
         default:
           return findTaskPath(
             taskReferenceName,

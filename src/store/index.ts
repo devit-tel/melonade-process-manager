@@ -10,7 +10,7 @@ import {
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import { dispatch, sendEvent, sendTimer } from '../kafka';
+import { dispatch, sendEvent, sendTimer, sendUpdate } from '../kafka';
 import { getCompltedAt, mapParametersToValue } from '../utils/task';
 
 export interface IStore {
@@ -167,6 +167,7 @@ export class TransactionInstanceStore {
     workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
     input: any,
     tags: string[] = [],
+    parent?: { transactionId: string; taskId: string },
   ): Promise<Transaction.ITransaction> => {
     const timestamp = Date.now();
     const transaction = await this.client.create({
@@ -178,6 +179,7 @@ export class TransactionInstanceStore {
       endTime: null,
       workflowDefinition,
       tags,
+      parent,
     });
 
     sendEvent({
@@ -209,6 +211,38 @@ export class TransactionInstanceStore {
         timestamp,
         details: transaction,
       });
+
+      const parentTransactionId = R.path(
+        ['parent', 'transactionId'],
+        transaction,
+      ) as string;
+      const parentTaskId = R.path(['parent', 'taskId'], transaction) as string;
+
+      if (parentTransactionId && parentTaskId) {
+        switch (transaction.status) {
+          case State.TransactionStates.Cancelled:
+          case State.TransactionStates.Compensated:
+          case State.TransactionStates.Failed:
+            sendUpdate({
+              transactionId: parentTransactionId,
+              taskId: parentTaskId,
+              status: State.TaskStates.Failed,
+              output: transaction.output,
+            });
+            break;
+          case State.TransactionStates.Completed:
+            sendUpdate({
+              transactionId: parentTransactionId,
+              taskId: parentTaskId,
+              status: State.TaskStates.Completed,
+              output: transaction.output,
+            });
+            break;
+          default:
+            break;
+        }
+      }
+
       return transaction;
     } catch (error) {
       sendEvent({
@@ -390,7 +424,8 @@ export class TaskInstanceStore {
     const workflowTask:
       | WorkflowDefinition.IDecisionTask
       | WorkflowDefinition.IParallelTask
-      | WorkflowDefinition.IScheduleTask = R.path(
+      | WorkflowDefinition.IScheduleTask
+      | WorkflowDefinition.ISubTransactionTask = R.path(
       ['workflowDefinition', 'tasks', ...taskPath],
       workflow,
     );
@@ -454,6 +489,55 @@ export class TaskInstanceStore {
         });
 
         return task;
+      } else if (workflowTask.type === Task.TaskTypes.SubTransaction) {
+        const task = await this.client.create(taskData);
+        sendEvent({
+          transactionId: workflow.transactionId,
+          type: 'TASK',
+          isError: false,
+          timestamp: timestampCreate,
+          details: {
+            ...task,
+            status: State.TaskStates.Scheduled,
+          },
+        });
+
+        const workflowDefinition = await workflowDefinitionStore.get(
+          R.path(['input', 'workflowName'], task),
+          R.path(['input', 'workflowRev'], task),
+        );
+
+        if (workflowDefinition) {
+          await transactionInstanceStore.create(
+            `${workflow.transactionId}-${task.taskId}`,
+            workflowDefinition,
+            task.input,
+            undefined,
+            {
+              transactionId: workflow.transactionId,
+              taskId: task.taskId,
+            },
+          );
+
+          return this.update({
+            transactionId: task.transactionId,
+            taskId: task.taskId,
+            status: State.TaskStates.Inprogress,
+            isSystem: true,
+          });
+        } else {
+          sendUpdate({
+            transactionId: task.transactionId,
+            taskId: task.taskId,
+            status: State.TaskStates.Failed,
+            doNotRetry: true,
+            isSystem: true,
+            output: {
+              error: `Workflow definition not found`,
+            },
+          });
+          return task;
+        }
       } else {
         // Dispatch child task(s)
         switch (workflowTask.type) {
@@ -607,6 +691,7 @@ export class TaskInstanceStore {
       case Task.TaskTypes.Decision:
       case Task.TaskTypes.Parallel:
       case Task.TaskTypes.Schedule:
+      case Task.TaskTypes.SubTransaction:
         return this.createSystemTask(
           workflow,
           taskPath,

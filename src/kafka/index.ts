@@ -145,6 +145,16 @@ export const dispatch = (task: Task.ITask) =>
     Date.now(),
   );
 
+// Use to send update event to another PM or itself to make sure ordering
+export const sendUpdate = (taskUpdate: Event.ITaskUpdate) =>
+  producerClient.produce(
+    config.kafkaTopicName.event,
+    null,
+    Buffer.from(JSON.stringify(taskUpdate)),
+    taskUpdate.transactionId,
+    Date.now(),
+  );
+
 // Use to send Retry, Failed, Reject event, Completed workflow, Dispatch task
 export const sendEvent = (event: Event.AllEvent) =>
   producerClient.produce(
