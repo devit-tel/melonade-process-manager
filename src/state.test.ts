@@ -673,7 +673,7 @@ describe('getNextTaskPath', () => {
       parentTask: expect.objectContaining({
         taskReferenceName: 't2',
       }),
-      taskPath: [2],
+      taskPath: null,
       isLastChild: true,
     });
   });
@@ -687,7 +687,7 @@ describe('getNextTaskPath', () => {
         R.pick(['t1', 't2', 't3', 't4'], mockTasksData),
       ),
     ).toEqual({
-      isCompleted: true,
+      isCompleted: false,
       parentTask: expect.objectContaining({
         taskReferenceName: 't2',
       }),
@@ -725,7 +725,7 @@ describe('getNextTaskPath', () => {
         R.pick(['t1', 't2', 't3', 't4', 't12', 't13', 't14'], mockTasksData),
       ),
     ).toEqual({
-      isCompleted: true,
+      isCompleted: false,
       taskPath: null,
       parentTask: expect.objectContaining({
         taskReferenceName: 't12',

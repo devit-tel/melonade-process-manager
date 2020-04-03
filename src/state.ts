@@ -43,11 +43,6 @@ export const isChildOfDecisionCase = (
     tasks,
   ) && R.nth(-3, currentPath) === 'decisions';
 
-const isGotNextTaskToRun = (
-  tasks: WorkflowDefinition.AllTaskType[],
-  currentPath: (string | number)[],
-): boolean => !!R.path(getNextPath(currentPath), tasks);
-
 const isChildOfParallelTask = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
@@ -62,8 +57,6 @@ const getNextParallelTask = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
   taskData: { [taskReferenceName: string]: Task.ITask },
-  childTask: Task.ITask,
-  isLastChild: boolean,
 ): {
   isCompleted: boolean;
   taskPath: (string | number)[];
@@ -74,7 +67,7 @@ const getNextParallelTask = (
     R.dropLast(3, currentPath).concat('taskReferenceName'),
     tasks,
   );
-  const parentTask = childTask || taskData[taskReferenceName];
+  const parentTask = taskData[taskReferenceName];
 
   // If still got next task in line
   if (R.path(getNextPath(currentPath), tasks)) {
@@ -82,30 +75,75 @@ const getNextParallelTask = (
       isCompleted: false,
       taskPath: getNextPath(currentPath),
       parentTask,
-      isLastChild,
+      isLastChild: false,
     };
   }
 
-  const allTaskStatuses = R.pathOr([], R.dropLast(2, currentPath), tasks).map(
+  const allTaskStatuses = R.pathOr<WorkflowDefinition.AllTaskType[][]>(
+    [],
+    R.dropLast(2, currentPath),
+    tasks,
+  ).map(
     (pTask: WorkflowDefinition.AllTaskType[]) =>
-      R.path([R.last(pTask).taskReferenceName], taskData),
+      R.path<Task.ITask>([R.last(pTask).taskReferenceName], taskData), // Just check the last task of every line
   );
-  // All of line are completed
+
+  // All of lines are completed
+  // If no next task, so this mean this parellel task will completed aswell
   if (isAllCompleted(allTaskStatuses)) {
-    return getNextTaskPath(
-      tasks,
-      R.dropLast(3, currentPath),
-      taskData,
-      parentTask,
-      childTask ? isLastChild : true,
-    );
+    return {
+      isCompleted: false,
+      taskPath: null,
+      parentTask: parentTask,
+      isLastChild: true,
+    };
   }
+
   // Wait for other line
   return {
     isCompleted: false,
     taskPath: null,
     parentTask,
-    isLastChild,
+    isLastChild: false,
+  };
+};
+
+const getNextDecisionTask = (
+  tasks: WorkflowDefinition.AllTaskType[],
+  currentPath: (string | number)[],
+  taskData: { [taskReferenceName: string]: Task.ITask },
+): {
+  isCompleted: boolean;
+  taskPath: (string | number)[];
+  parentTask: Task.ITask;
+  isLastChild: boolean;
+} => {
+  const childOfDecisionDefault = isChildOfDecisionDefault(tasks, currentPath);
+  const decisionTaskPath = childOfDecisionDefault
+    ? R.dropLast(2, currentPath)
+    : R.dropLast(3, currentPath);
+
+  const taskReferenceName: string = R.path(
+    [...decisionTaskPath, 'taskReferenceName'],
+    tasks,
+  );
+
+  // If there are next child
+  if (R.path(getNextPath(currentPath), tasks)) {
+    return {
+      isCompleted: false,
+      taskPath: getNextPath(currentPath),
+      parentTask: taskData[taskReferenceName],
+      isLastChild: false,
+    };
+  }
+
+  // If no next task, so this mean this desision task will completed aswell
+  return {
+    isCompleted: false,
+    taskPath: null,
+    parentTask: taskData[taskReferenceName],
+    isLastChild: true,
   };
 };
 
@@ -118,8 +156,6 @@ export const getNextTaskPath = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
   taskData: { [taskReferenceName: string]: Task.ITask },
-  parentTask: Task.ITask = null,
-  isLastChild: boolean = false,
 ): {
   isCompleted: boolean;
   taskPath: (string | number)[];
@@ -132,57 +168,28 @@ export const getNextTaskPath = (
       isCompleted: true,
       taskPath: null,
       parentTask: null,
-      isLastChild: true, // This field is not matter for this case, bacause last task cannot have parent
+      isLastChild: true,
     };
 
   // Case of current task is parallel's child
   if (isChildOfParallelTask(tasks, currentPath))
-    return getNextParallelTask(
-      tasks,
-      currentPath,
-      taskData,
-      parentTask,
-      isLastChild,
-    );
+    return getNextParallelTask(tasks, currentPath, taskData);
 
-  // Case of decision (default) it's the same as other decision but
-  const childOfDecisionDefault = isChildOfDecisionDefault(tasks, currentPath);
-  const childOfDecisionCase = isChildOfDecisionCase(tasks, currentPath);
-  if (childOfDecisionDefault || childOfDecisionCase) {
-    const decisionTaskPath = childOfDecisionDefault
-      ? R.dropLast(2, currentPath)
-      : R.dropLast(3, currentPath);
-
-    const taskReferenceName: string = R.path(
-      [...decisionTaskPath, 'taskReferenceName'],
-      tasks,
-    );
-    if (R.path(getNextPath(currentPath), tasks)) {
-      return {
-        isCompleted: false,
-        taskPath: getNextPath(currentPath),
-        parentTask: parentTask || taskData[taskReferenceName],
-        isLastChild,
-      };
-    }
-    return getNextTaskPath(
-      tasks,
-      decisionTaskPath,
-      taskData,
-      parentTask || taskData[taskReferenceName],
-      parentTask ? isLastChild : true,
-    );
+  // Case of current task is decision's child
+  if (
+    isChildOfDecisionDefault(tasks, currentPath) ||
+    isChildOfDecisionCase(tasks, currentPath)
+  ) {
+    return getNextDecisionTask(tasks, currentPath, taskData);
   }
 
-  if (isGotNextTaskToRun(tasks, currentPath))
-    return {
-      isCompleted: false,
-      taskPath: getNextPath(currentPath),
-      parentTask,
-      isLastChild,
-    };
-
-  throw new Error('Task is invalid');
+  // Otherwise get go to next task (last index + 1)
+  return {
+    isCompleted: false,
+    taskPath: getNextPath(currentPath),
+    parentTask: null,
+    isLastChild: false,
+  };
 };
 
 export const getTaskData = async (
@@ -295,7 +302,7 @@ const handleCancelWorkflow = async (
 
 const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
-  // If workflow cancelled
+  // If workflow has cancelled
   if (workflow.status === State.WorkflowStates.Cancelled) {
     if (nextTaskPath.parentTask) {
       await processUpdateTask({
@@ -310,7 +317,6 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
     return;
   }
 
-  // For siblin of child of parallel are failed but the task is completed
   const tasksDataList = R.values(tasksData);
   const failedTasks = tasksDataList.filter((task: Task.ITask) =>
     [
@@ -319,13 +325,15 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       State.TaskStates.Timeout,
     ].includes(task.status),
   );
-
+  // If any task in workflow failed, mean this workflow is going to failed
+  // Don't dispatch another task, and wait for all task to finish then do Workflow Failure Strategy
   if (failedTasks.length) {
     await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
     return;
   }
 
-  // For all childs of system task completed => update system task to completed too
+  // For all childs of parallel/decision task has completed => update parent to completed aswell
+  // This will cause chain reaction to parent of parent so on...
   if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
     await processUpdateTask({
       taskId: nextTaskPath.parentTask.taskId,
