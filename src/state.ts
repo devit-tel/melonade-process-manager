@@ -109,7 +109,11 @@ const getNextParallelTask = (
   };
 };
 
-// Check if it's system task
+// Check if it's system task\
+// isCompleted: is workflow completed
+// taskPath: path of next task to exec
+// parentTask: parent task
+// isLastChild: current task is the last one of this parent
 export const getNextTaskPath = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
@@ -122,10 +126,16 @@ export const getNextTaskPath = (
   parentTask: Task.ITask;
   isLastChild: boolean;
 } => {
-  // Check if this's the final task
+  // If this is last task of workflow
   if (R.equals([tasks.length - 1], currentPath))
-    return { isCompleted: true, taskPath: null, parentTask, isLastChild };
+    return {
+      isCompleted: true,
+      taskPath: null,
+      parentTask: null,
+      isLastChild: true, // This field is not matter for this case, bacause last task cannot have parent
+    };
 
+  // Case of current task is parallel's child
   if (isChildOfParallelTask(tasks, currentPath))
     return getNextParallelTask(
       tasks,
@@ -135,31 +145,16 @@ export const getNextTaskPath = (
       isLastChild,
     );
 
-  if (isChildOfDecisionDefault(tasks, currentPath)) {
-    const taskReferenceName: string = R.path(
-      R.dropLast(2, currentPath).concat('taskReferenceName'),
-      tasks,
-    );
-    if (R.path(getNextPath(currentPath), tasks)) {
-      return {
-        isCompleted: false,
-        taskPath: getNextPath(currentPath),
-        parentTask: parentTask || taskData[taskReferenceName],
-        isLastChild: isLastChild || false,
-      };
-    }
-    return getNextTaskPath(
-      tasks,
-      R.dropLast(2, currentPath),
-      taskData,
-      parentTask || taskData[taskReferenceName],
-      parentTask ? isLastChild : true,
-    );
-  }
+  // Case of decision (default) it's the same as other decision but
+  const childOfDecisionDefault = isChildOfDecisionDefault(tasks, currentPath);
+  const childOfDecisionCase = isChildOfDecisionDefault(tasks, currentPath);
+  if (childOfDecisionDefault || childOfDecisionCase) {
+    const decisionTaskPath = childOfDecisionDefault
+      ? R.dropLast(2, currentPath)
+      : R.dropLast(3, currentPath);
 
-  if (isChildOfDecisionCase(tasks, currentPath)) {
     const taskReferenceName: string = R.path(
-      R.dropLast(3, currentPath).concat('taskReferenceName'),
+      [...decisionTaskPath, 'taskReferenceName'],
       tasks,
     );
     if (R.path(getNextPath(currentPath), tasks)) {
@@ -172,7 +167,7 @@ export const getNextTaskPath = (
     }
     return getNextTaskPath(
       tasks,
-      R.dropLast(3, currentPath),
+      decisionTaskPath,
       taskData,
       parentTask || taskData[taskReferenceName],
       parentTask ? isLastChild : true,
@@ -188,93 +183,6 @@ export const getNextTaskPath = (
     };
 
   throw new Error('Task is invalid');
-};
-
-const findNextParallelTaskPath = (
-  taskReferenceName: string,
-  tasks: WorkflowDefinition.AllTaskType[],
-  currentPath: (string | number)[],
-  currentTask: WorkflowDefinition.IParallelTask,
-) => {
-  for (
-    let pTasksIndex = 0;
-    pTasksIndex < currentTask.parallelTasks.length;
-    pTasksIndex++
-  ) {
-    const taskPath = findTaskPath(taskReferenceName, tasks, [
-      ...currentPath,
-      'parallelTasks',
-      pTasksIndex,
-      0,
-    ]);
-    if (taskPath) return taskPath;
-  }
-  return findTaskPath(taskReferenceName, tasks, getNextPath(currentPath));
-};
-
-const findNextDecisionTaskPath = (
-  taskReferenceName: string,
-  tasks: WorkflowDefinition.AllTaskType[],
-  currentPath: (string | number)[],
-  currentTask: WorkflowDefinition.IDecisionTask,
-) => {
-  const decisionsPath = [
-    ...Object.keys(currentTask.decisions).map((decision: string) => [
-      'decisions',
-      decision,
-    ]),
-    ['defaultDecision'],
-  ];
-  for (const decisionPath of decisionsPath) {
-    const taskPath = findTaskPath(taskReferenceName, tasks, [
-      ...currentPath,
-      ...decisionPath,
-      0,
-    ]);
-    if (taskPath) return taskPath;
-  }
-  return findTaskPath(taskReferenceName, tasks, getNextPath(currentPath));
-};
-
-export const findTaskPath = (
-  taskReferenceName: string,
-  tasks: WorkflowDefinition.AllTaskType[],
-  currentPath: (string | number)[] = [0],
-): (string | number)[] => {
-  const currentTask: WorkflowDefinition.AllTaskType = R.path(
-    currentPath,
-    tasks,
-  );
-  if (currentTask)
-    if (currentTask.taskReferenceName === taskReferenceName) return currentPath;
-    else
-      switch (currentTask.type) {
-        case Task.TaskTypes.Parallel:
-          return findNextParallelTaskPath(
-            taskReferenceName,
-            tasks,
-            currentPath,
-            currentTask,
-          );
-        case Task.TaskTypes.Decision:
-          return findNextDecisionTaskPath(
-            taskReferenceName,
-            tasks,
-            currentPath,
-            currentTask,
-          );
-        case Task.TaskTypes.Task:
-        case Task.TaskTypes.Compensate:
-        case Task.TaskTypes.Schedule:
-        case Task.TaskTypes.SubTransaction:
-        default:
-          return findTaskPath(
-            taskReferenceName,
-            tasks,
-            getNextPath(currentPath),
-          );
-      }
-  else return null;
 };
 
 export const getTaskData = async (
@@ -297,10 +205,7 @@ const getTaskInfo = async (task: Task.ITask) => {
 
   const tasksData = await getTaskData(workflow);
   // Compatibility for previous version.
-  // findTaskPath should be remove whenever we can.
-  const currentTaskPath =
-    task.taskPath ||
-    findTaskPath(task.taskReferenceName, workflow.workflowDefinition.tasks);
+  const currentTaskPath = task.taskPath;
   const nextTaskPath = getNextTaskPath(
     workflow.workflowDefinition.tasks,
     currentTaskPath,
