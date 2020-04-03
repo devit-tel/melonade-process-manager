@@ -147,7 +147,7 @@ export const getNextTaskPath = (
 
   // Case of decision (default) it's the same as other decision but
   const childOfDecisionDefault = isChildOfDecisionDefault(tasks, currentPath);
-  const childOfDecisionCase = isChildOfDecisionDefault(tasks, currentPath);
+  const childOfDecisionCase = isChildOfDecisionCase(tasks, currentPath);
   if (childOfDecisionDefault || childOfDecisionCase) {
     const decisionTaskPath = childOfDecisionDefault
       ? R.dropLast(2, currentPath)
@@ -204,7 +204,6 @@ const getTaskInfo = async (task: Task.ITask) => {
   );
 
   const tasksData = await getTaskData(workflow);
-  // Compatibility for previous version.
   const currentTaskPath = task.taskPath;
   const nextTaskPath = getNextTaskPath(
     workflow.workflowDefinition.tasks,
