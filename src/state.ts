@@ -1,22 +1,16 @@
-import {
-  Event,
-  State,
-  Task,
-  Workflow,
-  WorkflowDefinition,
-} from '@melonade/melonade-declaration';
+import { Event, State, Task, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import { poll, sendEvent, stateConsumerClient } from './kafka';
-import {
-  taskInstanceStore,
-  transactionInstanceStore,
-  workflowInstanceStore,
-} from './store';
+import { taskInstanceStore, transactionInstanceStore, workflowInstanceStore } from './store';
 import { sleep, toObjectByKey } from './utils/common';
 import { mapParametersToValue } from './utils/task';
 
-export const isAllCompleted = R.all(
-  R.pathEq(['status'], State.TaskStates.Completed),
+export const isAllTasksFinished = R.all(
+  (task?: Task.ITask) => [State.TaskStates.Completed, State.TaskStates.Failed, State.TaskStates.AckTimeOut, State.TaskStates.Timeout].includes(task?.status)
+);
+
+export const isAnyTasksFailed = R.any(
+  (task?: Task.ITask) => [State.TaskStates.Failed, State.TaskStates.Timeout, State.TaskStates.AckTimeOut].includes(task?.status)
 );
 
 export const getNextPath = (
@@ -64,13 +58,31 @@ const getNextParallelTask = (
   isLastChild: boolean;
 } => {
   const taskReferenceName: string = R.path(
-    R.dropLast(3, currentPath).concat('taskReferenceName'),
+    [...R.dropLast<string | number>(3, currentPath), 'taskReferenceName'],
     tasks,
   );
   const parentTask = taskData[taskReferenceName];
 
-  // If still got next task in line
-  if (R.path(getNextPath(currentPath), tasks)) {
+  const lastTaskOfEachLine = R.pathOr<WorkflowDefinition.AllTaskType[][]>(
+    [],
+    R.dropLast(2, currentPath),
+    tasks,
+  ).map(
+    (pTask: WorkflowDefinition.AllTaskType[]) => {
+      let lastFoundTask: Task.ITask
+      for (const task of pTask) {
+        if (taskData[task.taskReferenceName]) {
+          lastFoundTask = taskData[task.taskReferenceName]
+        } else {
+          return lastFoundTask
+        }
+      }
+      return lastFoundTask
+    }
+  );
+
+  // Check if no any INLINE failed tasks AND still get next task in line
+  if (!isAnyTasksFailed(lastTaskOfEachLine) && R.path(getNextPath(currentPath), tasks)) {
     return {
       isCompleted: false,
       taskPath: getNextPath(currentPath),
@@ -79,22 +91,13 @@ const getNextParallelTask = (
     };
   }
 
-  const allTaskStatuses = R.pathOr<WorkflowDefinition.AllTaskType[][]>(
-    [],
-    R.dropLast(2, currentPath),
-    tasks,
-  ).map(
-    (pTask: WorkflowDefinition.AllTaskType[]) =>
-      R.path<Task.ITask>([R.last(pTask).taskReferenceName], taskData), // Just check the last task of every line
-  );
-
   // All of lines are completed
   // If no next task, so this mean this parellel task will completed aswell
-  if (isAllCompleted(allTaskStatuses)) {
+  if (isAllTasksFinished(lastTaskOfEachLine)) {
     return {
       isCompleted: false,
       taskPath: null,
-      parentTask: parentTask,
+      parentTask,
       isLastChild: true,
     };
   }
@@ -128,8 +131,22 @@ const getNextDecisionTask = (
     tasks,
   );
 
+  const childTasks = R.pathOr<WorkflowDefinition.AllTaskType[]>(
+    [],
+    R.dropLast(1, currentPath),
+    tasks,
+  )
+
+  let lastFoundTask: Task.ITask
+  for (const task of childTasks) {
+    if (taskData[task.taskReferenceName]) {
+      lastFoundTask = taskData[task.taskReferenceName]
+    }
+  }
+
   // If there are next child
-  if (R.path(getNextPath(currentPath), tasks)) {
+  // Check if no any INLINE failed tasks AND still get next task in line
+  if (!isAnyTasksFailed([lastFoundTask]) && R.path(getNextPath(currentPath), tasks)) {
     return {
       isCompleted: false,
       taskPath: getNextPath(currentPath),
@@ -328,6 +345,16 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   // If any task in workflow failed, mean this workflow is going to failed
   // Don't dispatch another task, and wait for all task to finish then do Workflow Failure Strategy
   if (failedTasks.length) {
+    // If it have parent so make their parent failed aswell, parent of parent... so on
+    if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
+      await processUpdateTask({
+        taskId: nextTaskPath.parentTask.taskId,
+        transactionId: nextTaskPath.parentTask.transactionId,
+        status: State.TaskStates.Failed,
+        isSystem: true,
+      });
+    }
+
     await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
     return;
   }
@@ -603,8 +630,8 @@ const handleFailedTask = async (
       task.retryDelay <= 0,
     );
   } else {
-    // For all childs of system task completed => update system task to failed too
-    if (nextTaskPath.parentTask) {
+    // For all childs task failed => update parent task to failed aswell
+    if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
       await processUpdateTask({
         taskId: nextTaskPath.parentTask.taskId,
         transactionId: nextTaskPath.parentTask.transactionId,
