@@ -619,7 +619,12 @@ const isHaveRunningTasks = (tasks: Task.ITask[]): boolean =>
     (taskData: Task.ITask) =>
       [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
         taskData.status,
-      ) && taskData.type === Task.TaskTypes.Task,
+      ) &&
+      [
+        Task.TaskTypes.Task,
+        Task.TaskTypes.Schedule,
+        Task.TaskTypes.SubTransaction,
+      ].includes(taskData.type),
   ).length > 0;
 
 const handleWorkflowFailureStrategy = async (
@@ -686,7 +691,7 @@ const handleFailedTask = async (
       task.retryDelay <= 0,
     );
   } else {
-    // For all childs of system task completed => update system task to completed too
+    // For all childs of system task completed => update system task to failed too
     if (nextTaskPath.parentTask) {
       await processUpdateTask({
         taskId: nextTaskPath.parentTask.taskId,
