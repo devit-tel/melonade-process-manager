@@ -1,12 +1,7 @@
-import {
-  Event,
-  State,
-  Store,
-  Transaction,
-} from '@melonade/melonade-declaration';
+import { Event, State, Store, Transaction } from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
 import { MongooseStore } from '.';
-import { ITransactionInstanceStore, workflowInstanceStore } from '..';
+import { ITransactionInstanceStore } from '..';
 
 const transacationSchema = new mongoose.Schema(
   {
@@ -28,6 +23,7 @@ const transacationSchema = new mongoose.Schema(
     parent: {
       transactionId: String,
       taskId: String,
+      taskType: String
     },
   },
   {
@@ -88,24 +84,14 @@ export class TransactionInstanceMongooseStore extends MongooseStore
       .lean({ virtuals: true })
       .exec();
 
-    if (
-      [
-        State.TransactionStates.Completed,
-        State.TransactionStates.Failed,
-        State.TransactionStates.Cancelled,
-        State.TransactionStates.Compensated,
-      ].includes(transactionUpdate.status)
-    ) {
-      await Promise.all([
-        this.model.deleteOne({
-          transactionId: transactionUpdate.transactionId,
-        }),
-        workflowInstanceStore.deleteAll(transactionUpdate.transactionId),
-      ]);
-    }
-
     return updatedTransaction;
   };
+
+  delete = async (transactionId: string): Promise<void> => {
+    await this.model.deleteOne({
+      transactionId: transactionId,
+    })
+  }
 
   list = async (
     from: number = 0,

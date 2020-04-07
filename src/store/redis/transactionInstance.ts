@@ -1,13 +1,8 @@
-import {
-  Event,
-  State,
-  Store,
-  Transaction,
-} from '@melonade/melonade-declaration';
+import { Event, State, Store, Transaction } from '@melonade/melonade-declaration';
 import ioredis from 'ioredis';
 import * as R from 'ramda';
 import { RedisStore } from '.';
-import { ITransactionInstanceStore, workflowInstanceStore } from '..';
+import { ITransactionInstanceStore } from '..';
 import { prefix } from '../../config';
 import { jsonTryParse } from '../../utils/common';
 
@@ -67,22 +62,7 @@ export class TransactionInstanceRedisStore extends RedisStore
         : null,
     };
 
-    // In case of redis I dont want to keep completed transaction
-    if (
-      [
-        State.TransactionStates.Completed,
-        State.TransactionStates.Failed,
-        State.TransactionStates.Cancelled,
-        State.TransactionStates.Compensated,
-      ].includes(transactionUpdate.status)
-    ) {
-      await Promise.all([
-        this.client.del(key),
-        workflowInstanceStore.deleteAll(transaction.transactionId),
-      ]);
-    } else {
-      await this.client.set(key, JSON.stringify(updatedTransaction));
-    }
+    await this.client.set(key, JSON.stringify(updatedTransaction));
 
     return updatedTransaction;
   };
@@ -96,8 +76,8 @@ export class TransactionInstanceRedisStore extends RedisStore
     return null;
   };
 
-  delete(transactionId: string): Promise<any> {
-    return this.client.del(`${prefix}.transaction.${transactionId}`);
+  delete = async (transactionId: string): Promise<void> => {
+    await this.client.del(`${prefix}.transaction.${transactionId}`)
   }
 
   list = async (
