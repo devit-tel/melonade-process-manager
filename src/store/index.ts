@@ -1,7 +1,10 @@
 import { Event, State, Store, Task, TaskDefinition, Timer, Transaction, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
+import debug from 'debug';
 import * as R from 'ramda';
 import { dispatch, sendEvent, sendTimer, sendUpdate } from '../kafka';
 import { getCompltedAt, mapParametersToValue } from '../utils/task';
+
+const dg = debug('melonade:store')
 
 export interface IStore {
   isHealthy(): boolean;
@@ -188,6 +191,7 @@ export class TransactionInstanceStore {
       input,
     );
 
+    dg(`Create ${transactionId}`)
     return transaction;
   };
 
@@ -263,6 +267,8 @@ export class TransactionInstanceStore {
         await this.delete(transactionUpdate.transactionId)
       }
 
+
+      dg(`Updated ${transactionUpdate.transactionId} to ${transactionUpdate.status}`)
       return transaction;
     } catch (error) {
       sendEvent({
@@ -282,6 +288,7 @@ export class TransactionInstanceStore {
       this.client.delete(transactionId),
       workflowInstanceStore.deleteAll(transactionId)
     ])
+    dg(`Clean up ${transactionId}`)
   }
 
   list(from?: number, size?: number): Promise<Store.ITransactionPaginate> {

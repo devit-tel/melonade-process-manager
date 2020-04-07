@@ -1,9 +1,12 @@
 import { Event, State, Task, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
+import debug from 'debug';
 import * as R from 'ramda';
 import { poll, sendEvent, stateConsumerClient } from './kafka';
 import { taskInstanceStore, transactionInstanceStore, workflowInstanceStore } from './store';
 import { sleep, toObjectByKey } from './utils/common';
 import { mapParametersToValue } from './utils/task';
+
+const dg = debug('melonade:state')
 
 export const isAllTasksFinished = R.all(
   (task?: Task.ITask) => [State.TaskStates.Completed, State.TaskStates.Failed, State.TaskStates.AckTimeOut, State.TaskStates.Timeout].includes(task?.status)
@@ -684,9 +687,10 @@ export const processUpdateTasks = async (
   tasksUpdate: Event.ITaskUpdate[],
 ): Promise<any> => {
   for (const taskUpdate of tasksUpdate) {
-    // console.time(`${taskUpdate.taskId}-${taskUpdate.status}`);
+    const hrStart = process.hrtime()
     await processUpdateTask(taskUpdate, true);
-    // console.timeEnd(`${taskUpdate.taskId}-${taskUpdate.status}`);
+    const hrEnd = process.hrtime(hrStart)
+    dg(`Updated ${taskUpdate.transactionId}:${taskUpdate.taskId} to ${taskUpdate.status} take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`)
   }
 };
 
