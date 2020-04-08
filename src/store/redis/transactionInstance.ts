@@ -1,4 +1,9 @@
-import { Event, State, Store, Transaction } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Store,
+  Transaction,
+} from '@melonade/melonade-declaration';
 import ioredis from 'ioredis';
 import * as R from 'ramda';
 import { RedisStore } from '.';
@@ -77,8 +82,8 @@ export class TransactionInstanceRedisStore extends RedisStore
   };
 
   delete = async (transactionId: string): Promise<void> => {
-    await this.client.del(`${prefix}.transaction.${transactionId}`)
-  }
+    await this.client.del(`${prefix}.transaction.${transactionId}`);
+  };
 
   list = async (
     from: number = 0,
@@ -104,5 +109,27 @@ export class TransactionInstanceRedisStore extends RedisStore
         jsonTryParse,
       ) as Transaction.ITransaction[],
     };
+  };
+
+  changeParent = async (
+    transactionId: string,
+    parent: Transaction.ITransaction['parent'],
+  ) => {
+    const key = `${prefix}.transaction.${transactionId}`;
+
+    const transactionString = await this.client.get(key);
+    if (!transactionString) {
+      throw new Error(`Transaction "${transactionId}" not found`);
+    }
+
+    // Change parent to conpensate parent
+    const transaction: Transaction.ITransaction = JSON.parse(transactionString);
+    await this.client.set(
+      key,
+      JSON.stringify({
+        ...transaction,
+        parent,
+      }),
+    );
   };
 }

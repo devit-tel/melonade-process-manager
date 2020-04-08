@@ -1,10 +1,21 @@
-import { Event, State, Store, Task, TaskDefinition, Timer, Transaction, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Store,
+  Task,
+  TaskDefinition,
+  Timer,
+  Transaction,
+  Workflow,
+  WorkflowDefinition,
+} from '@melonade/melonade-declaration';
 import debug from 'debug';
 import * as R from 'ramda';
 import { dispatch, sendEvent, sendTimer, sendUpdate } from '../kafka';
+import { toObjectByKey } from '../utils/common';
 import { getCompltedAt, mapParametersToValue } from '../utils/task';
 
-const dg = debug('melonade:store')
+const dg = debug('melonade:store');
 
 export interface IStore {
   isHealthy(): boolean;
@@ -49,6 +60,10 @@ export interface ITransactionInstanceStore extends IStore {
   delete(transactionId: string): Promise<void>;
   list(from?: number, size?: number): Promise<Store.ITransactionPaginate>;
   isHealthy(): boolean;
+  changeParent(
+    transactionId: string,
+    parent: Transaction.ITransaction['parent'],
+  ): Promise<void>;
 }
 
 export interface IWorkflowInstanceStore extends IStore {
@@ -191,7 +206,7 @@ export class TransactionInstanceStore {
       input,
     );
 
-    dg(`Create ${transactionId}`)
+    dg(`Create ${transactionId}`);
     return transaction;
   };
 
@@ -207,12 +222,12 @@ export class TransactionInstanceStore {
         details: transaction,
       });
 
-      const parentTransactionId = transaction.parent?.transactionId
-      const parentTaskId = transaction.parent?.taskId
-      const parentTaskType = transaction.parent?.taskType
+      const parentTransactionId = transaction.parent?.transactionId;
+      const parentTaskId = transaction.parent?.taskId;
+      const parentIsCompensate = transaction.parent?.isCompensate;
 
       if (parentTransactionId && parentTaskId) {
-        if (parentTaskType === Task.TaskTypes.Task) {
+        if (!parentIsCompensate) {
           switch (transaction.status) {
             case State.TransactionStates.Cancelled:
             case State.TransactionStates.Compensated:
@@ -256,19 +271,31 @@ export class TransactionInstanceStore {
 
       // Clean up instance store when transaction finished
       // If it have parent let parent clean by themself
-      if (
-        [
-          State.TransactionStates.Completed,
-          State.TransactionStates.Failed,
-          State.TransactionStates.Cancelled,
-          State.TransactionStates.Compensated,
-        ].includes(transactionUpdate.status) && !(parentTransactionId && parentTaskId)
-      ) {
-        await this.delete(transactionUpdate.transactionId)
+      if (parentTransactionId && parentTaskId) {
+        if (
+          [
+            State.TransactionStates.Cancelled,
+            State.TransactionStates.Compensated,
+          ].includes(transactionUpdate.status)
+        ) {
+          await this.delete(transactionUpdate.transactionId);
+        }
+      } else {
+        if (
+          [
+            State.TransactionStates.Completed,
+            State.TransactionStates.Failed,
+            State.TransactionStates.Cancelled,
+            State.TransactionStates.Compensated,
+          ].includes(transactionUpdate.status)
+        ) {
+          await this.delete(transactionUpdate.transactionId);
+        }
       }
 
-
-      dg(`Updated ${transactionUpdate.transactionId} to ${transactionUpdate.status}`)
+      dg(
+        `Updated ${transactionUpdate.transactionId} to ${transactionUpdate.status}`,
+      );
       return transaction;
     } catch (error) {
       sendEvent({
@@ -286,14 +313,41 @@ export class TransactionInstanceStore {
   delete = async (transactionId: string) => {
     await Promise.all([
       this.client.delete(transactionId),
-      workflowInstanceStore.deleteAll(transactionId)
-    ])
-    dg(`Clean up ${transactionId}`)
-  }
+      workflowInstanceStore.deleteAll(transactionId),
+    ]);
+    dg(`Clean up ${transactionId}`);
+  };
 
   list(from?: number, size?: number): Promise<Store.ITransactionPaginate> {
     return this.client.list(from, size);
   }
+
+  compensate = async (
+    transactionId: string,
+    parent?: Transaction.ITransaction['parent'],
+  ): Promise<void> => {
+    if (parent) {
+      this.client.changeParent(transactionId, parent);
+    }
+
+    const workflow = await workflowInstanceStore.getByTransactionId(
+      transactionId,
+    );
+
+    if (workflow.status === State.WorkflowStates.Running) {
+      await workflowInstanceStore.update({
+        transactionId: workflow.workflowId,
+        workflowId: workflow.workflowId,
+        status: State.WorkflowStates.Cancelled,
+      });
+    } else if (workflow.status === State.WorkflowStates.Completed) {
+      await workflowInstanceStore.compensate(
+        workflow,
+        Workflow.WorkflowTypes.CancelWorkflow,
+        true,
+      );
+    }
+  };
 
   isHealthy(): boolean {
     return this.client.isHealthy();
@@ -384,6 +438,94 @@ export class WorkflowInstanceStore {
     return this.client.deleteAll(transactionId);
   }
 
+  reload = async (workflow: Workflow.IWorkflow) => {
+    await this.client.delete(workflow.workflowId);
+    await this.client.create({
+      ...workflow,
+      retries: workflow.retries - 1,
+    });
+  };
+
+  private getCompenstateTasks = (
+    tasks: Task.ITask[],
+    includeWorkers: boolean,
+  ): WorkflowDefinition.Tasks => {
+    return tasks
+      .filter((task: Task.ITask) => {
+        return includeWorkers
+          ? (task.type === Task.TaskTypes.Task ||
+              task.type === Task.TaskTypes.SubTransaction) &&
+              task.status === State.TaskStates.Completed
+          : task.type === Task.TaskTypes.SubTransaction &&
+              task.status === State.TaskStates.Completed;
+      })
+      .sort((taskA: Task.ITask, taskB: Task.ITask): number => {
+        return taskB.endTime - taskA.endTime;
+      })
+      .map(
+        (task: Task.ITask): WorkflowDefinition.AllTaskType => {
+          if (task.type === Task.TaskTypes.Task) {
+            return {
+              name: task.taskName,
+              taskReferenceName: task.taskReferenceName,
+              type: Task.TaskTypes.Compensate,
+              inputParameters: {
+                input: `\${workflow.input.${task.taskReferenceName}.input}`,
+                output: `\${workflow.input.${task.taskReferenceName}.output}`,
+              },
+            };
+          } else {
+            return {
+              taskReferenceName: task.taskReferenceName,
+              type: Task.TaskTypes.SubTransaction,
+              inputParameters: task.input,
+            };
+          }
+        },
+      );
+  };
+
+  // Delete current workflow and create oposite one
+  // Return number of tasks to compensate
+  compensate = async (
+    workflow: Workflow.IWorkflow,
+    workflowType: Workflow.WorkflowTypes,
+    includeWorkers: boolean,
+  ) => {
+    const tasksData = await taskInstanceStore.getAll(workflow.workflowId);
+    const isHaveRunningTask = !!tasksData.find((task: Task.ITask) =>
+      [State.TaskStates.Scheduled, State.TaskStates.Inprogress].includes(
+        task.status,
+      ),
+    );
+
+    if (isHaveRunningTask) throw new Error(`Have running task`);
+
+    await this.client.delete(workflow.workflowId);
+
+    const compenstateTasks = this.getCompenstateTasks(
+      tasksData,
+      includeWorkers,
+    );
+
+    if (compenstateTasks) {
+      await this.create(
+        workflow.transactionId,
+        workflowType,
+        {
+          name: workflow.workflowDefinition.name,
+          rev: `${workflow.workflowDefinition.rev}_compensation`,
+          tasks: compenstateTasks,
+          failureStrategy: State.WorkflowFailureStrategies.Failed,
+          outputParameters: {},
+        },
+        toObjectByKey(tasksData, 'taskReferenceName'),
+      );
+    }
+
+    return compenstateTasks.length;
+  };
+
   isHealthy(): boolean {
     return this.client.isHealthy();
   }
@@ -460,9 +602,9 @@ export class TaskInstanceStore {
       | WorkflowDefinition.IParallelTask
       | WorkflowDefinition.IScheduleTask
       | WorkflowDefinition.ISubTransactionTask = R.path(
-        ['workflowDefinition', 'tasks', ...taskPath],
-        workflow,
-      );
+      ['workflowDefinition', 'tasks', ...taskPath],
+      workflow,
+    );
     const timestampCreate = Date.now();
     const taskData: Task.ITask = {
       taskId: undefined,
@@ -536,42 +678,60 @@ export class TaskInstanceStore {
           },
         });
 
-        const workflowDefinition = await workflowDefinitionStore.get(
-          R.path(['input', 'workflowName'], task),
-          R.path(['input', 'workflowRev'], task),
-        );
-
-        if (workflowDefinition) {
-          await transactionInstanceStore.create(
-            `${workflow.transactionId}-${task.taskReferenceName}`,
-            workflowDefinition,
-            task.input,
-            [Task.TaskTypes.SubTransaction],
-            {
-              transactionId: workflow.transactionId,
-              taskId: task.taskId,
-              taskType: Task.TaskTypes.Task
-            },
+        if (workflow.type === Workflow.WorkflowTypes.Workflow) {
+          const workflowDefinition = await workflowDefinitionStore.get(
+            task.input?.workflowName,
+            task.input?.workflowRev,
           );
 
+          if (workflowDefinition) {
+            await transactionInstanceStore.create(
+              `${workflow.transactionId}-${task.taskReferenceName}`,
+              workflowDefinition,
+              task.input,
+              [Task.TaskTypes.SubTransaction],
+              {
+                transactionId: workflow.transactionId,
+                taskId: task.taskId,
+                isCompensate: false,
+              },
+            );
+
+            return this.update({
+              transactionId: task.transactionId,
+              taskId: task.taskId,
+              status: State.TaskStates.Inprogress,
+              isSystem: true,
+            });
+          } else {
+            sendUpdate({
+              transactionId: task.transactionId,
+              taskId: task.taskId,
+              status: State.TaskStates.Failed,
+              doNotRetry: true,
+              isSystem: true,
+              output: {
+                error: `Workflow definition not found`,
+              },
+            });
+            return task;
+          }
+        } else {
+          // For compensate inception XD
+          await transactionInstanceStore.compensate(
+            `${workflow.transactionId}-${task.taskReferenceName}`,
+            {
+              taskId: task.taskId,
+              transactionId: task.transactionId,
+              isCompensate: true,
+            },
+          );
           return this.update({
             transactionId: task.transactionId,
             taskId: task.taskId,
             status: State.TaskStates.Inprogress,
             isSystem: true,
           });
-        } else {
-          sendUpdate({
-            transactionId: task.transactionId,
-            taskId: task.taskId,
-            status: State.TaskStates.Failed,
-            doNotRetry: true,
-            isSystem: true,
-            output: {
-              error: `Workflow definition not found`,
-            },
-          });
-          return task;
         }
       } else {
         // Dispatch child task(s)
@@ -656,9 +816,9 @@ export class TaskInstanceStore {
     const workflowTask:
       | WorkflowDefinition.ICompensateTask
       | WorkflowDefinition.ITaskTask = R.path(
-        ['workflowDefinition', 'tasks', ...taskPath],
-        workflow,
-      );
+      ['workflowDefinition', 'tasks', ...taskPath],
+      workflow,
+    );
     const taskDefinition = await taskDefinitionStore.get(workflowTask.name);
 
     const timestamp = Date.now();
@@ -721,7 +881,7 @@ export class TaskInstanceStore {
     overideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
     switch (
-    R.path(['workflowDefinition', 'tasks', ...taskPath, 'type'], workflow)
+      R.path(['workflowDefinition', 'tasks', ...taskPath, 'type'], workflow)
     ) {
       case Task.TaskTypes.Decision:
       case Task.TaskTypes.Parallel:
@@ -775,14 +935,20 @@ export class TaskInstanceStore {
   }
 
   deleteAll = async (workflowId: string) => {
-    const tasksData = await this.getAll(workflowId)
-    const subTransactionTask = tasksData.filter((task: Task.ITask) => task.type === Task.TaskTypes.SubTransaction)
+    const tasksData = await this.getAll(workflowId);
+    const subTransactionTask = tasksData.filter(
+      (task: Task.ITask) => task.type === Task.TaskTypes.SubTransaction,
+    );
 
     await this.client.deleteAll(workflowId);
     await Promise.all(
-      subTransactionTask.map((task: Task.ITask) => transactionInstanceStore.delete(`${task.transactionId}-${task.taskReferenceName}`))
-    )
-  }
+      subTransactionTask.map((task: Task.ITask) =>
+        transactionInstanceStore.delete(
+          `${task.transactionId}-${task.taskReferenceName}`,
+        ),
+      ),
+    );
+  };
 
   isHealthy(): boolean {
     return this.client.isHealthy();

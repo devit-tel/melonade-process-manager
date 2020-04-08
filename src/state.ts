@@ -1,19 +1,38 @@
-import { Event, State, Task, Workflow, WorkflowDefinition } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Task,
+  Workflow,
+  WorkflowDefinition,
+} from '@melonade/melonade-declaration';
 import debug from 'debug';
 import * as R from 'ramda';
 import { poll, sendEvent, stateConsumerClient } from './kafka';
-import { taskInstanceStore, transactionInstanceStore, workflowInstanceStore } from './store';
-import { sleep, toObjectByKey } from './utils/common';
+import {
+  taskInstanceStore,
+  transactionInstanceStore,
+  workflowInstanceStore,
+} from './store';
+import { sleep } from './utils/common';
 import { mapParametersToValue } from './utils/task';
 
-const dg = debug('melonade:state')
+const dg = debug('melonade:state');
 
-export const isAllTasksFinished = R.all(
-  (task?: Task.ITask) => [State.TaskStates.Completed, State.TaskStates.Failed, State.TaskStates.AckTimeOut, State.TaskStates.Timeout].includes(task?.status)
+export const isAllTasksFinished = R.all((task?: Task.ITask) =>
+  [
+    State.TaskStates.Completed,
+    State.TaskStates.Failed,
+    State.TaskStates.AckTimeOut,
+    State.TaskStates.Timeout,
+  ].includes(task?.status),
 );
 
-export const isAnyTasksFailed = R.any(
-  (task?: Task.ITask) => [State.TaskStates.Failed, State.TaskStates.Timeout, State.TaskStates.AckTimeOut].includes(task?.status)
+export const isAnyTasksFailed = R.any((task?: Task.ITask) =>
+  [
+    State.TaskStates.Failed,
+    State.TaskStates.Timeout,
+    State.TaskStates.AckTimeOut,
+  ].includes(task?.status),
 );
 
 export const getNextPath = (
@@ -70,22 +89,23 @@ const getNextParallelTask = (
     [],
     R.dropLast(2, currentPath),
     tasks,
-  ).map(
-    (pTask: WorkflowDefinition.AllTaskType[]) => {
-      let lastFoundTask: Task.ITask
-      for (const task of pTask) {
-        if (taskData[task.taskReferenceName]) {
-          lastFoundTask = taskData[task.taskReferenceName]
-        } else {
-          return lastFoundTask
-        }
+  ).map((pTask: WorkflowDefinition.AllTaskType[]) => {
+    let lastFoundTask: Task.ITask;
+    for (const task of pTask) {
+      if (taskData[task.taskReferenceName]) {
+        lastFoundTask = taskData[task.taskReferenceName];
+      } else {
+        return lastFoundTask;
       }
-      return lastFoundTask
     }
-  );
+    return lastFoundTask;
+  });
 
   // Check if no any INLINE failed tasks AND still get next task in line
-  if (!isAnyTasksFailed(lastTaskOfEachLine) && R.path(getNextPath(currentPath), tasks)) {
+  if (
+    !isAnyTasksFailed(lastTaskOfEachLine) &&
+    R.path(getNextPath(currentPath), tasks)
+  ) {
     return {
       isCompleted: false,
       taskPath: getNextPath(currentPath),
@@ -138,18 +158,21 @@ const getNextDecisionTask = (
     [],
     R.dropLast(1, currentPath),
     tasks,
-  )
+  );
 
-  let lastFoundTask: Task.ITask
+  let lastFoundTask: Task.ITask;
   for (const task of childTasks) {
     if (taskData[task.taskReferenceName]) {
-      lastFoundTask = taskData[task.taskReferenceName]
+      lastFoundTask = taskData[task.taskReferenceName];
     }
   }
 
   // If there are next child
   // Check if no any INLINE failed tasks AND still get next task in line
-  if (!isAnyTasksFailed([lastFoundTask]) && R.path(getNextPath(currentPath), tasks)) {
+  if (
+    !isAnyTasksFailed([lastFoundTask]) &&
+    R.path(getNextPath(currentPath), tasks)
+  ) {
     return {
       isCompleted: false,
       taskPath: getNextPath(currentPath),
@@ -303,12 +326,9 @@ const handleCancelWorkflow = async (
   // If there are running task wait for them first
   if (runningTasks.length === 0) {
     switch (workflow.workflowDefinition.failureStrategy) {
-      case State.WorkflowFailureStrategies.RecoveryWorkflow:
-        await handleRecoveryWorkflow(workflow, tasksDataList, true);
-        break;
       case State.WorkflowFailureStrategies.Compensate:
       case State.WorkflowFailureStrategies.CompensateThenRetry:
-        await handleCompensateWorkflow(workflow, tasksDataList, true);
+        await handleCompensateWorkflow(workflow, true);
         break;
       case State.WorkflowFailureStrategies.Retry:
       case State.WorkflowFailureStrategies.Failed:
@@ -331,9 +351,9 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
         status: State.TaskStates.Completed,
         isSystem: true,
       });
+    } else {
+      await handleCancelWorkflow(workflow, tasksData);
     }
-
-    await handleCancelWorkflow(workflow, tasksData);
     return;
   }
 
@@ -356,9 +376,9 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
         status: State.TaskStates.Failed,
         isSystem: true,
       });
+    } else {
+      await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
     }
-
-    await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
     return;
   }
 
@@ -419,118 +439,49 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   }
 };
 
-const getCompensateTasks = R.compose(
-  R.map(
-    (task: Task.ITask): WorkflowDefinition.AllTaskType => {
-      return {
-        name: task.taskName,
-        taskReferenceName: task.taskReferenceName,
-        type: Task.TaskTypes.Compensate,
-        inputParameters: {
-          input: `\${workflow.input.${task.taskReferenceName}.input}`,
-          output: `\${workflow.input.${task.taskReferenceName}.output}`,
-        },
-      };
-    },
-  ),
-  R.sort((taskA: Task.ITask, taskB: Task.ITask): number => {
-    return taskB.endTime - taskA.endTime;
-  }),
-  R.filter((task: Task.ITask | any): boolean => {
-    return (
-      task.type === Task.TaskTypes.Task &&
-      task.status === State.TaskStates.Completed
-    );
-  }),
-);
-
-const handleRecoveryWorkflow = async (
-  workflow: Workflow.IWorkflow,
-  tasksData: Task.ITask[],
-  isCancel: boolean = false,
-): Promise<void> => {
-  await workflowInstanceStore.create(
-    workflow.transactionId,
-    isCancel
-      ? Workflow.WorkflowTypes.CancelWorkflow
-      : Workflow.WorkflowTypes.CompensateWorkflow,
-    workflow.workflowDefinition,
-    toObjectByKey(tasksData, 'taskReferenceName'),
-  );
-};
-
 const handleRetryWorkflow = async (
   workflow: Workflow.IWorkflow,
-  tasksData: Task.ITask[],
 ): Promise<void> => {
   if (workflow.retries > 0) {
-    await workflowInstanceStore.create(
-      workflow.transactionId,
-      Workflow.WorkflowTypes.Workflow,
-      workflow.workflowDefinition,
-      tasksData,
-      {
-        retries: workflow.retries - 1,
-      },
-    );
+    await workflowInstanceStore.reload(workflow);
     return;
   }
   await handleFailedWorkflow(workflow);
   return;
 };
 
-const handleCompensateWorkflow = (
+const handleCompensateWorkflow = async (
   workflow: Workflow.IWorkflow,
-  tasksData: Task.ITask[],
   isCancel: boolean = false,
-) => {
-  const compensateTasks = getCompensateTasks(tasksData);
-  if (compensateTasks.length) {
-    return workflowInstanceStore.create(
-      workflow.transactionId,
-      isCancel
-        ? Workflow.WorkflowTypes.CancelWorkflow
-        : Workflow.WorkflowTypes.CompensateWorkflow,
-      {
-        name: workflow.workflowDefinition.name,
-        rev: `${workflow.workflowDefinition.rev}_compensate`,
-        tasks: compensateTasks,
-        failureStrategy: State.WorkflowFailureStrategies.Failed,
-        outputParameters: {},
-      },
-      toObjectByKey(tasksData, 'taskReferenceName'),
-    );
-  } else {
+): Promise<void> => {
+  const tasksTocompensate = await workflowInstanceStore.compensate(
+    workflow,
+    isCancel
+      ? Workflow.WorkflowTypes.CancelWorkflow
+      : Workflow.WorkflowTypes.CompensateWorkflow,
+    true,
+  );
+
+  if (tasksTocompensate === 0) {
     if (isCancel) {
-      return handleCompletedCancelWorkflow(workflow);
+      await handleCompletedCancelWorkflow(workflow);
+    } else {
+      await handleCompletedCompensateWorkflow(workflow);
     }
-    return handleCompletedCompensateWorkflow(workflow);
   }
 };
 
-const handleCompensateThenRetryWorkflow = (
+const handleCompensateThenRetryWorkflow = async (
   workflow: Workflow.IWorkflow,
-  tasksData: Task.ITask[],
-) => {
-  const compensateTasks = getCompensateTasks(tasksData);
-  if (compensateTasks.length) {
-    return workflowInstanceStore.create(
-      workflow.transactionId,
-      Workflow.WorkflowTypes.CompensateThenRetryWorkflow,
-      {
-        name: workflow.workflowDefinition.name,
-        rev: `${workflow.workflowDefinition.rev}_compensate`,
-        tasks: getCompensateTasks(tasksData),
-        failureStrategy: State.WorkflowFailureStrategies.Failed,
-        outputParameters: {},
-      },
-      toObjectByKey(tasksData, 'taskReferenceName'),
-      {
-        retries: workflow.retries,
-      },
-    );
-  } else {
-    return handleCompletedCompensateThenRetryWorkflow(workflow);
+): Promise<void> => {
+  const tasksTocompensate = await workflowInstanceStore.compensate(
+    workflow,
+    Workflow.WorkflowTypes.CompensateThenRetryWorkflow,
+    true,
+  );
+
+  if (tasksTocompensate === 0) {
+    await handleCompletedCompensateThenRetryWorkflow(workflow);
   }
 };
 
@@ -573,8 +524,7 @@ const handleWorkflowFailureStrategy = async (
   task: Task.ITask,
   tasksDataList: Task.ITask[],
 ) => {
-  // No running task, start recovery
-  // If there are running task wait for them first
+  // Wait for every tasks to finish before start recovery
   if (!isHaveRunningTasks(tasksDataList)) {
     const workflow = await workflowInstanceStore.update({
       transactionId: task.transactionId,
@@ -587,17 +537,14 @@ const handleWorkflowFailureStrategy = async (
     }
 
     switch (workflow.workflowDefinition.failureStrategy) {
-      case State.WorkflowFailureStrategies.RecoveryWorkflow:
-        await handleRecoveryWorkflow(workflow, tasksDataList);
-        break;
       case State.WorkflowFailureStrategies.Retry:
-        await handleRetryWorkflow(workflow, tasksDataList);
+        await handleRetryWorkflow(workflow);
         break;
       case State.WorkflowFailureStrategies.Compensate:
-        await handleCompensateWorkflow(workflow, tasksDataList);
+        await handleCompensateWorkflow(workflow);
         break;
       case State.WorkflowFailureStrategies.CompensateThenRetry:
-        await handleCompensateThenRetryWorkflow(workflow, tasksDataList);
+        await handleCompensateThenRetryWorkflow(workflow);
         break;
       case State.WorkflowFailureStrategies.Failed:
         await handleFailedWorkflow(workflow);
@@ -608,7 +555,6 @@ const handleWorkflowFailureStrategy = async (
 
 const handleFailedTask = async (
   task: Task.ITask,
-  isRoot: boolean = false,
   doNotRetry: boolean = false,
 ) => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
@@ -641,9 +587,7 @@ const handleFailedTask = async (
         status: State.TaskStates.Failed,
         isSystem: true,
       });
-    }
-
-    if (isRoot) {
+    } else {
       const tasksDataList = R.values(tasksData);
       await handleWorkflowFailureStrategy(task, tasksDataList);
     }
@@ -652,7 +596,6 @@ const handleFailedTask = async (
 
 export const processUpdateTask = async (
   taskUpdate: Event.ITaskUpdate,
-  isRoot: boolean = false,
 ): Promise<void> => {
   try {
     const task = await taskInstanceStore.update(taskUpdate);
@@ -665,7 +608,7 @@ export const processUpdateTask = async (
       case State.TaskStates.Failed:
       case State.TaskStates.Timeout:
       case State.TaskStates.AckTimeOut:
-        await handleFailedTask(task, isRoot, taskUpdate.doNotRetry);
+        await handleFailedTask(task, taskUpdate.doNotRetry);
         break;
       default:
         // Case Inprogress we did't need to do anything except update the status
@@ -687,10 +630,14 @@ export const processUpdateTasks = async (
   tasksUpdate: Event.ITaskUpdate[],
 ): Promise<any> => {
   for (const taskUpdate of tasksUpdate) {
-    const hrStart = process.hrtime()
-    await processUpdateTask(taskUpdate, true);
-    const hrEnd = process.hrtime(hrStart)
-    dg(`Updated ${taskUpdate.transactionId}:${taskUpdate.taskId} to ${taskUpdate.status} take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`)
+    const hrStart = process.hrtime();
+    await processUpdateTask(taskUpdate);
+    const hrEnd = process.hrtime(hrStart);
+    dg(
+      `Updated ${taskUpdate.transactionId}:${taskUpdate.taskId} to ${
+        taskUpdate.status
+      } take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`,
+    );
   }
 };
 

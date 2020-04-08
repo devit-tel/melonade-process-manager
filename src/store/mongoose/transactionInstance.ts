@@ -1,4 +1,9 @@
-import { Event, State, Store, Transaction } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Store,
+  Transaction,
+} from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
 import { MongooseStore } from '.';
 import { ITransactionInstanceStore } from '..';
@@ -23,7 +28,7 @@ const transacationSchema = new mongoose.Schema(
     parent: {
       transactionId: String,
       taskId: String,
-      taskType: String
+      taskType: String,
     },
   },
   {
@@ -90,29 +95,35 @@ export class TransactionInstanceMongooseStore extends MongooseStore
   delete = async (transactionId: string): Promise<void> => {
     await this.model.deleteOne({
       transactionId: transactionId,
-    })
-  }
+    });
+  };
 
   list = async (
     from: number = 0,
     size: number = 50,
   ): Promise<Store.ITransactionPaginate> => {
     const [total, transactions] = await Promise.all([
-      this.model
-        .count({})
-        .lean()
-        .exec(),
-      this.model
-        .find({})
-        .limit(size)
-        .skip(from)
-        .lean()
-        .exec(),
+      this.model.count({}).lean().exec(),
+      this.model.find({}).limit(size).skip(from).lean().exec(),
     ]);
 
     return {
       total: total as number,
       transactions: transactions as Transaction.ITransaction[],
     };
+  };
+
+  changeParent = async (
+    transactionId: string,
+    parent: Transaction.ITransaction['parent'],
+  ) => {
+    await this.model.updateOne(
+      {
+        transactionId,
+      },
+      {
+        parent,
+      },
+    );
   };
 }

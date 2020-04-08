@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@koa/cors": "^3.0.0",
-    "@melonade/melonade-declaration": "^0.17.2",
+    "@melonade/melonade-declaration": "^0.17.5",
     "cron-parser": "^2.13.0",
     "debug": "^4.1.1",
     "dotenv": "^8.2.0",
@@ -50,7 +50,7 @@
     "jest": "^24.9.0",
     "jest-date-mock": "^1.0.7",
     "nodemon": "^1.19.4",
-    "prettier": "1.18.2",
+    "prettier": "^2.0.4",
     "prettier-tslint": "^0.4.2",
     "rimraf": "^2.7.1",
     "ts-jest": "^24.1.0",
