@@ -102,4 +102,19 @@ export class TransactionInstanceMemoryStore extends MemoryStore
       ) as Transaction.ITransaction[],
     };
   };
+
+  changeParent = async (
+    transactionId: string,
+    parent: Transaction.ITransaction['parent'],
+  ) => {
+    const transaction = await this.getValue(transactionId);
+    if (!transaction) {
+      throw new Error(`Transaction "${transactionId}" not found`);
+    }
+
+    this.setValue(transaction.transactionId, {
+      ...transaction,
+      parent,
+    });
+  };
 }
