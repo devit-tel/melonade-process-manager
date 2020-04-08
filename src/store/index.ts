@@ -491,7 +491,7 @@ export class WorkflowInstanceStore {
     workflow: Workflow.IWorkflow,
     workflowType: Workflow.WorkflowTypes,
     includeWorkers: boolean,
-  ) => {
+  ): Promise<number> => {
     const tasksData = await taskInstanceStore.getAll(workflow.workflowId);
     const isHaveRunningTask = !!tasksData.find((task: Task.ITask) =>
       [State.TaskStates.Scheduled, State.TaskStates.Inprogress].includes(
@@ -508,7 +508,7 @@ export class WorkflowInstanceStore {
       includeWorkers,
     );
 
-    if (compenstateTasks) {
+    if (compenstateTasks.length) {
       await this.create(
         workflow.transactionId,
         workflowType,
@@ -518,6 +518,9 @@ export class WorkflowInstanceStore {
           tasks: compenstateTasks,
           failureStrategy: State.WorkflowFailureStrategies.Failed,
           outputParameters: {},
+          retry: {
+            limit: workflow.retries,
+          },
         },
         toObjectByKey(tasksData, 'taskReferenceName'),
       );

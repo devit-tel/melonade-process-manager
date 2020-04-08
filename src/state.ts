@@ -474,13 +474,13 @@ const handleCompensateWorkflow = async (
 const handleCompensateThenRetryWorkflow = async (
   workflow: Workflow.IWorkflow,
 ): Promise<void> => {
-  const tasksTocompensate = await workflowInstanceStore.compensate(
+  const tasksToCompensate = await workflowInstanceStore.compensate(
     workflow,
     Workflow.WorkflowTypes.CompensateThenRetryWorkflow,
     true,
   );
 
-  if (tasksTocompensate === 0) {
+  if (tasksToCompensate === 0) {
     await handleCompletedCompensateThenRetryWorkflow(workflow);
   }
 };
