@@ -937,20 +937,8 @@ export class TaskInstanceStore {
     return this.client.delete(taskId);
   }
 
-  deleteAll = async (workflowId: string) => {
-    const tasksData = await this.getAll(workflowId);
-    const subTransactionTask = tasksData.filter(
-      (task: Task.ITask) => task.type === Task.TaskTypes.SubTransaction,
-    );
-
-    await this.client.deleteAll(workflowId);
-    await Promise.all(
-      subTransactionTask.map((task: Task.ITask) =>
-        transactionInstanceStore.delete(
-          `${task.transactionId}-${task.taskReferenceName}`,
-        ),
-      ),
-    );
+  deleteAll = (workflowId: string) => {
+    return this.client.deleteAll(workflowId);
   };
 
   isHealthy(): boolean {

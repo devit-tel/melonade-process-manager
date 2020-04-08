@@ -114,15 +114,18 @@ export class WorkflowInstanceRedisStore extends RedisStore
 
   delete = async (workflowId: string): Promise<void> => {
     const workflow = await this.get(workflowId);
-    await this.client
-      .pipeline()
-      .del(`${prefix}.workflow.${workflowId}`)
-      .lrem(
-        `${prefix}.transaction-workflow.${workflow.transactionId}`,
-        -1,
-        workflowId,
-      )
-      .exec();
+    await Promise.all([
+      this.client
+        .pipeline()
+        .del(`${prefix}.workflow.${workflowId}`)
+        .lrem(
+          `${prefix}.transaction-workflow.${workflow.transactionId}`,
+          -1,
+          workflowId,
+        )
+        .exec(),
+      taskInstanceStore.deleteAll(workflowId),
+    ]);
   };
 
   deleteAll = async (transactionId: string): Promise<void> => {
