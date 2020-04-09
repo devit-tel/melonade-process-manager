@@ -1,6 +1,7 @@
 /* tslint:disable: max-func-body-length */
 
 import {
+  Event,
   State,
   Task,
   WorkflowDefinition,
@@ -97,6 +98,15 @@ const updateTask = async (
     },
   ]);
 };
+
+const getEventsTaskByTaskRef = (taskReferenceName: string) =>
+  mockedSendEvent.mock.calls.find((args: [Event.AllEvent, any]) => {
+    return (
+      args[0].type === 'TASK' &&
+      args[0].isError === false &&
+      args[0].details.taskReferenceName === taskReferenceName
+    );
+  })[0].details;
 
 interface IAllStoreType {
   taskDefinitionStoreClient: ITaskDefinitionStore;
@@ -433,10 +443,12 @@ describe('Run parallel decision workflow', () => {
 
       // ----------------------------------------------------------------
       currentTasks = mockedDispatch.mock.calls.map(R.head);
+      const p2_2_d1_default_t1 = getEventsTaskByTaskRef('p2_2_d1_default_t1');
+      const p2_1_t1 = getEventsTaskByTaskRef('p2_1_t1');
       cleanMock();
       // ----------------------------------------------------------------
 
-      await updateTask(currentTasks[1]);
+      await updateTask(p2_2_d1_default_t1);
 
       expect(mockedSendEvent).toBeCalledTimes(3);
       expect(mockedSendEvent).toBeCalledWith(
@@ -487,7 +499,7 @@ describe('Run parallel decision workflow', () => {
       cleanMock();
       // ----------------------------------------------------------------
 
-      await updateTask(currentTasks[0]);
+      await updateTask(p2_1_t1);
 
       expect(mockedSendEvent).toBeCalledTimes(3);
       expect(mockedSendEvent).toBeCalledWith(
