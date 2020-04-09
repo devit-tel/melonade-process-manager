@@ -21,10 +21,7 @@ import {
   workflowInstanceStore,
 } from '../store';
 import { TaskDefinitionMemoryStore } from '../store/memory/taskDefinition';
-import { TaskInstanceMemoryStore } from '../store/memory/taskInstance';
-import { TransactionInstanceMemoryStore } from '../store/memory/transactionInstance';
 import { WorkflowDefinitionMemoryStore } from '../store/memory/workflowDefinition';
-import { WorkflowInstanceMemoryStore } from '../store/memory/workflowInstance';
 import { TaskInstanceMongooseStore } from '../store/mongoose/taskInstance';
 import { TransactionInstanceMongooseStore } from '../store/mongoose/transactionInstance';
 import { WorkflowInstanceMongooseStore } from '../store/mongoose/workflowInstance';
@@ -113,13 +110,6 @@ describe('Run simple workflow', () => {
 
   // Do test each store type
   describe.each([
-    {
-      taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
-      workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
-      taskInstanceStoreClient: new TaskInstanceMemoryStore(),
-      workflowInstanceStoreClient: new WorkflowInstanceMemoryStore(),
-      transactionInstanceStoreClient: new TransactionInstanceMemoryStore(),
-    },
     {
       taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
       workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
