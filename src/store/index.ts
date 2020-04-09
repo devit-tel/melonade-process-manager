@@ -742,8 +742,8 @@ export class TaskInstanceStore {
           case Task.TaskTypes.Decision:
             await this.create(
               workflow,
-              workflowTask.decisions[taskData.input.case]
-                ? [...taskPath, 'decisions', taskData.input.case, 0]
+              workflowTask.decisions?.[taskData.input?.case]
+                ? [...taskPath, 'decisions', taskData.input?.case, 0]
                 : [...taskPath, 'defaultDecision', 0],
               tasksData,
             );
