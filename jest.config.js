@@ -17,5 +17,4 @@ module.exports = {
     '!src/index.ts',
     '!src/store/__template__/*',
   ],
-  setupFiles: ['./src/store/mongoose/__mocks__/index.ts'],
 };
