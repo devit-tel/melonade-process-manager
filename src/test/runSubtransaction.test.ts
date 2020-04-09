@@ -338,7 +338,7 @@ describe('Run transaction with sub transaction', () => {
     });
 
     test('All task completed', async () => {
-      const TRANSACTION_ID = 'ALL_TASK_COMPLETED';
+      const TRANSACTION_ID = 'run-subtransaction-1';
       const SUB_TRANSACTION_1_ID = `${TRANSACTION_ID}-s1`;
       // const SUB_TRANSACTION_2_ID = `${SUB_TRANSACTION_1_ID}-s1`;
 
