@@ -1,6 +1,7 @@
 /* tslint:disable: max-func-body-length */
 
 import {
+  Event,
   State,
   Task,
   WorkflowDefinition,
@@ -340,7 +341,7 @@ describe('Run transaction with sub transaction', () => {
     test('All task completed', async () => {
       const TRANSACTION_ID = 'run-subtransaction-1';
       const SUB_TRANSACTION_1_ID = `${TRANSACTION_ID}-s1`;
-      // const SUB_TRANSACTION_2_ID = `${SUB_TRANSACTION_1_ID}-s1`;
+      const SUB_TRANSACTION_2_ID = `${SUB_TRANSACTION_1_ID}-s1`;
 
       let currentTask: Task.ITask;
       // Main workflow t1
@@ -414,6 +415,8 @@ describe('Run transaction with sub transaction', () => {
       }
 
       // Main workflow s1
+      let p1Tasks: Task.ITask[];
+      let w1Task: Task.ITask;
       {
         await updateTask(currentTask);
 
@@ -441,6 +444,7 @@ describe('Run transaction with sub transaction', () => {
           }),
         );
 
+        // Start parallel
         expect(mockedSendEvent).toBeCalledWith(
           expect.objectContaining({
             type: 'TASK',
@@ -565,6 +569,8 @@ describe('Run transaction with sub transaction', () => {
           }),
         );
 
+        expect(mockedSendTimer).toBeCalledTimes(1);
+
         expect(transactionInstanceStore.create).toBeCalledTimes(1);
         expect(transactionInstanceStore.update).toBeCalledTimes(0);
         expect(workflowInstanceStore.create).toBeCalledTimes(1);
@@ -574,9 +580,297 @@ describe('Run transaction with sub transaction', () => {
         expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
         // ----------------------------------------------------------------
-        currentTask = mockedDispatch.mock.calls[0][0];
+        // currentTask = mockedDispatch.mock.calls[0][0];
+        p1Tasks = mockedDispatch.mock.calls.map((args: any[]) => args[0]);
+        w1Task = mockedSendEvent.mock.calls.find(
+          (args: [Event.AllEvent, any]) => {
+            return (
+              args[0].type === 'TASK' &&
+              args[0].isError === false &&
+              args[0].details.taskReferenceName === 'w1'
+            );
+          },
+        )[0].details;
+
         cleanMock();
         // ----------------------------------------------------------------
+      }
+
+      // Parallel (t2, w1, s1)
+      {
+        // process t2
+        {
+          currentTask = p1Tasks.find(
+            (task: Task.ITask) => task.taskReferenceName === 't2',
+          );
+
+          await updateTask(currentTask);
+          expect(mockedSendEvent).toBeCalledTimes(2);
+
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: TRANSACTION_ID,
+                taskReferenceName: 't2',
+                status: State.TaskStates.Inprogress,
+                type: Task.TaskTypes.Task,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: TRANSACTION_ID,
+                taskReferenceName: 't2',
+                status: State.TaskStates.Completed,
+                type: Task.TaskTypes.Task,
+              }),
+              isError: false,
+            }),
+          );
+
+          expect(mockedDispatch).toBeCalledTimes(0);
+          expect(transactionInstanceStore.create).toBeCalledTimes(0);
+          expect(transactionInstanceStore.update).toBeCalledTimes(0);
+          expect(workflowInstanceStore.create).toBeCalledTimes(0);
+          expect(workflowInstanceStore.update).toBeCalledTimes(0);
+          expect(taskInstanceStore.create).toBeCalledTimes(0);
+          expect(taskInstanceStore.update).toBeCalledTimes(2);
+          expect(taskInstanceStore.reload).toBeCalledTimes(0);
+
+          cleanMock();
+        }
+
+        // process w1
+        {
+          currentTask = w1Task;
+
+          await updateTask(currentTask);
+          expect(mockedSendEvent).toBeCalledTimes(2);
+
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: TRANSACTION_ID,
+                taskReferenceName: 'w1',
+                status: State.TaskStates.Inprogress,
+                type: Task.TaskTypes.Schedule,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: TRANSACTION_ID,
+                taskReferenceName: 'w1',
+                status: State.TaskStates.Completed,
+                type: Task.TaskTypes.Schedule,
+              }),
+              isError: false,
+            }),
+          );
+
+          expect(mockedDispatch).toBeCalledTimes(0);
+          expect(transactionInstanceStore.create).toBeCalledTimes(0);
+          expect(transactionInstanceStore.update).toBeCalledTimes(0);
+          expect(workflowInstanceStore.create).toBeCalledTimes(0);
+          expect(workflowInstanceStore.update).toBeCalledTimes(0);
+          expect(taskInstanceStore.create).toBeCalledTimes(0);
+          expect(taskInstanceStore.update).toBeCalledTimes(2);
+          expect(taskInstanceStore.reload).toBeCalledTimes(0);
+
+          cleanMock();
+        }
+
+        // process s1
+        {
+          currentTask = p1Tasks.find(
+            (task: Task.ITask) => task.taskReferenceName === 't1',
+          );
+
+          await updateTask(currentTask);
+          expect(mockedSendEvent).toBeCalledTimes(12);
+
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_1_ID,
+                taskReferenceName: 't1',
+                status: State.TaskStates.Inprogress,
+                type: Task.TaskTypes.Task,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_1_ID,
+                taskReferenceName: 't1',
+                status: State.TaskStates.Completed,
+                type: Task.TaskTypes.Task,
+              }),
+              isError: false,
+            }),
+          );
+
+          // Start parallel
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_1_ID,
+                taskReferenceName: 'p1',
+                status: State.TaskStates.Scheduled,
+                type: Task.TaskTypes.Parallel,
+              }),
+              isError: false,
+            }),
+          );
+          // Decision
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_1_ID,
+                taskReferenceName: 'd1',
+                status: State.TaskStates.Scheduled,
+                type: Task.TaskTypes.Decision,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_1_ID,
+                taskReferenceName: 'd1_t1',
+                status: State.TaskStates.Scheduled,
+                type: Task.TaskTypes.Task,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_1_ID,
+                taskReferenceName: 'd1',
+                status: State.TaskStates.Inprogress,
+                type: Task.TaskTypes.Decision,
+              }),
+              isError: false,
+            }),
+          );
+
+          // Sub transaction #2
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_1_ID,
+                taskReferenceName: 's1',
+                status: State.TaskStates.Scheduled,
+                type: Task.TaskTypes.SubTransaction,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TRANSACTION',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_2_ID,
+                status: State.TransactionStates.Running,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'WORKFLOW',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_2_ID,
+                status: State.WorkflowStates.Running,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_2_ID,
+                taskReferenceName: 't1',
+                status: State.TaskStates.Scheduled,
+                type: Task.TaskTypes.Task,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_1_ID,
+                taskReferenceName: 's1',
+                status: State.TaskStates.Inprogress,
+                type: Task.TaskTypes.SubTransaction,
+              }),
+              isError: false,
+            }),
+          );
+          expect(mockedSendEvent).toBeCalledWith(
+            expect.objectContaining({
+              type: 'TASK',
+              details: expect.objectContaining({
+                transactionId: SUB_TRANSACTION_1_ID,
+                taskReferenceName: 'p1',
+                status: State.TaskStates.Inprogress,
+                type: Task.TaskTypes.Parallel,
+              }),
+              isError: false,
+            }),
+          );
+
+          expect(mockedDispatch).toBeCalledTimes(2);
+          expect(mockedDispatch).toBeCalledWith(
+            expect.objectContaining({
+              transactionId: SUB_TRANSACTION_1_ID,
+              type: Task.TaskTypes.Task,
+              taskReferenceName: 'd1_t1',
+              status: State.TaskStates.Scheduled,
+            }),
+          );
+          expect(mockedDispatch).toBeCalledWith(
+            expect.objectContaining({
+              transactionId: SUB_TRANSACTION_2_ID,
+              type: Task.TaskTypes.Task,
+              taskReferenceName: 't1',
+              status: State.TaskStates.Scheduled,
+            }),
+          );
+
+          expect(mockedSendTimer).toBeCalledTimes(0);
+
+          expect(transactionInstanceStore.create).toBeCalledTimes(1);
+          expect(transactionInstanceStore.update).toBeCalledTimes(0);
+          expect(workflowInstanceStore.create).toBeCalledTimes(1);
+          expect(workflowInstanceStore.update).toBeCalledTimes(0);
+          expect(taskInstanceStore.create).toBeCalledTimes(5);
+          expect(taskInstanceStore.update).toBeCalledTimes(3);
+          expect(taskInstanceStore.reload).toBeCalledTimes(0);
+        }
       }
     });
   });
