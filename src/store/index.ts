@@ -204,6 +204,9 @@ export class TransactionInstanceStore {
       Workflow.WorkflowTypes.Workflow,
       workflowDefinition,
       input,
+      {
+        transactionDepth: parent?.depth || 0,
+      },
     );
 
     dg(`Create ${transactionId}`);
@@ -390,6 +393,7 @@ export class WorkflowInstanceStore {
       startTime: timestamp,
       endTime: null,
       workflowDefinition,
+      transactionDepth: 0,
       ...overideWorkflow,
     });
     sendEvent({
@@ -687,6 +691,21 @@ export class TaskInstanceStore {
             task.input?.workflowRev,
           );
 
+          if (workflow.transactionDepth >= 5) {
+            // Maximum level of sub transaction is 5 (for now)
+            sendUpdate({
+              transactionId: task.transactionId,
+              taskId: task.taskId,
+              status: State.TaskStates.Failed,
+              doNotRetry: true,
+              isSystem: true,
+              output: {
+                error: `Maximum level of sub transaction exceeded`,
+              },
+            });
+            return task;
+          }
+
           if (workflowDefinition) {
             await transactionInstanceStore.create(
               `${workflow.transactionId}-${task.taskReferenceName}`,
@@ -697,6 +716,7 @@ export class TaskInstanceStore {
                 transactionId: workflow.transactionId,
                 taskId: task.taskId,
                 isCompensate: false,
+                depth: workflow.transactionDepth + 1, // increase depth by 1
               },
             );
 
@@ -727,6 +747,7 @@ export class TaskInstanceStore {
               taskId: task.taskId,
               transactionId: task.transactionId,
               isCompensate: true,
+              depth: workflow.transactionDepth, // do not +1
             },
           );
           return this.update({

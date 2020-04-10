@@ -29,6 +29,7 @@ const transacationSchema = new mongoose.Schema(
       transactionId: String,
       taskId: String,
       taskType: String,
+      depth: Number,
     },
   },
   {
