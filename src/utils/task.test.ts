@@ -41,7 +41,7 @@ describe('mapParametersToValue', () => {
     });
   });
 
-  test(`Won't parse nested`, () => {
+  test(`Parse nested`, () => {
     expect(
       task.mapParametersToValue(
         {
@@ -49,6 +49,24 @@ describe('mapParametersToValue', () => {
           b: 'hardcoded',
           nested: {
             c: '${t1.output.a}',
+            level2: {
+              level3: {
+                eiei: '${t1.output.a}',
+                eiei2: '$.t1.output[*]',
+                level4: {
+                  eiei: '${t1.output.a}',
+                  eiei2: '$.t1.output[*]',
+                  level5: {
+                    level6: {
+                      level7: {
+                        eiei: '${t1.output.a}',
+                        eiei2: '$.t1.output[*]',
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
         {
@@ -81,7 +99,25 @@ describe('mapParametersToValue', () => {
       a: 'eiei',
       b: 'hardcoded',
       nested: {
-        c: '${t1.output.a}',
+        c: 'eiei',
+        level2: {
+          level3: {
+            eiei: 'eiei',
+            eiei2: ['eiei'],
+            level4: {
+              eiei: '${t1.output.a}',
+              eiei2: '$.t1.output[*]',
+              level5: {
+                level6: {
+                  level7: {
+                    eiei: '${t1.output.a}',
+                    eiei2: '$.t1.output[*]',
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
   });

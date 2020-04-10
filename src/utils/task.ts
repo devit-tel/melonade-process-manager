@@ -9,33 +9,45 @@ export const getPathByInputTemplate = R.compose(
   R.replace(/(^\${)(.+)(}$)/i, '$2'),
 );
 
-export const mapParametersToValue = (
-  parameters: { [key: string]: any },
-  tasksData: { [taskReferenceName: string]: Task.ITask | Workflow.IWorkflow },
-): { [key: string]: any } => {
-  const parametersPairs = R.toPairs(parameters);
-  const valuePairs = parametersPairs.map(
-    ([key, value]: [string, string | any]): [string, any] => {
-      if (typeof value === 'string') {
-        // query template
-        // $.parcel[*].driverId => ["driver_1","driver_2"]
-        if (/^\$\.[a-z0-9-_.\[\]]+/i.test(value)) {
-          return [key, jsonpath.query(tasksData, value)];
-        }
+// Support 2 types of template
+const parseTemplate = (template: string, values: any) => {
+  // query template
+  // $.parcel[*].driverId => ["driver_1","driver_2"]
+  if (/^\$\.[a-z0-9-_.\[\]]+/i.test(template)) {
+    return jsonpath.query(values, template);
+  }
 
-        // get template
-        // ${parcel[0].driverId} => "driver_1"
-        if (/^\${[a-z0-9-_.\[\]]+}$/i.test(value)) {
-          return [
-            key,
-            _.get(value.replace(/(^\${)(.+)(}$)/i, '$2'), tasksData),
-          ];
-        }
-      }
-      return [key, value];
-    },
-  );
-  return R.fromPairs(valuePairs);
+  // get template
+  // ${parcel[0].driverId} => "driver_1"
+  if (/^\${[a-z0-9-_.\[\]]+}$/i.test(template)) {
+    return _.get(template.replace(/(^\${)(.+)(}$)/i, '$2'), values);
+  }
+
+  return template;
+};
+
+export const mapParametersToValue = (
+  parameters: any,
+  tasksData: { [taskReferenceName: string]: Task.ITask | Workflow.IWorkflow },
+  depth: number = 0,
+): { [key: string]: any } => {
+  if (depth > 4) return parameters;
+
+  if (typeof parameters === 'object') {
+    let output = Array.isArray(parameters) ? [] : {};
+    for (const param in parameters) {
+      output[param] = mapParametersToValue(
+        parameters[param],
+        tasksData,
+        depth + 1,
+      );
+    }
+    return output;
+  }
+  if (typeof parameters === 'string') {
+    return parseTemplate(parameters, tasksData);
+  }
+  return parameters;
 };
 
 export const getCompltedAt = (task: Task.ITask): number => {
