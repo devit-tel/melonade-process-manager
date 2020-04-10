@@ -304,6 +304,7 @@ const handleCompletedCompensateThenRetryWorkflow = async (
       transaction.input,
       {
         retries: workflow.retries - 1,
+        transactionDepth: transaction.parent?.depth || 0,
       },
     );
   } else {

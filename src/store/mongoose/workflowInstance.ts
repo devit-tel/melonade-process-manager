@@ -60,6 +60,7 @@ const workflowSchema = new mongoose.Schema(
       },
       outputParameters: mongoose.Schema.Types.Mixed,
     },
+    transactionDepth: Number,
   },
   {
     toObject: {
@@ -73,10 +74,10 @@ const workflowSchema = new mongoose.Schema(
 
 workflowSchema
   .virtual('workflowId')
-  .get(function() {
+  .get(function () {
     return this._id;
   })
-  .set(function() {
+  .set(function () {
     return this._id;
   });
 
@@ -134,10 +135,7 @@ export class WorkflowInstanceMongooseStore extends MongooseStore
   };
 
   delete = (workflowId: string): Promise<any> =>
-    this.model
-      .deleteOne({ _id: workflowId })
-      .lean({ virtuals: true })
-      .exec();
+    this.model.deleteOne({ _id: workflowId }).lean({ virtuals: true }).exec();
 
   getByTransactionId = (transactionId: string): Promise<Workflow.IWorkflow> =>
     this.model
