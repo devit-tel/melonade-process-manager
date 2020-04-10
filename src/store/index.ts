@@ -68,11 +68,11 @@ export interface ITransactionInstanceStore extends IStore {
 
 export interface IWorkflowInstanceStore extends IStore {
   get(workflowId: string): Promise<Workflow.IWorkflow>;
+  getByTransactionId(transactionId: string): Promise<Workflow.IWorkflow>;
   create(workflowData: Workflow.IWorkflow): Promise<Workflow.IWorkflow>;
   update(workflowUpdate: Event.IWorkflowUpdate): Promise<Workflow.IWorkflow>;
-  delete(workflowId: string): Promise<void>;
-  getByTransactionId(transactionId: string): Promise<Workflow.IWorkflow>;
-  deleteAll(transactionId: string): Promise<void>;
+  delete(workflowId: string, keepSubTransaction?: boolean): Promise<void>;
+  deleteAll(transactionId: string, keepSubTransaction?: boolean): Promise<void>;
   isHealthy(): boolean;
 }
 
@@ -81,8 +81,8 @@ export interface ITaskInstanceStore extends IStore {
   getAll(workflowId: string): Promise<Task.ITask[]>;
   create(taskData: Task.ITask): Promise<Task.ITask>;
   update(taskUpdate: Event.ITaskUpdate): Promise<Task.ITask>;
-  delete(taskId: string): Promise<void>;
-  deleteAll(workflowId: string): Promise<void>;
+  delete(taskId: string, keepSubTransaction?: boolean): Promise<void>;
+  deleteAll(workflowId: string, keepSubTransaction?: boolean): Promise<void>;
   isHealthy(): boolean;
 }
 
@@ -366,6 +366,10 @@ export class WorkflowInstanceStore {
     return this.client.get(workflowId);
   }
 
+  getByTransactionId(transactionId: string) {
+    return this.client.getByTransactionId(transactionId);
+  }
+
   create = async (
     transactionId: string,
     type: Workflow.WorkflowTypes,
@@ -426,16 +430,12 @@ export class WorkflowInstanceStore {
     }
   };
 
-  delete(workflowId: string) {
-    return this.client.delete(workflowId);
+  delete(workflowId: string, keepSubTransaction?: boolean) {
+    return this.client.delete(workflowId, keepSubTransaction);
   }
 
-  getByTransactionId(transactionId: string) {
-    return this.client.getByTransactionId(transactionId);
-  }
-
-  deleteAll(transactionId: string) {
-    return this.client.deleteAll(transactionId);
+  deleteAll(transactionId: string, keepSubTransaction?: boolean) {
+    return this.client.deleteAll(transactionId, keepSubTransaction);
   }
 
   reload = async (workflow: Workflow.IWorkflow) => {
@@ -501,12 +501,12 @@ export class WorkflowInstanceStore {
 
     if (isHaveRunningTask) throw new Error(`Have running task`);
 
-    await this.client.delete(workflow.workflowId);
-
     const compenstateTasks = this.getCompenstateTasks(
       tasksData,
       includeWorkers,
     );
+
+    await this.client.delete(workflow.workflowId, true);
 
     if (compenstateTasks.length) {
       await this.create(
@@ -933,12 +933,12 @@ export class TaskInstanceStore {
     }
   };
 
-  delete(taskId: string): Promise<any> {
-    return this.client.delete(taskId);
+  delete(taskId: string, keepSubTransaction?: boolean): Promise<any> {
+    return this.client.delete(taskId, keepSubTransaction);
   }
 
-  deleteAll = (workflowId: string) => {
-    return this.client.deleteAll(workflowId);
+  deleteAll = (workflowId: string, keepSubTransaction?: boolean) => {
+    return this.client.deleteAll(workflowId, keepSubTransaction);
   };
 
   isHealthy(): boolean {

@@ -112,7 +112,10 @@ export class WorkflowInstanceRedisStore extends RedisStore
     return null;
   };
 
-  delete = async (workflowId: string): Promise<void> => {
+  delete = async (
+    workflowId: string,
+    keepSubTransaction?: boolean,
+  ): Promise<void> => {
     const workflow = await this.get(workflowId);
     await Promise.all([
       this.client
@@ -124,11 +127,14 @@ export class WorkflowInstanceRedisStore extends RedisStore
           workflowId,
         )
         .exec(),
-      taskInstanceStore.deleteAll(workflowId),
+      taskInstanceStore.deleteAll(workflowId, keepSubTransaction),
     ]);
   };
 
-  deleteAll = async (transactionId: string): Promise<void> => {
+  deleteAll = async (
+    transactionId: string,
+    keepSubTransaction?: boolean,
+  ): Promise<void> => {
     const key = `${prefix}.transaction-workflow.${transactionId}`;
     const workflowKeys = await this.client.lrange(key, 0, -1);
     await Promise.all([
@@ -139,7 +145,7 @@ export class WorkflowInstanceRedisStore extends RedisStore
         key,
       ),
       ...workflowKeys.map((workflowId: string) =>
-        taskInstanceStore.deleteAll(workflowId),
+        taskInstanceStore.deleteAll(workflowId, keepSubTransaction),
       ),
     ]);
   };

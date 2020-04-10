@@ -104,10 +104,13 @@ export class TaskInstanceRedisStore extends RedisStore
     return tasksString.map(JSON.parse);
   };
 
-  delete = async (taskId: string): Promise<void> => {
+  delete = async (
+    taskId: string,
+    keepSubTransaction?: boolean,
+  ): Promise<void> => {
     const task = await this.get(taskId);
 
-    if (task.type === Task.TaskTypes.SubTransaction) {
+    if (!keepSubTransaction && task.type === Task.TaskTypes.SubTransaction) {
       await transactionInstanceStore.delete(
         `${task.transactionId}-${task.taskReferenceName}`,
       );
@@ -120,7 +123,10 @@ export class TaskInstanceRedisStore extends RedisStore
       .exec();
   };
 
-  deleteAll = async (workflowId: string): Promise<void> => {
+  deleteAll = async (
+    workflowId: string,
+    keepSubTransaction?: boolean,
+  ): Promise<void> => {
     const key = `${prefix}.workflow-task.${workflowId}`;
     const tasks = await this.getAll(workflowId);
 
@@ -131,7 +137,8 @@ export class TaskInstanceRedisStore extends RedisStore
       ) as Promise<any>,
       ...tasks
         .filter(
-          (task: Task.ITask) => task.type === Task.TaskTypes.SubTransaction,
+          (task: Task.ITask) =>
+            !keepSubTransaction && task.type === Task.TaskTypes.SubTransaction,
         )
         .map((task: Task.ITask) =>
           transactionInstanceStore.delete(
