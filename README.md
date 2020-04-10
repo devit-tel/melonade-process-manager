@@ -60,3 +60,4 @@ auto.create.topics.enable=false
 - [x] Transaction did not cancelled if compensating
 - [x] Parent task did not failed if child failed
 - [x] Delay retry task sometime did not retry until limit
+- [ ] Transaction will failed if send cancel transaction while on compensate workflow
