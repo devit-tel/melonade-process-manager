@@ -1,8 +1,8 @@
 import { Task, Workflow } from '@melonade/melonade-declaration';
 import { parseExpression } from 'cron-parser';
+import * as jsonpath from 'jsonpath';
 import * as _ from 'lodash/fp'; // use lodash just for "get" thing XD
 import * as R from 'ramda';
-import { isString } from './common';
 
 export const getPathByInputTemplate = R.compose(
   R.split(/[[\].]/),
@@ -16,7 +16,15 @@ export const mapParametersToValue = (
   const parametersPairs = R.toPairs(parameters);
   const valuePairs = parametersPairs.map(
     ([key, value]: [string, string | any]): [string, any] => {
-      if (isString(value)) {
+      if (typeof value === 'string') {
+        // query template
+        // $.parcel[*].driverId => ["driver_1","driver_2"]
+        if (/^\$\.[a-z0-9-_.\[\]]+/i.test(value)) {
+          return [key, jsonpath.query(tasksData, value)];
+        }
+
+        // get template
+        // ${parcel[0].driverId} => "driver_1"
         if (/^\${[a-z0-9-_.\[\]]+}$/i.test(value)) {
           return [
             key,
