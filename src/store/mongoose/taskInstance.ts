@@ -2,7 +2,7 @@ import { Event, State, Task } from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
 import * as mongooseLeanVirtuals from 'mongoose-lean-virtuals';
 import { MongooseStore } from '.';
-import { ITaskInstanceStore } from '..';
+import { ITaskInstanceStore, transactionInstanceStore } from '..';
 
 const taskSchema = new mongoose.Schema(
   {
@@ -53,10 +53,10 @@ const taskSchema = new mongoose.Schema(
 
 taskSchema
   .virtual('taskId')
-  .get(function() {
+  .get(function () {
     return this._id;
   })
-  .set(function() {
+  .set(function () {
     return this._id;
   });
 
@@ -119,10 +119,9 @@ export class TaskInstanceMongooseStore extends MongooseStore
   };
 
   get = async (taskId: string): Promise<Task.ITask> => {
-    const taskData = <Task.ITask>await this.model
-      .findOne({ _id: taskId })
-      .lean({ virtuals: true })
-      .exec();
+    const taskData = <Task.ITask>(
+      await this.model.findOne({ _id: taskId }).lean({ virtuals: true }).exec()
+    );
 
     if (taskData) return taskData;
     return null;
@@ -135,19 +134,41 @@ export class TaskInstanceMongooseStore extends MongooseStore
       .exec() as Promise<Task.ITask[]>;
   };
 
-  delete(taskId: string): Promise<any> {
+  delete = async (taskId: string): Promise<any> => {
+    const task = await this.get(taskId);
+
+    if (task.type === Task.TaskTypes.SubTransaction) {
+      await transactionInstanceStore.delete(
+        `${task.transactionId}-${task.taskReferenceName}`,
+      );
+    }
+
     return this.model
       .deleteOne({ _id: taskId })
       .lean({ virtuals: true })
       .exec();
-  }
+  };
 
   deleteAll = async (workflowId: string): Promise<void> => {
+    const tasks = await this.getAll(workflowId);
+
     await this.model
       .deleteMany({
         workflowId,
       })
       .lean()
       .exec();
+
+    await Promise.all([
+      tasks
+        .filter(
+          (task: Task.ITask) => task.type === Task.TaskTypes.SubTransaction,
+        )
+        .map((task: Task.ITask) =>
+          transactionInstanceStore.delete(
+            `${task.transactionId}-${task.taskReferenceName}`,
+          ),
+        ),
+    ]);
   };
 }

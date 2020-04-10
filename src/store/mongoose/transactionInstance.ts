@@ -1,7 +1,12 @@
-import { Event, State, Store, Transaction } from '@melonade/melonade-declaration';
+import {
+  Event,
+  State,
+  Store,
+  Transaction,
+} from '@melonade/melonade-declaration';
 import * as mongoose from 'mongoose';
 import { MongooseStore } from '.';
-import { ITransactionInstanceStore, workflowInstanceStore } from '..';
+import { ITransactionInstanceStore } from '..';
 
 const transacationSchema = new mongoose.Schema(
   {
@@ -19,7 +24,12 @@ const transacationSchema = new mongoose.Schema(
     createTime: Number,
     endTime: Number,
     workflowDefinition: mongoose.Schema.Types.Mixed,
-    tags: [String]
+    tags: [String],
+    parent: {
+      transactionId: String,
+      taskId: String,
+      taskType: String,
+    },
   },
   {
     toObject: {
@@ -79,23 +89,13 @@ export class TransactionInstanceMongooseStore extends MongooseStore
       .lean({ virtuals: true })
       .exec();
 
-    if (
-      [
-        State.TransactionStates.Completed,
-        State.TransactionStates.Failed,
-        State.TransactionStates.Cancelled,
-        State.TransactionStates.Compensated,
-      ].includes(transactionUpdate.status)
-    ) {
-      await Promise.all([
-        this.model.deleteOne({
-          transactionId: transactionUpdate.transactionId,
-        }),
-        workflowInstanceStore.deleteAll(transactionUpdate.transactionId),
-      ]);
-    }
-
     return updatedTransaction;
+  };
+
+  delete = async (transactionId: string): Promise<void> => {
+    await this.model.deleteOne({
+      transactionId: transactionId,
+    });
   };
 
   list = async (
@@ -103,21 +103,27 @@ export class TransactionInstanceMongooseStore extends MongooseStore
     size: number = 50,
   ): Promise<Store.ITransactionPaginate> => {
     const [total, transactions] = await Promise.all([
-      this.model
-        .count({})
-        .lean()
-        .exec(),
-      this.model
-        .find({})
-        .limit(size)
-        .skip(from)
-        .lean()
-        .exec(),
+      this.model.count({}).lean().exec(),
+      this.model.find({}).limit(size).skip(from).lean().exec(),
     ]);
 
     return {
       total: total as number,
       transactions: transactions as Transaction.ITransaction[],
     };
+  };
+
+  changeParent = async (
+    transactionId: string,
+    parent: Transaction.ITransaction['parent'],
+  ) => {
+    await this.model.updateOne(
+      {
+        transactionId,
+      },
+      {
+        parent,
+      },
+    );
   };
 }

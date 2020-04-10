@@ -1,8 +1,4 @@
-import {
-  State,
-  Task,
-  WorkflowDefinition,
-} from '@melonade/melonade-declaration';
+import { State, Task, WorkflowDefinition } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import * as state from './state';
 
@@ -11,132 +7,6 @@ import * as state from './state';
 
 jest.mock('./kafka');
 jest.mock('./store');
-
-describe('isAllCompleted', () => {
-  test('All tasks completed', () => {
-    expect(
-      state.isAllCompleted([
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Completed,
-        },
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Completed,
-        },
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Completed,
-        },
-      ]),
-    ).toBe(true);
-  });
-
-  test('One tasks failed', () => {
-    expect(
-      state.isAllCompleted([
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Completed,
-        },
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Completed,
-        },
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Failed,
-        },
-      ]),
-    ).toBe(false);
-  });
-
-  test('One task running', () => {
-    expect(
-      state.isAllCompleted([
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Completed,
-        },
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Completed,
-        },
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Inprogress,
-        },
-      ]),
-    ).toBe(false);
-  });
-
-  test('All tasks running', () => {
-    expect(
-      state.isAllCompleted([
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Inprogress,
-        },
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Inprogress,
-        },
-        {
-          taskName: 'taskName',
-          taskReferenceName: 'taskReferenceName',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          status: State.TaskStates.Inprogress,
-        },
-      ]),
-    ).toBe(false);
-  });
-});
 
 describe('getNextPath', () => {
   test('return next path', () => {
@@ -673,7 +543,7 @@ describe('getNextTaskPath', () => {
       parentTask: expect.objectContaining({
         taskReferenceName: 't2',
       }),
-      taskPath: [2],
+      taskPath: null,
       isLastChild: true,
     });
   });
@@ -687,7 +557,7 @@ describe('getNextTaskPath', () => {
         R.pick(['t1', 't2', 't3', 't4'], mockTasksData),
       ),
     ).toEqual({
-      isCompleted: true,
+      isCompleted: false,
       parentTask: expect.objectContaining({
         taskReferenceName: 't2',
       }),
@@ -725,165 +595,12 @@ describe('getNextTaskPath', () => {
         R.pick(['t1', 't2', 't3', 't4', 't12', 't13', 't14'], mockTasksData),
       ),
     ).toEqual({
-      isCompleted: true,
+      isCompleted: false,
       taskPath: null,
       parentTask: expect.objectContaining({
         taskReferenceName: 't12',
       }),
       isLastChild: true,
     });
-  });
-});
-
-describe('findTaskPath', () => {
-  const exampleWorkflow: WorkflowDefinition.IWorkflowDefinition = {
-    name: '',
-    rev: '',
-    description: '',
-    failureStrategy: State.WorkflowFailureStrategies.Failed,
-    outputParameters: {},
-    tasks: [
-      {
-        name: 'name',
-        taskReferenceName: 't1',
-        inputParameters: {},
-        type: Task.TaskTypes.Task,
-      },
-      {
-        taskReferenceName: 't2',
-        inputParameters: {},
-        type: Task.TaskTypes.Decision,
-        decisions: {
-          case1: [
-            {
-              name: 'name',
-              taskReferenceName: 't3',
-              inputParameters: {},
-              type: Task.TaskTypes.Task,
-            },
-            {
-              name: 'name',
-              taskReferenceName: 't4',
-              inputParameters: {},
-              type: Task.TaskTypes.Task,
-            },
-          ],
-          case2: [
-            {
-              name: 'name',
-              taskReferenceName: 't5',
-              inputParameters: {},
-              type: Task.TaskTypes.Task,
-            },
-            {
-              name: 'name',
-              taskReferenceName: 't6',
-              inputParameters: {},
-              type: Task.TaskTypes.Task,
-            },
-          ],
-        },
-        defaultDecision: [
-          {
-            name: 'name',
-            taskReferenceName: 't7',
-            inputParameters: {},
-            type: Task.TaskTypes.Task,
-          },
-          {
-            name: 'name',
-            taskReferenceName: 't8',
-            inputParameters: {},
-            type: Task.TaskTypes.Task,
-          },
-          {
-            taskReferenceName: 't9',
-            inputParameters: {},
-            type: Task.TaskTypes.Parallel,
-            parallelTasks: [
-              [
-                {
-                  name: 'name',
-                  taskReferenceName: 't10',
-                  inputParameters: {},
-                  type: Task.TaskTypes.Task,
-                },
-              ],
-              [
-                {
-                  name: 'name',
-                  taskReferenceName: 't11',
-                  inputParameters: {},
-                  type: Task.TaskTypes.Task,
-                },
-              ],
-            ],
-          },
-        ],
-      },
-      {
-        taskReferenceName: 't12',
-        inputParameters: {},
-        type: Task.TaskTypes.Parallel,
-        parallelTasks: [
-          [
-            {
-              name: 'name',
-              taskReferenceName: 't13',
-              inputParameters: {},
-              type: Task.TaskTypes.Task,
-            },
-          ],
-          [
-            {
-              name: 'name',
-              taskReferenceName: 't14',
-              inputParameters: {},
-              type: Task.TaskTypes.Task,
-            },
-          ],
-        ],
-      },
-    ],
-  };
-
-  test('First task', () => {
-    expect(state.findTaskPath('t1', exampleWorkflow.tasks)).toEqual([0]);
-  });
-
-  test('Find child of decisions case', () => {
-    const spyFindTaskPath = jest.spyOn(state, 'findTaskPath');
-    expect(state.findTaskPath('t4', exampleWorkflow.tasks)).toEqual([
-      1,
-      'decisions',
-      'case1',
-      1,
-    ]);
-    // findTaskPath have to recursive 4 time (From the begining) to find the task
-    expect(spyFindTaskPath).toHaveBeenCalledTimes(4);
-    spyFindTaskPath.mockRestore();
-  });
-
-  test('Find child of decisions case (Optimize)', () => {
-    const spyFindTaskPath = jest.spyOn(state, 'findTaskPath');
-    expect(
-      state.findTaskPath('t4', exampleWorkflow.tasks, [
-        1,
-        'decisions',
-        'case1',
-        0,
-      ]),
-    ).toEqual([1, 'decisions', 'case1', 1]);
-    // findTaskPath will start from current path
-    expect(spyFindTaskPath).toHaveBeenCalledTimes(2);
-    spyFindTaskPath.mockRestore();
-  });
-
-  test('Find child of decisions default', () => {
-    expect(state.findTaskPath('t7', exampleWorkflow.tasks)).toEqual([
-      1,
-      'defaultDecision',
-      0,
-    ]);
   });
 });

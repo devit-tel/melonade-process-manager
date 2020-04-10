@@ -12,7 +12,7 @@ export const router = new koaRouter();
 
 router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext & any) => {
   const { name, rev } = ctx.params;
-  const { transactionId } = ctx.query;
+  const { transactionId, tags } = ctx.query;
   const workflowDefinition: WorkflowDefinition.IWorkflowDefinition = await workflowDefinitionStore.get(
     name,
     rev,
@@ -24,6 +24,7 @@ router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext & any) => {
     transactionId || uuid(),
     workflowDefinition,
     ctx.request.body,
+    tags ? JSON.parse(tags) : [],
   );
 });
 

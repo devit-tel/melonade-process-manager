@@ -1,6 +1,7 @@
 /* tslint:disable: max-func-body-length */
 
 import {
+  Event,
   State,
   Task,
   WorkflowDefinition,
@@ -21,10 +22,7 @@ import {
   workflowInstanceStore,
 } from '../store';
 import { TaskDefinitionMemoryStore } from '../store/memory/taskDefinition';
-import { TaskInstanceMemoryStore } from '../store/memory/taskInstance';
-import { TransactionInstanceMemoryStore } from '../store/memory/transactionInstance';
 import { WorkflowDefinitionMemoryStore } from '../store/memory/workflowDefinition';
-import { WorkflowInstanceMemoryStore } from '../store/memory/workflowInstance';
 import { TaskInstanceMongooseStore } from '../store/mongoose/taskInstance';
 import { TransactionInstanceMongooseStore } from '../store/mongoose/transactionInstance';
 import { WorkflowInstanceMongooseStore } from '../store/mongoose/workflowInstance';
@@ -33,7 +31,8 @@ import { TransactionInstanceRedisStore } from '../store/redis/transactionInstanc
 import { WorkflowInstanceRedisStore } from '../store/redis/workflowInstance';
 
 const MONGODB_URL: string =
-  process.env['MONGODB_URI'] || 'mongodb://127.0.0.1:27017/melonade-test';
+  process.env['MONGODB_URI'] ||
+  `mongodb://127.0.0.1:27017/melonade-test-${Date.now()}`;
 
 const TASK_RETRY_LIMIT = 3;
 const WORKFLOW_RETRY_LIMIT = 3;
@@ -100,6 +99,15 @@ const updateTask = async (
   ]);
 };
 
+const getEventsTaskByTaskRef = (taskReferenceName: string) =>
+  mockedSendEvent.mock.calls.find((args: [Event.AllEvent, any]) => {
+    return (
+      args[0].type === 'TASK' &&
+      args[0].isError === false &&
+      args[0].details.taskReferenceName === taskReferenceName
+    );
+  })[0].details;
+
 interface IAllStoreType {
   taskDefinitionStoreClient: ITaskDefinitionStore;
   workflowDefinitionStoreClient: IWorkflowDefinitionStore;
@@ -113,13 +121,6 @@ describe('Run parallel decision workflow', () => {
 
   // Do test each store type
   describe.each([
-    {
-      taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
-      workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
-      taskInstanceStoreClient: new TaskInstanceMemoryStore(),
-      workflowInstanceStoreClient: new WorkflowInstanceMemoryStore(),
-      transactionInstanceStoreClient: new TransactionInstanceMemoryStore(),
-    },
     {
       taskDefinitionStoreClient: new TaskDefinitionMemoryStore(),
       workflowDefinitionStoreClient: new WorkflowDefinitionMemoryStore(),
@@ -442,10 +443,12 @@ describe('Run parallel decision workflow', () => {
 
       // ----------------------------------------------------------------
       currentTasks = mockedDispatch.mock.calls.map(R.head);
+      const p2_2_d1_default_t1 = getEventsTaskByTaskRef('p2_2_d1_default_t1');
+      const p2_1_t1 = getEventsTaskByTaskRef('p2_1_t1');
       cleanMock();
       // ----------------------------------------------------------------
 
-      await updateTask(currentTasks[1]);
+      await updateTask(p2_2_d1_default_t1);
 
       expect(mockedSendEvent).toBeCalledTimes(3);
       expect(mockedSendEvent).toBeCalledWith(
@@ -496,7 +499,7 @@ describe('Run parallel decision workflow', () => {
       cleanMock();
       // ----------------------------------------------------------------
 
-      await updateTask(currentTasks[0]);
+      await updateTask(p2_1_t1);
 
       expect(mockedSendEvent).toBeCalledTimes(3);
       expect(mockedSendEvent).toBeCalledWith(

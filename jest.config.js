@@ -14,8 +14,9 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/server/**/*.ts',
     '!src/bootstrap.ts',
+    '!src/kafka/*.ts',
+    '!src/command.ts',
     '!src/index.ts',
     '!src/store/__template__/*',
   ],
-  setupFiles: ['./src/store/mongoose/__mocks__/index.ts'],
 };

@@ -7,7 +7,7 @@ import {
 import ioredis from 'ioredis';
 import * as R from 'ramda';
 import { RedisStore } from '.';
-import { ITransactionInstanceStore, workflowInstanceStore } from '..';
+import { ITransactionInstanceStore } from '..';
 import { prefix } from '../../config';
 import { jsonTryParse } from '../../utils/common';
 
@@ -67,22 +67,7 @@ export class TransactionInstanceRedisStore extends RedisStore
         : null,
     };
 
-    // In case of redis I dont want to keep completed transaction
-    if (
-      [
-        State.TransactionStates.Completed,
-        State.TransactionStates.Failed,
-        State.TransactionStates.Cancelled,
-        State.TransactionStates.Compensated,
-      ].includes(transactionUpdate.status)
-    ) {
-      await Promise.all([
-        this.client.del(key),
-        workflowInstanceStore.deleteAll(transaction.transactionId),
-      ]);
-    } else {
-      await this.client.set(key, JSON.stringify(updatedTransaction));
-    }
+    await this.client.set(key, JSON.stringify(updatedTransaction));
 
     return updatedTransaction;
   };
@@ -96,9 +81,9 @@ export class TransactionInstanceRedisStore extends RedisStore
     return null;
   };
 
-  delete(transactionId: string): Promise<any> {
-    return this.client.del(`${prefix}.transaction.${transactionId}`);
-  }
+  delete = async (transactionId: string): Promise<void> => {
+    await this.client.del(`${prefix}.transaction.${transactionId}`);
+  };
 
   list = async (
     from: number = 0,
@@ -124,5 +109,27 @@ export class TransactionInstanceRedisStore extends RedisStore
         jsonTryParse,
       ) as Transaction.ITransaction[],
     };
+  };
+
+  changeParent = async (
+    transactionId: string,
+    parent: Transaction.ITransaction['parent'],
+  ) => {
+    const key = `${prefix}.transaction.${transactionId}`;
+
+    const transactionString = await this.client.get(key);
+    if (!transactionString) {
+      throw new Error(`Transaction "${transactionId}" not found`);
+    }
+
+    // Change parent to conpensate parent
+    const transaction: Transaction.ITransaction = JSON.parse(transactionString);
+    await this.client.set(
+      key,
+      JSON.stringify({
+        ...transaction,
+        parent,
+      }),
+    );
   };
 }

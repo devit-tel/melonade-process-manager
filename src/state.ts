@@ -5,6 +5,7 @@ import {
   Workflow,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
+import debug from 'debug';
 import * as R from 'ramda';
 import { poll, sendEvent, stateConsumerClient } from './kafka';
 import {
@@ -12,11 +13,26 @@ import {
   transactionInstanceStore,
   workflowInstanceStore,
 } from './store';
-import { sleep, toObjectByKey } from './utils/common';
+import { sleep } from './utils/common';
 import { mapParametersToValue } from './utils/task';
 
-export const isAllCompleted = R.all(
-  R.pathEq(['status'], State.TaskStates.Completed),
+const dg = debug('melonade:state');
+
+export const isAllTasksFinished = R.all((task?: Task.ITask) =>
+  [
+    State.TaskStates.Completed,
+    State.TaskStates.Failed,
+    State.TaskStates.AckTimeOut,
+    State.TaskStates.Timeout,
+  ].includes(task?.status),
+);
+
+export const isAnyTasksFailed = R.any((task?: Task.ITask) =>
+  [
+    State.TaskStates.Failed,
+    State.TaskStates.Timeout,
+    State.TaskStates.AckTimeOut,
+  ].includes(task?.status),
 );
 
 export const getNextPath = (
@@ -43,11 +59,6 @@ export const isChildOfDecisionCase = (
     tasks,
   ) && R.nth(-3, currentPath) === 'decisions';
 
-const isGotNextTaskToRun = (
-  tasks: WorkflowDefinition.AllTaskType[],
-  currentPath: (string | number)[],
-): boolean => !!R.path(getNextPath(currentPath), tasks);
-
 const isChildOfParallelTask = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
@@ -62,8 +73,6 @@ const getNextParallelTask = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
   taskData: { [taskReferenceName: string]: Task.ITask },
-  childTask: Task.ITask,
-  isLastChild: boolean,
 ): {
   isCompleted: boolean;
   taskPath: (string | number)[];
@@ -71,209 +80,159 @@ const getNextParallelTask = (
   isLastChild: boolean;
 } => {
   const taskReferenceName: string = R.path(
-    R.dropLast(3, currentPath).concat('taskReferenceName'),
+    [...R.dropLast<string | number>(3, currentPath), 'taskReferenceName'],
     tasks,
   );
-  const parentTask = childTask || taskData[taskReferenceName];
+  const parentTask = taskData[taskReferenceName];
 
-  // If still got next task in line
-  if (R.path(getNextPath(currentPath), tasks)) {
+  const lastTaskOfEachLine = R.pathOr<WorkflowDefinition.AllTaskType[][]>(
+    [],
+    R.dropLast(2, currentPath),
+    tasks,
+  ).map((pTask: WorkflowDefinition.AllTaskType[]) => {
+    let lastFoundTask: Task.ITask;
+    for (const task of pTask) {
+      if (taskData[task.taskReferenceName]) {
+        lastFoundTask = taskData[task.taskReferenceName];
+      } else {
+        return lastFoundTask;
+      }
+    }
+    return lastFoundTask;
+  });
+
+  // Check if no any INLINE failed tasks AND still get next task in line
+  if (
+    !isAnyTasksFailed(lastTaskOfEachLine) &&
+    R.path(getNextPath(currentPath), tasks)
+  ) {
     return {
       isCompleted: false,
       taskPath: getNextPath(currentPath),
       parentTask,
-      isLastChild,
+      isLastChild: false,
     };
   }
 
-  const allTaskStatuses = R.pathOr([], R.dropLast(2, currentPath), tasks).map(
-    (pTask: WorkflowDefinition.AllTaskType[]) =>
-      R.path([R.last(pTask).taskReferenceName], taskData),
-  );
-  // All of line are completed
-  if (isAllCompleted(allTaskStatuses)) {
-    return getNextTaskPath(
-      tasks,
-      R.dropLast(3, currentPath),
-      taskData,
+  // All of lines are completed
+  // If no next task, so this mean this parellel task will completed aswell
+  if (isAllTasksFinished(lastTaskOfEachLine)) {
+    return {
+      isCompleted: false,
+      taskPath: null,
       parentTask,
-      childTask ? isLastChild : true,
-    );
+      isLastChild: true,
+    };
   }
+
   // Wait for other line
   return {
     isCompleted: false,
     taskPath: null,
     parentTask,
-    isLastChild,
+    isLastChild: false,
   };
 };
 
-// Check if it's system task
-export const getNextTaskPath = (
+const getNextDecisionTask = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
   taskData: { [taskReferenceName: string]: Task.ITask },
-  parentTask: Task.ITask = null,
-  isLastChild: boolean = false,
 ): {
   isCompleted: boolean;
   taskPath: (string | number)[];
   parentTask: Task.ITask;
   isLastChild: boolean;
 } => {
-  // Check if this's the final task
-  if (R.equals([tasks.length - 1], currentPath))
-    return { isCompleted: true, taskPath: null, parentTask, isLastChild };
+  const childOfDecisionDefault = isChildOfDecisionDefault(tasks, currentPath);
+  const decisionTaskPath = childOfDecisionDefault
+    ? R.dropLast(2, currentPath)
+    : R.dropLast(3, currentPath);
 
-  if (isChildOfParallelTask(tasks, currentPath))
-    return getNextParallelTask(
-      tasks,
-      currentPath,
-      taskData,
-      parentTask,
-      isLastChild,
-    );
+  const taskReferenceName: string = R.path(
+    [...decisionTaskPath, 'taskReferenceName'],
+    tasks,
+  );
 
-  if (isChildOfDecisionDefault(tasks, currentPath)) {
-    const taskReferenceName: string = R.path(
-      R.dropLast(2, currentPath).concat('taskReferenceName'),
-      tasks,
-    );
-    if (R.path(getNextPath(currentPath), tasks)) {
-      return {
-        isCompleted: false,
-        taskPath: getNextPath(currentPath),
-        parentTask: parentTask || taskData[taskReferenceName],
-        isLastChild: isLastChild || false,
-      };
+  const childTasks = R.pathOr<WorkflowDefinition.AllTaskType[]>(
+    [],
+    R.dropLast(1, currentPath),
+    tasks,
+  );
+
+  let lastFoundTask: Task.ITask;
+  for (const task of childTasks) {
+    if (taskData[task.taskReferenceName]) {
+      lastFoundTask = taskData[task.taskReferenceName];
     }
-    return getNextTaskPath(
-      tasks,
-      R.dropLast(2, currentPath),
-      taskData,
-      parentTask || taskData[taskReferenceName],
-      parentTask ? isLastChild : true,
-    );
   }
 
-  if (isChildOfDecisionCase(tasks, currentPath)) {
-    const taskReferenceName: string = R.path(
-      R.dropLast(3, currentPath).concat('taskReferenceName'),
-      tasks,
-    );
-    if (R.path(getNextPath(currentPath), tasks)) {
-      return {
-        isCompleted: false,
-        taskPath: getNextPath(currentPath),
-        parentTask: parentTask || taskData[taskReferenceName],
-        isLastChild,
-      };
-    }
-    return getNextTaskPath(
-      tasks,
-      R.dropLast(3, currentPath),
-      taskData,
-      parentTask || taskData[taskReferenceName],
-      parentTask ? isLastChild : true,
-    );
-  }
-
-  if (isGotNextTaskToRun(tasks, currentPath))
+  // If there are next child
+  // Check if no any INLINE failed tasks AND still get next task in line
+  if (
+    !isAnyTasksFailed([lastFoundTask]) &&
+    R.path(getNextPath(currentPath), tasks)
+  ) {
     return {
       isCompleted: false,
       taskPath: getNextPath(currentPath),
-      parentTask,
-      isLastChild,
+      parentTask: taskData[taskReferenceName],
+      isLastChild: false,
+    };
+  }
+
+  // If no next task, so this mean this desision task will completed aswell
+  return {
+    isCompleted: false,
+    taskPath: null,
+    parentTask: taskData[taskReferenceName],
+    isLastChild: true,
+  };
+};
+
+// Check if it's system task\
+// isCompleted: is workflow completed
+// taskPath: path of next task to exec
+// parentTask: parent task
+// isLastChild: current task is the last one of this parent
+export const getNextTaskPath = (
+  tasks: WorkflowDefinition.AllTaskType[],
+  currentPath: (string | number)[],
+  taskData: { [taskReferenceName: string]: Task.ITask },
+): {
+  isCompleted: boolean;
+  taskPath: (string | number)[];
+  parentTask: Task.ITask;
+  isLastChild: boolean;
+} => {
+  // If this is last task of workflow
+  if (R.equals([tasks.length - 1], currentPath))
+    return {
+      isCompleted: true,
+      taskPath: null,
+      parentTask: null,
+      isLastChild: true,
     };
 
-  throw new Error('Task is invalid');
-};
+  // Case of current task is parallel's child
+  if (isChildOfParallelTask(tasks, currentPath))
+    return getNextParallelTask(tasks, currentPath, taskData);
 
-const findNextParallelTaskPath = (
-  taskReferenceName: string,
-  tasks: WorkflowDefinition.AllTaskType[],
-  currentPath: (string | number)[],
-  currentTask: WorkflowDefinition.IParallelTask,
-) => {
-  for (
-    let pTasksIndex = 0;
-    pTasksIndex < currentTask.parallelTasks.length;
-    pTasksIndex++
+  // Case of current task is decision's child
+  if (
+    isChildOfDecisionDefault(tasks, currentPath) ||
+    isChildOfDecisionCase(tasks, currentPath)
   ) {
-    const taskPath = findTaskPath(taskReferenceName, tasks, [
-      ...currentPath,
-      'parallelTasks',
-      pTasksIndex,
-      0,
-    ]);
-    if (taskPath) return taskPath;
+    return getNextDecisionTask(tasks, currentPath, taskData);
   }
-  return findTaskPath(taskReferenceName, tasks, getNextPath(currentPath));
-};
 
-const findNextDecisionTaskPath = (
-  taskReferenceName: string,
-  tasks: WorkflowDefinition.AllTaskType[],
-  currentPath: (string | number)[],
-  currentTask: WorkflowDefinition.IDecisionTask,
-) => {
-  const decisionsPath = [
-    ...Object.keys(currentTask.decisions).map((decision: string) => [
-      'decisions',
-      decision,
-    ]),
-    ['defaultDecision'],
-  ];
-  for (const decisionPath of decisionsPath) {
-    const taskPath = findTaskPath(taskReferenceName, tasks, [
-      ...currentPath,
-      ...decisionPath,
-      0,
-    ]);
-    if (taskPath) return taskPath;
-  }
-  return findTaskPath(taskReferenceName, tasks, getNextPath(currentPath));
-};
-
-export const findTaskPath = (
-  taskReferenceName: string,
-  tasks: WorkflowDefinition.AllTaskType[],
-  currentPath: (string | number)[] = [0],
-): (string | number)[] => {
-  const currentTask: WorkflowDefinition.AllTaskType = R.path(
-    currentPath,
-    tasks,
-  );
-  if (currentTask)
-    if (currentTask.taskReferenceName === taskReferenceName) return currentPath;
-    else
-      switch (currentTask.type) {
-        case Task.TaskTypes.Parallel:
-          return findNextParallelTaskPath(
-            taskReferenceName,
-            tasks,
-            currentPath,
-            currentTask,
-          );
-        case Task.TaskTypes.Decision:
-          return findNextDecisionTaskPath(
-            taskReferenceName,
-            tasks,
-            currentPath,
-            currentTask,
-          );
-        case Task.TaskTypes.Task:
-        case Task.TaskTypes.Compensate:
-        case Task.TaskTypes.Schedule:
-        default:
-          return findTaskPath(
-            taskReferenceName,
-            tasks,
-            getNextPath(currentPath),
-          );
-      }
-  else return null;
+  // Otherwise get go to next task (last index + 1)
+  return {
+    isCompleted: false,
+    taskPath: getNextPath(currentPath),
+    parentTask: null,
+    isLastChild: false,
+  };
 };
 
 export const getTaskData = async (
@@ -295,11 +254,7 @@ const getTaskInfo = async (task: Task.ITask) => {
   );
 
   const tasksData = await getTaskData(workflow);
-  // Compatibility for previous version.
-  // findTaskPath should be remove whenever we can.
-  const currentTaskPath =
-    task.taskPath ||
-    findTaskPath(task.taskReferenceName, workflow.workflowDefinition.tasks);
+  const currentTaskPath = task.taskPath;
   const nextTaskPath = getNextTaskPath(
     workflow.workflowDefinition.tasks,
     currentTaskPath,
@@ -371,12 +326,9 @@ const handleCancelWorkflow = async (
   // If there are running task wait for them first
   if (runningTasks.length === 0) {
     switch (workflow.workflowDefinition.failureStrategy) {
-      case State.WorkflowFailureStrategies.RecoveryWorkflow:
-        await handleRecoveryWorkflow(workflow, tasksDataList, true);
-        break;
       case State.WorkflowFailureStrategies.Compensate:
       case State.WorkflowFailureStrategies.CompensateThenRetry:
-        await handleCompensateWorkflow(workflow, tasksDataList, true);
+        await handleCompensateWorkflow(workflow, true);
         break;
       case State.WorkflowFailureStrategies.Retry:
       case State.WorkflowFailureStrategies.Failed:
@@ -390,7 +342,7 @@ const handleCancelWorkflow = async (
 
 const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
-  // If workflow cancelled
+  // If workflow has cancelled
   if (workflow.status === State.WorkflowStates.Cancelled) {
     if (nextTaskPath.parentTask) {
       await processUpdateTask({
@@ -399,13 +351,12 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
         status: State.TaskStates.Completed,
         isSystem: true,
       });
+    } else {
+      await handleCancelWorkflow(workflow, tasksData);
     }
-
-    await handleCancelWorkflow(workflow, tasksData);
     return;
   }
 
-  // For siblin of child of parallel are failed but the task is completed
   const tasksDataList = R.values(tasksData);
   const failedTasks = tasksDataList.filter((task: Task.ITask) =>
     [
@@ -414,13 +365,25 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
       State.TaskStates.Timeout,
     ].includes(task.status),
   );
-
+  // If any task in workflow failed, mean this workflow is going to failed
+  // Don't dispatch another task, and wait for all task to finish then do Workflow Failure Strategy
   if (failedTasks.length) {
-    await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
+    // If it have parent so make their parent failed aswell, parent of parent... so on
+    if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
+      await processUpdateTask({
+        taskId: nextTaskPath.parentTask.taskId,
+        transactionId: nextTaskPath.parentTask.transactionId,
+        status: State.TaskStates.Failed,
+        isSystem: true,
+      });
+    } else {
+      await handleWorkflowFailureStrategy(failedTasks[0], tasksDataList);
+    }
     return;
   }
 
-  // For all childs of system task completed => update system task to completed too
+  // For all childs of parallel/decision task has completed => update parent to completed aswell
+  // This will cause chain reaction to parent of parent so on...
   if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
     await processUpdateTask({
       taskId: nextTaskPath.parentTask.taskId,
@@ -476,118 +439,49 @@ const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   }
 };
 
-const getCompensateTasks = R.compose(
-  R.map(
-    (task: Task.ITask): WorkflowDefinition.AllTaskType => {
-      return {
-        name: task.taskName,
-        taskReferenceName: task.taskReferenceName,
-        type: Task.TaskTypes.Compensate,
-        inputParameters: {
-          input: `\${workflow.input.${task.taskReferenceName}.input}`,
-          output: `\${workflow.input.${task.taskReferenceName}.output}`,
-        },
-      };
-    },
-  ),
-  R.sort((taskA: Task.ITask, taskB: Task.ITask): number => {
-    return taskB.endTime - taskA.endTime;
-  }),
-  R.filter((task: Task.ITask | any): boolean => {
-    return (
-      task.type === Task.TaskTypes.Task &&
-      task.status === State.TaskStates.Completed
-    );
-  }),
-);
-
-const handleRecoveryWorkflow = async (
-  workflow: Workflow.IWorkflow,
-  tasksData: Task.ITask[],
-  isCancel: boolean = false,
-): Promise<void> => {
-  await workflowInstanceStore.create(
-    workflow.transactionId,
-    isCancel
-      ? Workflow.WorkflowTypes.CancelWorkflow
-      : Workflow.WorkflowTypes.CompensateWorkflow,
-    workflow.workflowDefinition,
-    toObjectByKey(tasksData, 'taskReferenceName'),
-  );
-};
-
 const handleRetryWorkflow = async (
   workflow: Workflow.IWorkflow,
-  tasksData: Task.ITask[],
 ): Promise<void> => {
   if (workflow.retries > 0) {
-    await workflowInstanceStore.create(
-      workflow.transactionId,
-      Workflow.WorkflowTypes.Workflow,
-      workflow.workflowDefinition,
-      tasksData,
-      {
-        retries: workflow.retries - 1,
-      },
-    );
+    await workflowInstanceStore.reload(workflow);
     return;
   }
   await handleFailedWorkflow(workflow);
   return;
 };
 
-const handleCompensateWorkflow = (
+const handleCompensateWorkflow = async (
   workflow: Workflow.IWorkflow,
-  tasksData: Task.ITask[],
   isCancel: boolean = false,
-) => {
-  const compensateTasks = getCompensateTasks(tasksData);
-  if (compensateTasks.length) {
-    return workflowInstanceStore.create(
-      workflow.transactionId,
-      isCancel
-        ? Workflow.WorkflowTypes.CancelWorkflow
-        : Workflow.WorkflowTypes.CompensateWorkflow,
-      {
-        name: workflow.workflowDefinition.name,
-        rev: `${workflow.workflowDefinition.rev}_compensate`,
-        tasks: compensateTasks,
-        failureStrategy: State.WorkflowFailureStrategies.Failed,
-        outputParameters: {},
-      },
-      toObjectByKey(tasksData, 'taskReferenceName'),
-    );
-  } else {
+): Promise<void> => {
+  const tasksTocompensate = await workflowInstanceStore.compensate(
+    workflow,
+    isCancel
+      ? Workflow.WorkflowTypes.CancelWorkflow
+      : Workflow.WorkflowTypes.CompensateWorkflow,
+    true,
+  );
+
+  if (tasksTocompensate === 0) {
     if (isCancel) {
-      return handleCompletedCancelWorkflow(workflow);
+      await handleCompletedCancelWorkflow(workflow);
+    } else {
+      await handleCompletedCompensateWorkflow(workflow);
     }
-    return handleCompletedCompensateWorkflow(workflow);
   }
 };
 
-const handleCompensateThenRetryWorkflow = (
+const handleCompensateThenRetryWorkflow = async (
   workflow: Workflow.IWorkflow,
-  tasksData: Task.ITask[],
-) => {
-  const compensateTasks = getCompensateTasks(tasksData);
-  if (compensateTasks.length) {
-    return workflowInstanceStore.create(
-      workflow.transactionId,
-      Workflow.WorkflowTypes.CompensateThenRetryWorkflow,
-      {
-        name: workflow.workflowDefinition.name,
-        rev: `${workflow.workflowDefinition.rev}_compensate`,
-        tasks: getCompensateTasks(tasksData),
-        failureStrategy: State.WorkflowFailureStrategies.Failed,
-        outputParameters: {},
-      },
-      toObjectByKey(tasksData, 'taskReferenceName'),
-      {
-        retries: workflow.retries,
-      },
-    );
-  } else {
-    return handleCompletedCompensateThenRetryWorkflow(workflow);
+): Promise<void> => {
+  const tasksToCompensate = await workflowInstanceStore.compensate(
+    workflow,
+    Workflow.WorkflowTypes.CompensateThenRetryWorkflow,
+    true,
+  );
+
+  if (tasksToCompensate === 0) {
+    await handleCompletedCompensateThenRetryWorkflow(workflow);
   }
 };
 
@@ -618,15 +512,19 @@ const isHaveRunningTasks = (tasks: Task.ITask[]): boolean =>
     (taskData: Task.ITask) =>
       [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
         taskData.status,
-      ) && taskData.type === Task.TaskTypes.Task,
+      ) &&
+      [
+        Task.TaskTypes.Task,
+        Task.TaskTypes.Schedule,
+        Task.TaskTypes.SubTransaction,
+      ].includes(taskData.type),
   ).length > 0;
 
 const handleWorkflowFailureStrategy = async (
   task: Task.ITask,
   tasksDataList: Task.ITask[],
 ) => {
-  // No running task, start recovery
-  // If there are running task wait for them first
+  // Wait for every tasks to finish before start recovery
   if (!isHaveRunningTasks(tasksDataList)) {
     const workflow = await workflowInstanceStore.update({
       transactionId: task.transactionId,
@@ -639,17 +537,14 @@ const handleWorkflowFailureStrategy = async (
     }
 
     switch (workflow.workflowDefinition.failureStrategy) {
-      case State.WorkflowFailureStrategies.RecoveryWorkflow:
-        await handleRecoveryWorkflow(workflow, tasksDataList);
-        break;
       case State.WorkflowFailureStrategies.Retry:
-        await handleRetryWorkflow(workflow, tasksDataList);
+        await handleRetryWorkflow(workflow);
         break;
       case State.WorkflowFailureStrategies.Compensate:
-        await handleCompensateWorkflow(workflow, tasksDataList);
+        await handleCompensateWorkflow(workflow);
         break;
       case State.WorkflowFailureStrategies.CompensateThenRetry:
-        await handleCompensateThenRetryWorkflow(workflow, tasksDataList);
+        await handleCompensateThenRetryWorkflow(workflow);
         break;
       case State.WorkflowFailureStrategies.Failed:
         await handleFailedWorkflow(workflow);
@@ -660,7 +555,6 @@ const handleWorkflowFailureStrategy = async (
 
 const handleFailedTask = async (
   task: Task.ITask,
-  isRoot: boolean = false,
   doNotRetry: boolean = false,
 ) => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
@@ -685,17 +579,15 @@ const handleFailedTask = async (
       task.retryDelay <= 0,
     );
   } else {
-    // For all childs of system task completed => update system task to completed too
-    if (nextTaskPath.parentTask) {
+    // For all childs task failed => update parent task to failed aswell
+    if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
       await processUpdateTask({
         taskId: nextTaskPath.parentTask.taskId,
         transactionId: nextTaskPath.parentTask.transactionId,
         status: State.TaskStates.Failed,
         isSystem: true,
       });
-    }
-
-    if (isRoot) {
+    } else {
       const tasksDataList = R.values(tasksData);
       await handleWorkflowFailureStrategy(task, tasksDataList);
     }
@@ -704,7 +596,6 @@ const handleFailedTask = async (
 
 export const processUpdateTask = async (
   taskUpdate: Event.ITaskUpdate,
-  isRoot: boolean = false,
 ): Promise<void> => {
   try {
     const task = await taskInstanceStore.update(taskUpdate);
@@ -717,7 +608,7 @@ export const processUpdateTask = async (
       case State.TaskStates.Failed:
       case State.TaskStates.Timeout:
       case State.TaskStates.AckTimeOut:
-        await handleFailedTask(task, isRoot, taskUpdate.doNotRetry);
+        await handleFailedTask(task, taskUpdate.doNotRetry);
         break;
       default:
         // Case Inprogress we did't need to do anything except update the status
@@ -739,9 +630,14 @@ export const processUpdateTasks = async (
   tasksUpdate: Event.ITaskUpdate[],
 ): Promise<any> => {
   for (const taskUpdate of tasksUpdate) {
-    // console.time(`${taskUpdate.taskId}-${taskUpdate.status}`);
-    await processUpdateTask(taskUpdate, true);
-    // console.timeEnd(`${taskUpdate.taskId}-${taskUpdate.status}`);
+    const hrStart = process.hrtime();
+    await processUpdateTask(taskUpdate);
+    const hrEnd = process.hrtime(hrStart);
+    dg(
+      `Updated ${taskUpdate.transactionId}:${taskUpdate.taskId} to ${
+        taskUpdate.status
+      } take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`,
+    );
   }
 };
 

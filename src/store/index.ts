@@ -9,9 +9,13 @@ import {
   Workflow,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
+import debug from 'debug';
 import * as R from 'ramda';
-import { dispatch, sendEvent, sendTimer } from '../kafka';
+import { dispatch, sendEvent, sendTimer, sendUpdate } from '../kafka';
+import { toObjectByKey } from '../utils/common';
 import { getCompltedAt, mapParametersToValue } from '../utils/task';
+
+const dg = debug('melonade:store');
 
 export interface IStore {
   isHealthy(): boolean;
@@ -53,17 +57,22 @@ export interface ITransactionInstanceStore extends IStore {
   update(
     transactionUpdate: Event.ITransactionUpdate,
   ): Promise<Transaction.ITransaction>;
+  delete(transactionId: string): Promise<void>;
   list(from?: number, size?: number): Promise<Store.ITransactionPaginate>;
   isHealthy(): boolean;
+  changeParent(
+    transactionId: string,
+    parent: Transaction.ITransaction['parent'],
+  ): Promise<void>;
 }
 
 export interface IWorkflowInstanceStore extends IStore {
   get(workflowId: string): Promise<Workflow.IWorkflow>;
+  getByTransactionId(transactionId: string): Promise<Workflow.IWorkflow>;
   create(workflowData: Workflow.IWorkflow): Promise<Workflow.IWorkflow>;
   update(workflowUpdate: Event.IWorkflowUpdate): Promise<Workflow.IWorkflow>;
-  delete(workflowId: string): Promise<any>;
-  getByTransactionId(transactionId: string): Promise<Workflow.IWorkflow>;
-  deleteAll(transactionId: string): Promise<void>;
+  delete(workflowId: string, keepSubTransaction?: boolean): Promise<void>;
+  deleteAll(transactionId: string, keepSubTransaction?: boolean): Promise<void>;
   isHealthy(): boolean;
 }
 
@@ -72,8 +81,8 @@ export interface ITaskInstanceStore extends IStore {
   getAll(workflowId: string): Promise<Task.ITask[]>;
   create(taskData: Task.ITask): Promise<Task.ITask>;
   update(taskUpdate: Event.ITaskUpdate): Promise<Task.ITask>;
-  delete(taskId: string): Promise<any>;
-  deleteAll(workflowId: string): Promise<void>;
+  delete(taskId: string, keepSubTransaction?: boolean): Promise<void>;
+  deleteAll(workflowId: string, keepSubTransaction?: boolean): Promise<void>;
   isHealthy(): boolean;
 }
 
@@ -167,6 +176,7 @@ export class TransactionInstanceStore {
     workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
     input: any,
     tags: string[] = [],
+    parent?: Transaction.ITransaction['parent'],
   ): Promise<Transaction.ITransaction> => {
     const timestamp = Date.now();
     const transaction = await this.client.create({
@@ -178,6 +188,7 @@ export class TransactionInstanceStore {
       endTime: null,
       workflowDefinition,
       tags,
+      parent,
     });
 
     sendEvent({
@@ -195,6 +206,7 @@ export class TransactionInstanceStore {
       input,
     );
 
+    dg(`Create ${transactionId}`);
     return transaction;
   };
 
@@ -209,6 +221,81 @@ export class TransactionInstanceStore {
         timestamp,
         details: transaction,
       });
+
+      const parentTransactionId = transaction.parent?.transactionId;
+      const parentTaskId = transaction.parent?.taskId;
+      const parentIsCompensate = transaction.parent?.isCompensate;
+
+      if (parentTransactionId && parentTaskId) {
+        if (!parentIsCompensate) {
+          switch (transaction.status) {
+            case State.TransactionStates.Cancelled:
+            case State.TransactionStates.Compensated:
+            case State.TransactionStates.Failed:
+              sendUpdate({
+                transactionId: parentTransactionId,
+                taskId: parentTaskId,
+                status: State.TaskStates.Failed,
+                output: transaction.output,
+              });
+              break;
+            case State.TransactionStates.Completed:
+              sendUpdate({
+                transactionId: parentTransactionId,
+                taskId: parentTaskId,
+                status: State.TaskStates.Completed,
+                output: transaction.output,
+              });
+              break;
+            default:
+              break;
+          }
+        } else {
+          switch (transaction.status) {
+            case State.TransactionStates.Cancelled:
+            case State.TransactionStates.Compensated:
+            case State.TransactionStates.Failed:
+            case State.TransactionStates.Completed:
+              sendUpdate({
+                transactionId: parentTransactionId,
+                taskId: parentTaskId,
+                status: State.TaskStates.Completed,
+                output: transaction.output,
+              });
+              break;
+            default:
+              break;
+          }
+        }
+      }
+
+      // Clean up instance store when transaction finished
+      // If it have parent let parent clean by themself
+      if (parentTransactionId && parentTaskId) {
+        if (
+          [
+            State.TransactionStates.Cancelled,
+            State.TransactionStates.Compensated,
+          ].includes(transactionUpdate.status)
+        ) {
+          await this.delete(transactionUpdate.transactionId);
+        }
+      } else {
+        if (
+          [
+            State.TransactionStates.Completed,
+            State.TransactionStates.Failed,
+            State.TransactionStates.Cancelled,
+            State.TransactionStates.Compensated,
+          ].includes(transactionUpdate.status)
+        ) {
+          await this.delete(transactionUpdate.transactionId);
+        }
+      }
+
+      dg(
+        `Updated ${transactionUpdate.transactionId} to ${transactionUpdate.status}`,
+      );
       return transaction;
     } catch (error) {
       sendEvent({
@@ -223,9 +310,44 @@ export class TransactionInstanceStore {
     }
   };
 
+  delete = async (transactionId: string) => {
+    await Promise.all([
+      this.client.delete(transactionId),
+      workflowInstanceStore.deleteAll(transactionId),
+    ]);
+    dg(`Clean up ${transactionId}`);
+  };
+
   list(from?: number, size?: number): Promise<Store.ITransactionPaginate> {
     return this.client.list(from, size);
   }
+
+  compensate = async (
+    transactionId: string,
+    parent?: Transaction.ITransaction['parent'],
+  ): Promise<void> => {
+    if (parent) {
+      this.client.changeParent(transactionId, parent);
+    }
+
+    const workflow = await workflowInstanceStore.getByTransactionId(
+      transactionId,
+    );
+
+    if (workflow.status === State.WorkflowStates.Running) {
+      await workflowInstanceStore.update({
+        transactionId: workflow.workflowId,
+        workflowId: workflow.workflowId,
+        status: State.WorkflowStates.Cancelled,
+      });
+    } else if (workflow.status === State.WorkflowStates.Completed) {
+      await workflowInstanceStore.compensate(
+        workflow,
+        Workflow.WorkflowTypes.CancelWorkflow,
+        true,
+      );
+    }
+  };
 
   isHealthy(): boolean {
     return this.client.isHealthy();
@@ -242,6 +364,10 @@ export class WorkflowInstanceStore {
 
   get(workflowId: string): Promise<Workflow.IWorkflow> {
     return this.client.get(workflowId);
+  }
+
+  getByTransactionId(transactionId: string) {
+    return this.client.getByTransactionId(transactionId);
   }
 
   create = async (
@@ -304,17 +430,104 @@ export class WorkflowInstanceStore {
     }
   };
 
-  delete(workflowId: string) {
-    return this.client.delete(workflowId);
+  delete(workflowId: string, keepSubTransaction?: boolean) {
+    return this.client.delete(workflowId, keepSubTransaction);
   }
 
-  getByTransactionId(transactionId: string) {
-    return this.client.getByTransactionId(transactionId);
+  deleteAll(transactionId: string, keepSubTransaction?: boolean) {
+    return this.client.deleteAll(transactionId, keepSubTransaction);
   }
 
-  deleteAll(transactionId: string) {
-    return this.client.deleteAll(transactionId);
-  }
+  reload = async (workflow: Workflow.IWorkflow) => {
+    await this.client.delete(workflow.workflowId);
+    await this.client.create({
+      ...workflow,
+      retries: workflow.retries - 1,
+    });
+  };
+
+  private getCompenstateTasks = (
+    tasks: Task.ITask[],
+    includeWorkers: boolean,
+  ): WorkflowDefinition.Tasks => {
+    return tasks
+      .filter((task: Task.ITask) => {
+        return includeWorkers
+          ? (task.type === Task.TaskTypes.Task ||
+              task.type === Task.TaskTypes.SubTransaction) &&
+              task.status === State.TaskStates.Completed
+          : task.type === Task.TaskTypes.SubTransaction &&
+              task.status === State.TaskStates.Completed;
+      })
+      .sort((taskA: Task.ITask, taskB: Task.ITask): number => {
+        return taskB.endTime - taskA.endTime;
+      })
+      .map(
+        (task: Task.ITask): WorkflowDefinition.AllTaskType => {
+          if (task.type === Task.TaskTypes.Task) {
+            return {
+              name: task.taskName,
+              taskReferenceName: task.taskReferenceName,
+              type: Task.TaskTypes.Compensate,
+              inputParameters: {
+                input: `\${workflow.input.${task.taskReferenceName}.input}`,
+                output: `\${workflow.input.${task.taskReferenceName}.output}`,
+              },
+            };
+          } else {
+            return {
+              taskReferenceName: task.taskReferenceName,
+              type: Task.TaskTypes.SubTransaction,
+              inputParameters: task.input,
+            };
+          }
+        },
+      );
+  };
+
+  // Delete current workflow and create oposite one
+  // Return number of tasks to compensate
+  compensate = async (
+    workflow: Workflow.IWorkflow,
+    workflowType: Workflow.WorkflowTypes,
+    includeWorkers: boolean,
+  ): Promise<number> => {
+    const tasksData = await taskInstanceStore.getAll(workflow.workflowId);
+    const isHaveRunningTask = !!tasksData.find((task: Task.ITask) =>
+      [State.TaskStates.Scheduled, State.TaskStates.Inprogress].includes(
+        task.status,
+      ),
+    );
+
+    if (isHaveRunningTask) throw new Error(`Have running task`);
+
+    const compenstateTasks = this.getCompenstateTasks(
+      tasksData,
+      includeWorkers,
+    );
+
+    await this.client.delete(workflow.workflowId, true);
+
+    if (compenstateTasks.length) {
+      await this.create(
+        workflow.transactionId,
+        workflowType,
+        {
+          name: workflow.workflowDefinition.name,
+          rev: `${workflow.workflowDefinition.rev}_compensation`,
+          tasks: compenstateTasks,
+          failureStrategy: State.WorkflowFailureStrategies.Failed,
+          outputParameters: {},
+          retry: {
+            limit: workflow.retries,
+          },
+        },
+        toObjectByKey(tasksData, 'taskReferenceName'),
+      );
+    }
+
+    return compenstateTasks.length;
+  };
 
   isHealthy(): boolean {
     return this.client.isHealthy();
@@ -390,7 +603,8 @@ export class TaskInstanceStore {
     const workflowTask:
       | WorkflowDefinition.IDecisionTask
       | WorkflowDefinition.IParallelTask
-      | WorkflowDefinition.IScheduleTask = R.path(
+      | WorkflowDefinition.IScheduleTask
+      | WorkflowDefinition.ISubTransactionTask = R.path(
       ['workflowDefinition', 'tasks', ...taskPath],
       workflow,
     );
@@ -454,14 +668,82 @@ export class TaskInstanceStore {
         });
 
         return task;
+      } else if (workflowTask.type === Task.TaskTypes.SubTransaction) {
+        const task = await this.client.create(taskData);
+        sendEvent({
+          transactionId: workflow.transactionId,
+          type: 'TASK',
+          isError: false,
+          timestamp: timestampCreate,
+          details: {
+            ...task,
+            status: State.TaskStates.Scheduled,
+          },
+        });
+
+        if (workflow.type === Workflow.WorkflowTypes.Workflow) {
+          const workflowDefinition = await workflowDefinitionStore.get(
+            task.input?.workflowName,
+            task.input?.workflowRev,
+          );
+
+          if (workflowDefinition) {
+            await transactionInstanceStore.create(
+              `${workflow.transactionId}-${task.taskReferenceName}`,
+              workflowDefinition,
+              task.input,
+              [Task.TaskTypes.SubTransaction],
+              {
+                transactionId: workflow.transactionId,
+                taskId: task.taskId,
+                isCompensate: false,
+              },
+            );
+
+            return this.update({
+              transactionId: task.transactionId,
+              taskId: task.taskId,
+              status: State.TaskStates.Inprogress,
+              isSystem: true,
+            });
+          } else {
+            sendUpdate({
+              transactionId: task.transactionId,
+              taskId: task.taskId,
+              status: State.TaskStates.Failed,
+              doNotRetry: true,
+              isSystem: true,
+              output: {
+                error: `Workflow definition not found`,
+              },
+            });
+            return task;
+          }
+        } else {
+          // For compensate inception XD
+          await transactionInstanceStore.compensate(
+            `${workflow.transactionId}-${task.taskReferenceName}`,
+            {
+              taskId: task.taskId,
+              transactionId: task.transactionId,
+              isCompensate: true,
+            },
+          );
+          return this.update({
+            transactionId: task.transactionId,
+            taskId: task.taskId,
+            status: State.TaskStates.Inprogress,
+            isSystem: true,
+          });
+        }
       } else {
         // Dispatch child task(s)
         switch (workflowTask.type) {
           case Task.TaskTypes.Decision:
             await this.create(
               workflow,
-              workflowTask.decisions[taskData.input.case]
-                ? [...taskPath, 'decisions', taskData.input.case, 0]
+              workflowTask.decisions?.[taskData.input?.case]
+                ? [...taskPath, 'decisions', taskData.input?.case, 0]
                 : [...taskPath, 'defaultDecision', 0],
               tasksData,
             );
@@ -607,6 +889,7 @@ export class TaskInstanceStore {
       case Task.TaskTypes.Decision:
       case Task.TaskTypes.Parallel:
       case Task.TaskTypes.Schedule:
+      case Task.TaskTypes.SubTransaction:
         return this.createSystemTask(
           workflow,
           taskPath,
@@ -650,13 +933,13 @@ export class TaskInstanceStore {
     }
   };
 
-  delete(taskId: string): Promise<any> {
-    return this.client.delete(taskId);
+  delete(taskId: string, keepSubTransaction?: boolean): Promise<any> {
+    return this.client.delete(taskId, keepSubTransaction);
   }
 
-  deleteAll(workflowId: string) {
-    return this.client.deleteAll(workflowId);
-  }
+  deleteAll = (workflowId: string, keepSubTransaction?: boolean) => {
+    return this.client.deleteAll(workflowId, keepSubTransaction);
+  };
 
   isHealthy(): boolean {
     return this.client.isHealthy();

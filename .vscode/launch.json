@@ -25,9 +25,7 @@
         "program": "${workspaceFolder}/node_modules/jest/bin/jest"
       },
       "runtimeVersion": "10.16.3",
-      "env": {
-        "MONGODB_URL": "mongodb://127.0.0.1:27017/melonade-test"
-      }
+      "env": {}
     },
     {
       "type": "node",
@@ -45,9 +43,7 @@
       "windows": {
         "program": "${workspaceFolder}/node_modules/jest/bin/jest"
       },
-      "env": {
-        "MONGODB_URL": "mongodb://127.0.0.1:27017/melonade-test"
-      }
+      "env": {}
     }
   ]
 }
