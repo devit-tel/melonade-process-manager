@@ -2,7 +2,7 @@ import { Event, State, Task } from '@melonade/melonade-declaration';
 import ioredis from 'ioredis';
 import * as uuid from 'uuid/v4';
 import { RedisStore } from '.';
-import { ITaskInstanceStore } from '..';
+import { ITaskInstanceStore, transactionInstanceStore } from '..';
 import { prefix } from '../../config';
 
 export class TaskInstanceRedisStore extends RedisStore
@@ -104,9 +104,16 @@ export class TaskInstanceRedisStore extends RedisStore
     return tasksString.map(JSON.parse);
   };
 
-  delete = async (taskId: string): Promise<any> => {
+  delete = async (taskId: string): Promise<void> => {
     const task = await this.get(taskId);
-    return this.client
+
+    if (task.type === Task.TaskTypes.SubTransaction) {
+      await transactionInstanceStore.delete(
+        `${task.transactionId}-${task.taskReferenceName}`,
+      );
+    }
+
+    await this.client
       .pipeline()
       .srem(`${prefix}.workflow-task.${task.workflowId}`, taskId)
       .del(`${prefix}.task.${taskId}`)
@@ -115,10 +122,22 @@ export class TaskInstanceRedisStore extends RedisStore
 
   deleteAll = async (workflowId: string): Promise<void> => {
     const key = `${prefix}.workflow-task.${workflowId}`;
-    const taskKeys = await this.client.smembers(key);
-    await this.client.del(
-      ...taskKeys.map((taskId: string) => `${prefix}.task.${taskId}`),
-      key,
-    );
+    const tasks = await this.getAll(workflowId);
+
+    await Promise.all([
+      this.client.del(
+        ...tasks.map((task: Task.ITask) => `${prefix}.task.${task.taskId}`),
+        key,
+      ) as Promise<any>,
+      ...tasks
+        .filter(
+          (task: Task.ITask) => task.type === Task.TaskTypes.SubTransaction,
+        )
+        .map((task: Task.ITask) =>
+          transactionInstanceStore.delete(
+            `${task.transactionId}-${task.taskReferenceName}`,
+          ),
+        ),
+    ]);
   };
 }
