@@ -561,6 +561,15 @@ const handleFailedTask = async (
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow oncancle do not retry or anything
   if (workflow.status === State.WorkflowStates.Cancelled) {
+    if (nextTaskPath.parentTask) {
+      await processUpdateTask({
+        taskId: nextTaskPath.parentTask.taskId,
+        transactionId: nextTaskPath.parentTask.transactionId,
+        status: State.TaskStates.Completed,
+        isSystem: true,
+      });
+    }
+
     await handleCancelWorkflow(workflow, tasksData);
     return;
   }
