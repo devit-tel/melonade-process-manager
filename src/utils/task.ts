@@ -22,6 +22,7 @@ const expressionOperators = {
   '-': (a: any, b: any) => { return a - b },
   '*': (a: any, b: any) => { return a * b },
   '/': (a: any, b: any) => { return a / b },
+  '^': (a: any, b: any) => { return Math.pow(a,b) },
 };
 
 
@@ -29,7 +30,7 @@ const solveRegExp = [ // Order by operator priority
   /\&\&|\|\|/g, 
   /==|!=|>=|<=|>|</g, 
   /\+|\-/g, 
-  /\*|\//g, 
+  /\*|\/|\^/g, 
 ];
 
 
@@ -45,12 +46,17 @@ const solveExpression = (expression: string, values: any, depth: number = 0) => 
     if (/^\${[a-z0-9-_.\[\]]+}$/i.test(trimmedExpression)) { // Check if it's variable
       return _.get(trimmedExpression.replace(/(^\${)(.+)(}$)/i, '$2'), values);
     }
-    return expression; //Assume it's string Do not trim the string
+
+    if (/(^\')(.+)(\'$)/i.test(trimmedExpression)) {
+      return trimmedExpression.replace(/(^\')(.+)(\'$)/i, '$2');
+    }
+
+    return ""; 
   }
 
   const matchRegExp = solveRegExp[depth];
   const operators = expression.match(matchRegExp);
-  const operands = expression.replace(matchRegExp, "&&").split("&&"); // Replace everything to && to split it properly
+  const operands = expression.split(matchRegExp);
   if (operators) {
     if (
       operators.length > 0 &&
