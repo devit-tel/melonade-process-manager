@@ -26,21 +26,12 @@ const calculate = {
 };
 
 
-/*const solveRegExp = [ // Order by operator priority
-  /\&\&|\|\|/g,
-  /==|!=|>=|<=|>|</g,
-  /\+|\-/g,
-  /\*|\/|\^/g,
-];*/
-
 const solveRegExp = [ // Order by operator priority
   /(\&\&|\|\|)/g,
   /(==|!=|>=|<=|>|<)/g,
   /(\+|\-)/g,
   /(\*|\/|\^)/g,
 ];
-
-
 
 const solveExpression = (expression: string, values: any, depth: number = 0) => {
 
