@@ -9,7 +9,7 @@ export const getPathByInputTemplate = R.compose(
   R.replace(/(^\${)(.+)(}$)/i, '$2'),
 );
 
-const expressionOperators = {
+const calculate = {
   '==': (a: any, b: any) => { return a == b },
   '!=': (a: any, b: any) => { return a != b },
   '<': (a: any, b: any) => { return a < b },
@@ -26,11 +26,18 @@ const expressionOperators = {
 };
 
 
-const solveRegExp = [ // Order by operator priority
+/*const solveRegExp = [ // Order by operator priority
   /\&\&|\|\|/g,
   /==|!=|>=|<=|>|</g,
   /\+|\-/g,
   /\*|\/|\^/g,
+];*/
+
+const solveRegExp = [ // Order by operator priority
+  /(\&\&|\|\|)/g,
+  /(==|!=|>=|<=|>|<)/g,
+  /(\+|\-)/g,
+  /(\*|\/|\^)/g,
 ];
 
 
@@ -38,42 +45,37 @@ const solveRegExp = [ // Order by operator priority
 const solveExpression = (expression: string, values: any, depth: number = 0) => {
 
   if (depth == solveRegExp.length) { // No more operator to solve just resolve variable
-    const trimExpression = expression.trim();
-    if (/^\d+$/.test(trimExpression)) { // Check if it's number
-      return parseInt(trimExpression);
+    expression = expression.trim();
+    if (/^\d+$/.test(expression)) { // Check if it's number
+      return parseInt(expression);
     }
 
-    if (/^\${[a-z0-9-_.\[\]]+}$/i.test(trimExpression)) { // Check if it's variable
-      return _.get(trimExpression.replace(/(^\${)(.+)(}$)/i, '$2'), values);
+    if (/^\${[a-z0-9-_.\[\]]+}$/i.test(expression)) { // Check if it's variable
+      return _.get(expression.replace(/(^\${)(.+)(}$)/i, '$2'), values);
     }
 
-    if (/(^\')(.+)(\'$)/i.test(trimExpression)) {
-      return trimExpression.replace(/(^\')(.+)(\'$)/i, '$2');
+    if (/(^\')(.+)(\'$)/i.test(expression)) {
+      return expression.replace(/(^\')(.+)(\'$)/i, '$2');
     }
 
     return "";
   }
 
   const matchRegExp = solveRegExp[depth];
-  const operators = expression.match(matchRegExp);
-  const operands = expression.split(matchRegExp);
-  if (operators) {
-    if (
-      operators.length > 0 &&
-      operands.length > 0 &&
-      operators.length == (operands.length - 1)
-    ) {
-      let result = solveExpression(operands[0], values, depth + 1);
-      for (let i = 0; i < operators.length; i++) {
-        let nextOperand = solveExpression(operands[i + 1], values, depth + 1);
-        result = expressionOperators[operators[i].trim()](result, nextOperand);
+  const ops = expression.split(matchRegExp);
+  if (ops.length > 2) {
+    let accum = solveExpression(ops.shift(), values, depth + 1);
+    while (ops.length > 1) {
+      let operator = calculate[ops.shift()];
+      let operand = solveExpression(ops.shift(), values, depth + 1);
+      if (operator) {
+        accum = operator(accum, operand);
       }
-      return result;
-    } else {
-      return expression;
     }
+    return accum;
+
   } else {
-    return solveExpression(expression, values, depth + 1);
+    return solveExpression(ops[0], values, depth + 1);
   }
 }
 

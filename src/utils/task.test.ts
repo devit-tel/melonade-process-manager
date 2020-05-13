@@ -343,7 +343,7 @@ describe('mapParametersToValue', () => {
   test('Parameter is number', () => {
     expect(
       task.mapParametersToValue(
-       1,
+        1,
         {
           t1: {
             taskName: 'taskName',
@@ -373,7 +373,7 @@ describe('mapParametersToValue', () => {
     ).toEqual(1);
   });
 
-  test('Append pure string', () => {
+  test('Append const string', () => {
     expect(
       task.mapParametersToValue(
         {
@@ -412,7 +412,7 @@ describe('mapParametersToValue', () => {
     });
   });
 
-  test('Single pure string', () => {
+  test('Single const string', () => {
     expect(
       task.mapParametersToValue(
         {
@@ -1594,44 +1594,6 @@ describe('mapParametersToValue', () => {
     });
   });
 
-  test('Invalid operand', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} || asdasdasd}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 'Yeet',
-              b: false,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: 'Yeet',
-    });
-  });
-
   test('Input a + b should equal b + a and c should be true', () => {
     expect(
       task.mapParametersToValue(
@@ -1667,6 +1629,45 @@ describe('mapParametersToValue', () => {
       ),
     ).toEqual({
       c: true,
+    });
+  });
+
+  test('Input a + b * c should do b * c first and d should be 75', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          d: '${${t1.output.a} + ${t1.output.b} * ${t1.output.c}}',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 5,
+              b: 7,
+              c: 10,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      d: 75,
     });
   });
 });
