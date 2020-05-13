@@ -22,15 +22,15 @@ const expressionOperators = {
   '-': (a: any, b: any) => { return a - b },
   '*': (a: any, b: any) => { return a * b },
   '/': (a: any, b: any) => { return a / b },
-  '^': (a: any, b: any) => { return Math.pow(a,b) },
+  '^': (a: any, b: any) => { return Math.pow(a, b) },
 };
 
 
 const solveRegExp = [ // Order by operator priority
-  /\&\&|\|\|/g, 
-  /==|!=|>=|<=|>|</g, 
-  /\+|\-/g, 
-  /\*|\/|\^/g, 
+  /\&\&|\|\|/g,
+  /==|!=|>=|<=|>|</g,
+  /\+|\-/g,
+  /\*|\/|\^/g,
 ];
 
 
@@ -38,20 +38,20 @@ const solveRegExp = [ // Order by operator priority
 const solveExpression = (expression: string, values: any, depth: number = 0) => {
 
   if (depth == solveRegExp.length) { // No more operator to solve just resolve variable
-    const trimmedExpression = expression.trim();
-    if (/^\d+$/.test(trimmedExpression)) { // Check if it's number
-      return parseInt(trimmedExpression);
+    const trimExpression = expression.trim();
+    if (/^\d+$/.test(trimExpression)) { // Check if it's number
+      return parseInt(trimExpression);
     }
 
-    if (/^\${[a-z0-9-_.\[\]]+}$/i.test(trimmedExpression)) { // Check if it's variable
-      return _.get(trimmedExpression.replace(/(^\${)(.+)(}$)/i, '$2'), values);
+    if (/^\${[a-z0-9-_.\[\]]+}$/i.test(trimExpression)) { // Check if it's variable
+      return _.get(trimExpression.replace(/(^\${)(.+)(}$)/i, '$2'), values);
     }
 
-    if (/(^\')(.+)(\'$)/i.test(trimmedExpression)) {
-      return trimmedExpression.replace(/(^\')(.+)(\'$)/i, '$2');
+    if (/(^\')(.+)(\'$)/i.test(trimExpression)) {
+      return trimExpression.replace(/(^\')(.+)(\'$)/i, '$2');
     }
 
-    return ""; 
+    return "";
   }
 
   const matchRegExp = solveRegExp[depth];
@@ -92,7 +92,11 @@ const parseTemplate = (template: string, values: any) => {
   }
 
   // expression template
-  // ${${parcel[0].driverId} == ${parcel[0].driverId}}
+  // ${${parcel[0].driverId} == ${parcel[0].driverId} => true/false
+  // ${${parcel[0].driverId} == 'A1'} => true/false
+  // ${${parcel[0].driverId} + ${parcel[0].driverId}} => 6
+  // ${${parcel[0].driverId} + 1} => 4
+  // ${'Hello' + 'World'} => 'HelloWorld'
   if (/(^\${)(.+)(}$)/i.test(template)) {
     return solveExpression(template.replace(/(^\${)(.+)(}$)/i, '$2'), values);
   }
