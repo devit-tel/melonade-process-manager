@@ -10,30 +10,27 @@ export const getPathByInputTemplate = R.compose(
   R.replace(/(^\${)(.+)(}$)/i, '$2'),
 );
 
-
-
 const resolveVars = (expression: string, values: any) => {
-  const variables = expression.match(/\${[a-z0-9-_.\[\]]+}/g);
+  const variables = expression.match(/\${[a-z0-9-_.\[\]]+}/gi);
   if (variables) {
-    variables.forEach(element => {
-      expression = expression.replace(element, _.get(element.replace(/(^\${)(.+)(}$)/i, '$2'), values));
+    variables.forEach((element) => {
+      expression = expression.replace(
+        element,
+        _.get(element.replace(/(^\${)(.+)(}$)/i, '$2'), values),
+      );
     });
   }
   return expression;
-}
+};
 
 const dateParse = (expression: string, values: any) => {
   try {
     expression = resolveVars(expression, values);
     return Date.parse(expression);
-
   } catch (error) {
-    console.log(error);
     return expression;
   }
-}
-
-
+};
 
 const mathCalculation = (expression: string, values: any) => {
   try {
@@ -52,22 +49,20 @@ const mathCalculation = (expression: string, values: any) => {
         logical: true,
         comparison: true,
         // Disable 'in' and = operators
-        'in': false,
-        assignment: false
-      }
+        in: false,
+        assignment: false,
+      },
     });
 
-    expression = expression.replace(/\&\&/g, " and ");
-    expression = expression.replace(/\|\|/g, " or ");
+    expression = expression.replace(/\&\&/g, ' and ');
+    expression = expression.replace(/\|\|/g, ' or ');
 
     const expr = parser.parse(expression);
     return expr.evaluate();
-
   } catch (error) {
-    console.log(error);
     return expression;
   }
-}
+};
 
 // Support 2 types of template
 const parseTemplate = (template: string, values: any) => {
@@ -86,7 +81,10 @@ const parseTemplate = (template: string, values: any) => {
   // math template
   // math(2+2) => 4
   if (/(^math\()(.+)(\)$)/i.test(template)) {
-    return mathCalculation(template.replace(/(^math\()(.+)(\)$)/i, '$2'), values);
+    return mathCalculation(
+      template.replace(/(^math\()(.+)(\)$)/i, '$2'),
+      values,
+    );
   }
 
   // date conversion template
@@ -97,7 +95,7 @@ const parseTemplate = (template: string, values: any) => {
 
   // string append template
   // ${parcel[0].driverId} ${parcel[0].driverId} => "driver_1 driver_1"
-  if (/\${[a-z0-9-_.\[\]]+}/g.test(template)) {
+  if (/\${[a-z0-9-_.\[\]]+}/gi.test(template)) {
     return resolveVars(template, values);
   }
 
@@ -143,7 +141,6 @@ export const getCompltedAt = (task: Task.ITask): number => {
       .next()
       .getTime();
   } catch (error) {
-    console.log(error);
     return 0;
   }
 };

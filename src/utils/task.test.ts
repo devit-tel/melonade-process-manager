@@ -1,7 +1,6 @@
 import { State, Task } from '@melonade/melonade-declaration';
 import * as task from './task';
 
-
 describe('mapParametersToValue', () => {
   test('Parse parameter', () => {
     expect(
@@ -339,11 +338,53 @@ describe('mapParametersToValue', () => {
     });
   });
 
+  test('String append', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c:
+            '${t1.output.driverName} กรุณาขับรถไปที่ ${t1.output.pickupLocation} เพื่อสั่ง ${t1.output.order} เพิ่ม ${t1.output.additions} ด้วยนะ',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              driverName: 'Prayoooooot',
+              pickupLocation: 'ข้าวมันไก่ป้าดา',
+              order: 'ข้าวผัด',
+              additions: 'ไข่ดาว',
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c:
+        'Prayoooooot กรุณาขับรถไปที่ ข้าวมันไก่ป้าดา เพื่อสั่ง ข้าวผัด เพิ่ม ไข่ดาว ด้วยนะ',
+    });
+  });
+
   test('Basic add test', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(${t1.output.a} + ${t1.output.b})",
+          c: 'math(${t1.output.a} + ${t1.output.b})',
         },
         {
           t1: {
@@ -381,7 +422,7 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(${t1.output.a} - ${t1.output.b})",
+          c: 'math(${t1.output.a} - ${t1.output.b})',
         },
         {
           t1: {
@@ -419,7 +460,7 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(${t1.output.a} * ${t1.output.b})",
+          c: 'math(${t1.output.a} * ${t1.output.b})',
         },
         {
           t1: {
@@ -457,7 +498,7 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(${t1.output.a} / ${t1.output.b})",
+          c: 'math(${t1.output.a} / ${t1.output.b})',
         },
         {
           t1: {
@@ -495,7 +536,7 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(${t1.output.a} ^ ${t1.output.b})",
+          c: 'math(${t1.output.a} ^ ${t1.output.b})',
         },
         {
           t1: {
@@ -533,7 +574,7 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(${t1.output.a} + (${t1.output.b} - ${t1.output.a}))",
+          c: 'math(${t1.output.a} + (${t1.output.b} - ${t1.output.a}))',
         },
         {
           t1: {
@@ -571,7 +612,7 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(${t1.output.a} + ${t1.output.b} != ${t1.output.a})",
+          c: 'math(${t1.output.a} + ${t1.output.b} != ${t1.output.a})',
         },
         {
           t1: {
@@ -609,7 +650,8 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(${t1.output.a} == ${t1.output.b} && ${t1.output.a} == ${t1.output.b})",
+          c:
+            'math(${t1.output.a} == ${t1.output.b} && ${t1.output.a} == ${t1.output.b})',
         },
         {
           t1: {
@@ -647,7 +689,8 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(${t1.output.b} == ${t1.output.b} || ${t1.output.a} == ${t1.output.b})",
+          c:
+            'math(${t1.output.b} == ${t1.output.b} || ${t1.output.a} == ${t1.output.b})',
         },
         {
           t1: {
@@ -681,12 +724,11 @@ describe('mapParametersToValue', () => {
     });
   });
 
-
   test('Math error test', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "math(x+x)",
+          c: 'math(x+x)',
         },
         {
           t1: {
@@ -724,7 +766,7 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "date(${t1.output.a})",
+          c: 'date(${t1.output.a})',
         },
         {
           t1: {
@@ -736,7 +778,7 @@ describe('mapParametersToValue', () => {
             type: Task.TaskTypes.Task,
             status: State.TaskStates.Completed,
             output: {
-              a: '2019/05/13 04:35:01',
+              a: '2019/05/13 04:35:01Z',
             },
             input: {},
             ackTimeout: 0,
@@ -761,7 +803,7 @@ describe('mapParametersToValue', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: "date(${t1.output.a})",
+          c: 'date(${t1.output.a})',
         },
         {
           t1: {
@@ -793,8 +835,4 @@ describe('mapParametersToValue', () => {
       c: NaN,
     });
   });
-
-
-
-
 });
