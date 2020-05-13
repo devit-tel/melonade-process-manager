@@ -1,6 +1,7 @@
 import { State, Task } from '@melonade/melonade-declaration';
 import * as task from './task';
 
+
 describe('mapParametersToValue', () => {
   test('Parse parameter', () => {
     expect(
@@ -335,44 +336,6 @@ describe('mapParametersToValue', () => {
         'Moby Dick',
         'The Lord of the Rings',
       ],
-    });
-  });
-
-  test('OK Boomer', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: "math(${t1.output.a} + ${t1.output.b})",
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 1,
-              b: 2,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: 3,
     });
   });
 
@@ -790,7 +753,7 @@ describe('mapParametersToValue', () => {
         },
       ),
     ).toEqual({
-      c: 1557696901000,
+      c: 1557722101000, //UTC Timezone
     });
   });
 
