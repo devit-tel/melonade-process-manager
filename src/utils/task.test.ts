@@ -337,4 +337,502 @@ describe('mapParametersToValue', () => {
       ],
     });
   });
+
+  test('String append', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c:
+            '${t1.output.driverName} กรุณาขับรถไปที่ ${t1.output.pickupLocation} เพื่อสั่ง ${t1.output.order} เพิ่ม ${t1.output.additions} ด้วยนะ',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              driverName: 'Prayoooooot',
+              pickupLocation: 'ข้าวมันไก่ป้าดา',
+              order: 'ข้าวผัด',
+              additions: 'ไข่ดาว',
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c:
+        'Prayoooooot กรุณาขับรถไปที่ ข้าวมันไก่ป้าดา เพื่อสั่ง ข้าวผัด เพิ่ม ไข่ดาว ด้วยนะ',
+    });
+  });
+
+  test('Basic add test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'math(${t1.output.a} + ${t1.output.b})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 1,
+              b: 2,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: 3,
+    });
+  });
+
+  test('Basic subtract test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'math(${t1.output.a} - ${t1.output.b})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 1,
+              b: 2,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: -1,
+    });
+  });
+
+  test('Basic multiply test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'math(${t1.output.a} * ${t1.output.b})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 4,
+              b: 2,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: 8,
+    });
+  });
+
+  test('Basic divide test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'math(${t1.output.a} / ${t1.output.b})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 16,
+              b: 2,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: 8,
+    });
+  });
+
+  test('Basic power test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'math(${t1.output.a} ^ ${t1.output.b})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 2,
+              b: 8,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: 256,
+    });
+  });
+
+  test('Parentheses test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'math(${t1.output.a} + (${t1.output.b} - ${t1.output.a}))',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 2,
+              b: 8,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: 8,
+    });
+  });
+
+  test('Compare test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'math(${t1.output.a} + ${t1.output.b} != ${t1.output.a})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 2,
+              b: 8,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: true,
+    });
+  });
+
+  test('Logical and test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c:
+            'math(${t1.output.a} == ${t1.output.b} && ${t1.output.a} == ${t1.output.b})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 2,
+              b: 2,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: true,
+    });
+  });
+
+  test('Logical or test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c:
+            'math(${t1.output.b} == ${t1.output.b} || ${t1.output.a} == ${t1.output.b})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 2,
+              b: 5,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: true,
+    });
+  });
+
+  test('Math error test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'math(x+x)',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 2,
+              b: 8,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: 'x+x',
+    });
+  });
+
+  test('Date parse test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'date(${t1.output.a})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: '2019/05/13 04:35:01Z',
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: 1557722101000, //UTC Timezone
+    });
+  });
+
+  test('Datetime incorrect will result in NaN', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: 'date(${t1.output.a})',
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: '-------------',
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: NaN,
+    });
+  });
 });
