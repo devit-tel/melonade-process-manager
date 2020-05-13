@@ -338,47 +338,11 @@ describe('mapParametersToValue', () => {
     });
   });
 
-
-
-  test('Parameter is number', () => {
-    expect(
-      task.mapParametersToValue(
-        1,
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 'eiei',
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual(1);
-  });
-
-  test('Append const string', () => {
+  test('OK Boomer', () => {
     expect(
       task.mapParametersToValue(
         {
-          a: '${\'Takumi\' + \' \' + \'Producer\'}',
-          b: 'hardcoded',
+          c: "math(${t1.output.a} + ${t1.output.b})",
         },
         {
           t1: {
@@ -390,198 +354,7 @@ describe('mapParametersToValue', () => {
             type: Task.TaskTypes.Task,
             status: State.TaskStates.Completed,
             output: {
-              a: 'eiei',
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      a: 'Takumi Producer',
-      b: 'hardcoded',
-    });
-  });
-
-  test('Single const string', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          a: '${\'Takumi\'}',
-          b: 'hardcoded',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 'eiei',
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      a: 'Takumi',
-      b: 'hardcoded',
-    });
-  });
-
-  test('Input c = a + b and store in c shoud have number 7', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} + ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: 12,
-    });
-  });
-
-  test('Input c = a - b and store in c shoud have number -2', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} - ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: -2,
-    });
-  });
-
-  test('Input c = a * b and store in c shoud have number 35', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} * ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: 35,
-    });
-  });
-
-  test('Input c = a / b and store in c shoud have number 2.5', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} / ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
+              a: 1,
               b: 2,
             },
             input: {},
@@ -599,15 +372,91 @@ describe('mapParametersToValue', () => {
         },
       ),
     ).toEqual({
-      c: 2.5,
+      c: 3,
     });
   });
 
-  test('Input c = a ^ b and store in c shoud have number 64', () => {
+  test('Basic add test', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: '${${t1.output.a} ^ ${t1.output.b}}',
+          c: "math(${t1.output.a} + ${t1.output.b})",
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 1,
+              b: 2,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: 3,
+    });
+  });
+
+  test('Basic subtract test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: "math(${t1.output.a} - ${t1.output.b})",
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 1,
+              b: 2,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: -1,
+    });
+  });
+
+  test('Basic multiply test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: "math(${t1.output.a} * ${t1.output.b})",
         },
         {
           t1: {
@@ -620,7 +469,7 @@ describe('mapParametersToValue', () => {
             status: State.TaskStates.Completed,
             output: {
               a: 4,
-              b: 3,
+              b: 2,
             },
             input: {},
             ackTimeout: 0,
@@ -637,15 +486,15 @@ describe('mapParametersToValue', () => {
         },
       ),
     ).toEqual({
-      c: 64,
+      c: 8,
     });
   });
 
-  test('Input c = a + b but b was a string and store in c shoud have string 57', () => {
+  test('Basic divide test', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: '${${t1.output.a} + ${t1.output.b}}',
+          c: "math(${t1.output.a} / ${t1.output.b})",
         },
         {
           t1: {
@@ -657,8 +506,8 @@ describe('mapParametersToValue', () => {
             type: Task.TaskTypes.Task,
             status: State.TaskStates.Completed,
             output: {
-              a: 5,
-              b: '7',
+              a: 16,
+              b: 2,
             },
             input: {},
             ackTimeout: 0,
@@ -675,15 +524,15 @@ describe('mapParametersToValue', () => {
         },
       ),
     ).toEqual({
-      c: '57',
+      c: 8,
     });
   });
 
-  test('Input c = a + b * 2 should and c shoud have 19', () => {
+  test('Basic power test', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: '${${t1.output.a} + ${t1.output.b} * 2}',
+          c: "math(${t1.output.a} ^ ${t1.output.b})",
         },
         {
           t1: {
@@ -695,8 +544,8 @@ describe('mapParametersToValue', () => {
             type: Task.TaskTypes.Task,
             status: State.TaskStates.Completed,
             output: {
-              a: 5,
-              b: 7,
+              a: 2,
+              b: 8,
             },
             input: {},
             ackTimeout: 0,
@@ -713,15 +562,15 @@ describe('mapParametersToValue', () => {
         },
       ),
     ).toEqual({
-      c: 19,
+      c: 256,
     });
   });
 
-  test('Input a not equal b and c is == the result should be false', () => {
+  test('Parentheses test', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: '${${t1.output.a} == ${t1.output.b}}',
+          c: "math(${t1.output.a} + (${t1.output.b} - ${t1.output.a}))",
         },
         {
           t1: {
@@ -733,8 +582,8 @@ describe('mapParametersToValue', () => {
             type: Task.TaskTypes.Task,
             status: State.TaskStates.Completed,
             output: {
-              a: 5,
-              b: 7,
+              a: 2,
+              b: 8,
             },
             input: {},
             ackTimeout: 0,
@@ -751,15 +600,15 @@ describe('mapParametersToValue', () => {
         },
       ),
     ).toEqual({
-      c: false,
+      c: 8,
     });
   });
 
-  test('Input a is equal b and c is a == b the result should be true', () => {
+  test('Compare test', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: '${${t1.output.a} == ${t1.output.b}}',
+          c: "math(${t1.output.a} + ${t1.output.b} != ${t1.output.a})",
         },
         {
           t1: {
@@ -771,7 +620,83 @@ describe('mapParametersToValue', () => {
             type: Task.TaskTypes.Task,
             status: State.TaskStates.Completed,
             output: {
-              a: 5,
+              a: 2,
+              b: 8,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: true,
+    });
+  });
+
+  test('Logical and test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: "math(${t1.output.a} == ${t1.output.b} && ${t1.output.a} == ${t1.output.b})",
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 2,
+              b: 2,
+            },
+            input: {},
+            ackTimeout: 0,
+            createTime: 0,
+            endTime: 0,
+            logs: [],
+            retries: 0,
+            isRetried: false,
+            retryDelay: 0,
+            timeout: 0,
+            startTime: 0,
+            taskPath: [0],
+          },
+        },
+      ),
+    ).toEqual({
+      c: true,
+    });
+  });
+
+  test('Logical or test', () => {
+    expect(
+      task.mapParametersToValue(
+        {
+          c: "math(${t1.output.b} == ${t1.output.b} || ${t1.output.a} == ${t1.output.b})",
+        },
+        {
+          t1: {
+            taskName: 'taskName',
+            taskReferenceName: 't1',
+            taskId: 'taskId',
+            workflowId: 'workflowId',
+            transactionId: 'transactionId',
+            type: Task.TaskTypes.Task,
+            status: State.TaskStates.Completed,
+            output: {
+              a: 2,
               b: 5,
             },
             input: {},
@@ -794,11 +719,11 @@ describe('mapParametersToValue', () => {
   });
 
 
-  test('Input a not equal b and c is != the result should be true', () => {
+  test('Math error test', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: '${${t1.output.a} != ${t1.output.b}}',
+          c: "math(x+x)",
         },
         {
           t1: {
@@ -810,8 +735,8 @@ describe('mapParametersToValue', () => {
             type: Task.TaskTypes.Task,
             status: State.TaskStates.Completed,
             output: {
-              a: 5,
-              b: 7,
+              a: 2,
+              b: 8,
             },
             input: {},
             ackTimeout: 0,
@@ -828,15 +753,15 @@ describe('mapParametersToValue', () => {
         },
       ),
     ).toEqual({
-      c: true,
+      c: 'x+x',
     });
   });
 
-  test('Input a is equal b and c is a != b the result should be false', () => {
+  test('Date parse test', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: '${${t1.output.a} != ${t1.output.b}}',
+          c: "date(${t1.output.a})",
         },
         {
           t1: {
@@ -848,8 +773,7 @@ describe('mapParametersToValue', () => {
             type: Task.TaskTypes.Task,
             status: State.TaskStates.Completed,
             output: {
-              a: 5,
-              b: 5,
+              a: '2019/05/13 04:35:01',
             },
             input: {},
             ackTimeout: 0,
@@ -866,15 +790,15 @@ describe('mapParametersToValue', () => {
         },
       ),
     ).toEqual({
-      c: false,
+      c: 1557696901000,
     });
   });
 
-  test('Input a is equal b and c is a > b the result should be false', () => {
+  test('Datetime incorrect will result in NaN', () => {
     expect(
       task.mapParametersToValue(
         {
-          c: '${${t1.output.a} > ${t1.output.b}}',
+          c: "date(${t1.output.a})",
         },
         {
           t1: {
@@ -886,8 +810,7 @@ describe('mapParametersToValue', () => {
             type: Task.TaskTypes.Task,
             status: State.TaskStates.Completed,
             output: {
-              a: 5,
-              b: 5,
+              a: '-------------',
             },
             input: {},
             ackTimeout: 0,
@@ -904,770 +827,11 @@ describe('mapParametersToValue', () => {
         },
       ),
     ).toEqual({
-      c: false,
-    });
-  });
-
-  test('Input a is greater than b and c is a > b the result should be true', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} > ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 7,
-              b: 5,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a is less than b and c is a > b the result should be false', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} > ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: false,
+      c: NaN,
     });
   });
 
 
-  test('Input a is equal b and c is a < b the result should be false', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} < ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 5,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: false,
-    });
-  });
-
-  test('Input a is greater than b and c is a < b the result should be false', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} < ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 7,
-              b: 5,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: false,
-    });
-  });
-
-  test('Input a is less than b and c is a < b the result should be true', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} < ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a is equal b and c is a >= b the result should be true', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} >= ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 5,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a is greater than b and c is a >= b the result should be true', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} >= ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 7,
-              b: 5,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a is less than b and c is a >= b the result should be false', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} >= ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: false,
-    });
-  });
 
 
-  test('Input a is equal b and c is a <= b the result should be true', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} <= ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 5,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a is greater than b and c is a <= b the result should be false', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} <= ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 7,
-              b: 5,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: false,
-    });
-  });
-
-  test('Input a is less than b and c is a <= b the result should be true', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} <= ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a is less than b and c is a <= b the result should be true', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} <= ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a and b is true do And function c should have true ', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} && ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: true,
-              b: true,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a is true b is false do And function c should have false ', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} && ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: true,
-              b: false,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: false,
-    });
-  });
-
-  test('Input a and b is false do And function c should have false ', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} && ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: false,
-              b: false,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: false,
-    });
-  });
-
-  test('Input a and b is true do OR function c should have true ', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} || ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: true,
-              b: true,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a is false b is true do OR function c should have true ', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} || ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: false,
-              b: true,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a is false b is false do OR function c should have false ', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} || ${t1.output.b}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: false,
-              b: false,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: false,
-    });
-  });
-
-  test('Input a + b should equal b + a and c should be true', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          c: '${${t1.output.a} + ${t1.output.b} == ${t1.output.b} + ${t1.output.a}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      c: true,
-    });
-  });
-
-  test('Input a + b * c should do b * c first and d should be 75', () => {
-    expect(
-      task.mapParametersToValue(
-        {
-          d: '${${t1.output.a} + ${t1.output.b} * ${t1.output.c}}',
-        },
-        {
-          t1: {
-            taskName: 'taskName',
-            taskReferenceName: 't1',
-            taskId: 'taskId',
-            workflowId: 'workflowId',
-            transactionId: 'transactionId',
-            type: Task.TaskTypes.Task,
-            status: State.TaskStates.Completed,
-            output: {
-              a: 5,
-              b: 7,
-              c: 10,
-            },
-            input: {},
-            ackTimeout: 0,
-            createTime: 0,
-            endTime: 0,
-            logs: [],
-            retries: 0,
-            isRetried: false,
-            retryDelay: 0,
-            timeout: 0,
-            startTime: 0,
-            taskPath: [0],
-          },
-        },
-      ),
-    ).toEqual({
-      d: 75,
-    });
-  });
 });

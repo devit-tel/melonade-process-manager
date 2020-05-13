@@ -1,5 +1,6 @@
 import { Task, Workflow } from '@melonade/melonade-declaration';
 import { parseExpression } from 'cron-parser';
+import { Parser } from 'expr-eval';
 import * as jsonpath from 'jsonpath';
 import * as _ from 'lodash/fp'; // use lodash just for "get" thing XD
 import * as R from 'ramda';
@@ -9,64 +10,62 @@ export const getPathByInputTemplate = R.compose(
   R.replace(/(^\${)(.+)(}$)/i, '$2'),
 );
 
-const calculate = {
-  '==': (a: any, b: any) => { return a == b },
-  '!=': (a: any, b: any) => { return a != b },
-  '<': (a: any, b: any) => { return a < b },
-  '>': (a: any, b: any) => { return a > b },
-  '<=': (a: any, b: any) => { return a <= b },
-  '>=': (a: any, b: any) => { return a >= b },
-  '&&': (a: any, b: any) => { return a && b },
-  '||': (a: any, b: any) => { return a || b },
-  '+': (a: any, b: any) => { return a + b },
-  '-': (a: any, b: any) => { return a - b },
-  '*': (a: any, b: any) => { return a * b },
-  '/': (a: any, b: any) => { return a / b },
-  '^': (a: any, b: any) => { return Math.pow(a, b) },
-};
 
 
-const solveRegExp = [ // Order by operator priority
-  /(\&\&|\|\|)/g,
-  /(==|!=|>=|<=|>|<)/g,
-  /(\+|\-)/g,
-  /(\*|\/|\^)/g,
-];
-
-const solveExpression = (expression: string, values: any, depth: number = 0) => {
-
-  if (depth == solveRegExp.length) { // No more operator to solve just resolve variable
-    expression = expression.trim();
-    if (/^\d+$/.test(expression)) { // Check if it's number
-      return parseInt(expression);
-    }
-
-    if (/^\${[a-z0-9-_.\[\]]+}$/i.test(expression)) { // Check if it's variable
-      return _.get(expression.replace(/(^\${)(.+)(}$)/i, '$2'), values);
-    }
-
-    if (/(^\')(.+)(\'$)/i.test(expression)) {
-      return expression.replace(/(^\')(.+)(\'$)/i, '$2');
-    }
-
-    return "";
+const resolveVars = (expression: string, values: any) => {
+  const variables = expression.match(/\${[a-z0-9-_.\[\]]+}/g);
+  if (variables) {
+    variables.forEach(element => {
+      expression = expression.replace(element, _.get(element.replace(/(^\${)(.+)(}$)/i, '$2'), values));
+    });
   }
+  return expression;
+}
 
-  const matchRegExp = solveRegExp[depth];
-  const ops = expression.split(matchRegExp);
-  if (ops.length > 2) {
-    let accum = solveExpression(ops.shift(), values, depth + 1);
-    while (ops.length > 1) {
-      let operator = calculate[ops.shift()];
-      let operand = solveExpression(ops.shift(), values, depth + 1);
-      if (operator) {
-        accum = operator(accum, operand);
+const dateParse = (expression: string, values: any) => {
+  try {
+    expression = resolveVars(expression, values);
+    return Date.parse(expression);
+
+  } catch (error) {
+    console.log(error);
+    return expression;
+  }
+}
+
+
+
+const mathCalculation = (expression: string, values: any) => {
+  try {
+    expression = resolveVars(expression, values);
+    const parser = new Parser({
+      operators: {
+        add: true,
+        concatenate: true,
+        conditional: true,
+        divide: true,
+        factorial: true,
+        multiply: true,
+        power: true,
+        remainder: true,
+        subtract: true,
+        logical: true,
+        comparison: true,
+        // Disable 'in' and = operators
+        'in': false,
+        assignment: false
       }
-    }
-    return accum;
+    });
 
-  } else {
-    return solveExpression(ops[0], values, depth + 1);
+    expression = expression.replace(/\&\&/g, " and ");
+    expression = expression.replace(/\|\|/g, " or ");
+
+    const expr = parser.parse(expression);
+    return expr.evaluate();
+
+  } catch (error) {
+    console.log(error);
+    return expression;
   }
 }
 
@@ -84,14 +83,22 @@ const parseTemplate = (template: string, values: any) => {
     return _.get(template.replace(/(^\${)(.+)(}$)/i, '$2'), values);
   }
 
-  // expression template
-  // ${${parcel[0].driverId} == ${parcel[0].driverId} => true/false
-  // ${${parcel[0].driverId} == 'A1'} => true/false
-  // ${${parcel[0].driverId} + ${parcel[0].driverId}} => 6
-  // ${${parcel[0].driverId} + 1} => 4
-  // ${'Hello' + 'World'} => 'HelloWorld'
-  if (/(^\${)(.+)(}$)/i.test(template)) {
-    return solveExpression(template.replace(/(^\${)(.+)(}$)/i, '$2'), values);
+  // math template
+  // math(2+2) => 4
+  if (/(^math\()(.+)(\)$)/i.test(template)) {
+    return mathCalculation(template.replace(/(^math\()(.+)(\)$)/i, '$2'), values);
+  }
+
+  // date conversion template
+  // date('2019/05/13 04:35:01') => 1557696901000
+  if (/(^date\()(.+)(\)$)/i.test(template)) {
+    return dateParse(template.replace(/(^date\()(.+)(\)$)/i, '$2'), values);
+  }
+
+  // string append template
+  // ${parcel[0].driverId} ${parcel[0].driverId} => "driver_1 driver_1"
+  if (/\${[a-z0-9-_.\[\]]+}/g.test(template)) {
+    return resolveVars(template, values);
   }
 
   return template;
