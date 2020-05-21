@@ -45,14 +45,29 @@ export class TransactionInstanceRedisStore extends RedisStore
     }
 
     const transaction: Transaction.ITransaction = JSON.parse(transactionString);
-    if (
-      !State.TransactionNextStates[transaction.status].includes(
-        transactionUpdate.status,
-      )
-    ) {
-      throw new Error(
-        `Cannot change status of "${transaction.transactionId}" from ${transaction.status} to ${transactionUpdate.status}`,
-      );
+
+    const parentTransactionId = transaction.parent?.transactionId;
+    const parentTaskId = transaction.parent?.taskId;
+    if (parentTransactionId && parentTaskId) {
+      if (
+        !State.SubTransactionNextStates[transaction.status].includes(
+          transactionUpdate.status,
+        )
+      ) {
+        throw new Error(
+          `Cannot change status of "${transaction.transactionId}" from ${transaction.status} to ${transactionUpdate.status}`,
+        );
+      }
+    } else {
+      if (
+        !State.TransactionNextStates[transaction.status].includes(
+          transactionUpdate.status,
+        )
+      ) {
+        throw new Error(
+          `Cannot change status of "${transaction.transactionId}" from ${transaction.status} to ${transactionUpdate.status}`,
+        );
+      }
     }
 
     const updatedTransaction = {

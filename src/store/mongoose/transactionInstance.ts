@@ -67,30 +67,61 @@ export class TransactionInstanceMongooseStore extends MongooseStore
   update = async (
     transactionUpdate: Event.ITransactionUpdate,
   ): Promise<Transaction.ITransaction> => {
-    const updatedTransaction = <Transaction.ITransaction>await this.model
-      .findOneAndUpdate(
-        {
-          transactionId: transactionUpdate.transactionId,
-          status: State.TransactionPrevStates[transactionUpdate.status],
-        },
-        {
-          status: transactionUpdate.status,
-          output: transactionUpdate.output,
-          endTime: [
-            State.TransactionStates.Completed,
-            State.TransactionStates.Failed,
-          ].includes(transactionUpdate.status)
-            ? Date.now()
-            : null,
-        },
-        {
-          new: true,
-        },
-      )
-      .lean({ virtuals: true })
-      .exec();
+    const transaction = await this.get(transactionUpdate.transactionId);
+    const parentTransactionId = transaction.parent?.transactionId;
+    const parentTaskId = transaction.parent?.taskId;
 
-    return updatedTransaction;
+    if (parentTransactionId && parentTaskId) {
+      const updatedTransaction = <Transaction.ITransaction>await this.model
+        .findOneAndUpdate(
+          {
+            transactionId: transactionUpdate.transactionId,
+            status: State.SubTransactionPrevStates[transactionUpdate.status],
+          },
+          {
+            status: transactionUpdate.status,
+            output: transactionUpdate.output,
+            endTime: [
+              State.TransactionStates.Completed,
+              State.TransactionStates.Failed,
+            ].includes(transactionUpdate.status)
+              ? Date.now()
+              : null,
+          },
+          {
+            new: true,
+          },
+        )
+        .lean({ virtuals: true })
+        .exec();
+
+      return updatedTransaction;
+    } else {
+      const updatedTransaction = <Transaction.ITransaction>await this.model
+        .findOneAndUpdate(
+          {
+            transactionId: transactionUpdate.transactionId,
+            status: State.TransactionPrevStates[transactionUpdate.status],
+          },
+          {
+            status: transactionUpdate.status,
+            output: transactionUpdate.output,
+            endTime: [
+              State.TransactionStates.Completed,
+              State.TransactionStates.Failed,
+            ].includes(transactionUpdate.status)
+              ? Date.now()
+              : null,
+          },
+          {
+            new: true,
+          },
+        )
+        .lean({ virtuals: true })
+        .exec();
+
+      return updatedTransaction;
+    }
   };
 
   delete = async (transactionId: string): Promise<void> => {
