@@ -710,7 +710,7 @@ export class TaskInstanceStore {
             await transactionInstanceStore.create(
               `${workflow.transactionId}-${task.taskReferenceName}`,
               workflowDefinition,
-              task.input,
+              task.input?.input,
               [Task.TaskTypes.SubTransaction],
               {
                 transactionId: workflow.transactionId,
