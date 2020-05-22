@@ -39,6 +39,7 @@ const workflowSchema = new mongoose.Schema(
           defaultDecision: [mongoose.Schema.Types.Mixed],
           decisions: mongoose.Schema.Types.Mixed,
           parallelTasks: [[mongoose.Schema.Types.Mixed]],
+          dynamicTasks: [[mongoose.Schema.Types.Mixed]],
           workflow: {
             name: String,
             rev: String,
@@ -103,6 +104,25 @@ export class WorkflowInstanceMongooseStore extends MongooseStore
       ...workflowData,
       ...(await this.model.create(workflowData)).toObject(),
     };
+  };
+
+  updateWorkflowDefinition = async (
+    workflowDefinitionUpdate: Event.IWorkflowDefinitionUpdate,
+  ): Promise<Workflow.IWorkflow> => {
+    return this.model
+      .findOneAndUpdate(
+        {
+          _id: workflowDefinitionUpdate.workflowId,
+        },
+        {
+          workflowDefinition: workflowDefinitionUpdate.workflowDefinition,
+        },
+        {
+          new: true,
+        },
+      )
+      .lean({ virtuals: true })
+      .exec() as Promise<Workflow.IWorkflow>;
   };
 
   update = async (

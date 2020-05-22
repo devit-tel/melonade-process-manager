@@ -70,6 +70,9 @@ export interface IWorkflowInstanceStore extends IStore {
   get(workflowId: string): Promise<Workflow.IWorkflow>;
   getByTransactionId(transactionId: string): Promise<Workflow.IWorkflow>;
   create(workflowData: Workflow.IWorkflow): Promise<Workflow.IWorkflow>;
+  updateWorkflowDefinition(
+    workflowDefinitionUpdate: Event.IWorkflowDefinitionUpdate,
+  ): Promise<Workflow.IWorkflow>;
   update(workflowUpdate: Event.IWorkflowUpdate): Promise<Workflow.IWorkflow>;
   delete(workflowId: string, keepSubTransaction?: boolean): Promise<void>;
   deleteAll(transactionId: string, keepSubTransaction?: boolean): Promise<void>;
@@ -407,6 +410,19 @@ export class WorkflowInstanceStore {
     await taskInstanceStore.create(workflow, [0], {}, { taskPath: [0] });
 
     return workflow;
+  };
+
+  updateWorkflowDefinition = async (
+    workflowDefinitionUpdate: Event.IWorkflowDefinitionUpdate,
+  ) => {
+    try {
+      const workflow = await this.client.updateWorkflowDefinition(
+        workflowDefinitionUpdate,
+      );
+      return workflow;
+    } catch (error) {
+      return null;
+    }
   };
 
   update = async (workflowUpdate: Event.IWorkflowUpdate) => {
