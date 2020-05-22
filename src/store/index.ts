@@ -9,6 +9,7 @@ import {
   Workflow,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
+import { ITaskTask } from '@melonade/melonade-declaration/build/workflowDefinition';
 import debug from 'debug';
 import * as R from 'ramda';
 import { dispatch, sendEvent, sendTimer, sendUpdate } from '../kafka';
@@ -624,7 +625,8 @@ export class TaskInstanceStore {
       | WorkflowDefinition.IDecisionTask
       | WorkflowDefinition.IParallelTask
       | WorkflowDefinition.IScheduleTask
-      | WorkflowDefinition.ISubTransactionTask = R.path(
+      | WorkflowDefinition.ISubTransactionTask
+      | WorkflowDefinition.IDynamicTask = R.path(
       ['workflowDefinition', 'tasks', ...taskPath],
       workflow,
     );
@@ -658,6 +660,7 @@ export class TaskInstanceStore {
         workflowTask.type === Task.TaskTypes.Decision
           ? workflowTask.defaultDecision
           : undefined,
+      dynamicTasks: [],
       retries: 0,
       retryDelay: 0,
       ackTimeout: 0,
@@ -797,6 +800,54 @@ export class TaskInstanceStore {
               ),
             );
             break;
+          case Task.TaskTypes.DynamicTask:
+            if (!taskData.input?.tasks) {
+              throw new Error(`Missing input.tasks array for dynamictask`);
+            }
+
+            taskData.dynamicTasks = taskData.input?.tasks;
+
+            const workerTask = taskData.dynamicTasks.filter(
+              (task) => task.type == Task.TaskTypes.Task,
+            );
+
+            //Validate if tasks definition not exists
+            const missingTask = [];
+            await Promise.all(
+              workerTask.map(async (_tasks: ITaskTask) => {
+                return new Promise<void>((resolve) => {
+                  const result = taskDefinitionStore.get(_tasks.name);
+                  if (!result) missingTask.push(_tasks.name);
+                  resolve();
+                });
+              }),
+            );
+
+            if (missingTask.length > 0) {
+              throw new Error(
+                `The following task definition not found ${missingTask.join(
+                  ',',
+                )}`,
+              );
+            }
+
+            workflowTask.dynamicTasks = taskData.input?.tasks;
+            WorkflowDefinition.validateAllTaskReferenceName(
+              workflow.workflowDefinition.tasks,
+            );
+
+            await workflowInstanceStore.updateWorkflowDefinition({
+              transactionId: workflow.transactionId,
+              workflowId: workflow.workflowId,
+              workflowDefinition: workflow.workflowDefinition,
+            });
+
+            await this.create(
+              workflow,
+              [...taskPath, 'dynamicTasks', 0],
+              tasksData,
+            );
+            break;
         }
         // Create task instance
 
@@ -927,6 +978,7 @@ export class TaskInstanceStore {
       case Task.TaskTypes.Parallel:
       case Task.TaskTypes.Schedule:
       case Task.TaskTypes.SubTransaction:
+      case Task.TaskTypes.DynamicTask:
         return this.createSystemTask(
           workflow,
           taskPath,
