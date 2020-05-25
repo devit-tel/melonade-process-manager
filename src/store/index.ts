@@ -13,6 +13,7 @@ import { ITaskTask } from '@melonade/melonade-declaration/build/workflowDefiniti
 import debug from 'debug';
 import * as R from 'ramda';
 import { dispatch, sendEvent, sendTimer, sendUpdate } from '../kafka';
+import * as state from '../state';
 import { toObjectByKey } from '../utils/common';
 import { getCompltedAt, mapParametersToValue } from '../utils/task';
 
@@ -807,6 +808,34 @@ export class TaskInstanceStore {
 
             taskData.dynamicTasks = taskData.input?.tasks;
 
+            if (taskData.dynamicTasks.length <= 0) {
+              const task = await this.client.create({
+                ...taskData,
+                status: State.TaskStates.Inprogress,
+              });
+
+              sendEvent({
+                transactionId: workflow.transactionId,
+                type: 'TASK',
+                isError: false,
+                timestamp: Date.now(),
+                details: task,
+              });
+
+              //SendUpdate task completed status to run fail strategy handle
+              await state.processUpdateTasks([
+                {
+                  transactionId: workflow.transactionId,
+                  taskId: task.taskId,
+                  status: State.TaskStates.Completed,
+                  doNotRetry: true,
+                  isSystem: true,
+                  output: {},
+                },
+              ]);
+              return task;
+            }
+
             const workerTask = taskData.dynamicTasks.filter(
               (task) => task.type == Task.TaskTypes.Task,
             );
@@ -878,12 +907,10 @@ export class TaskInstanceStore {
         return task;
       }
     } catch (error) {
+      //Create SystemTask with in-progress state first
       const task = await this.client.create({
         ...taskData,
-        status: State.TaskStates.Failed,
-        output: {
-          error: error.toString(),
-        },
+        status: State.TaskStates.Inprogress,
       });
 
       sendEvent({
@@ -893,6 +920,20 @@ export class TaskInstanceStore {
         timestamp: Date.now(),
         details: task,
       });
+
+      //SendUpdate task fail status to run fail strategy handle
+      await state.processUpdateTasks([
+        {
+          transactionId: workflow.transactionId,
+          taskId: task.taskId,
+          status: State.TaskStates.Failed,
+          doNotRetry: true,
+          isSystem: true,
+          output: {
+            error: error.toString(),
+          },
+        },
+      ]);
 
       return task;
     }

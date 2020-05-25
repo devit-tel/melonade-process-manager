@@ -39,7 +39,7 @@ const workflowSchema = new mongoose.Schema(
           defaultDecision: [mongoose.Schema.Types.Mixed],
           decisions: mongoose.Schema.Types.Mixed,
           parallelTasks: [[mongoose.Schema.Types.Mixed]],
-          dynamicTasks: [[mongoose.Schema.Types.Mixed]],
+          dynamicTasks: [mongoose.Schema.Types.Mixed],
           workflow: {
             name: String,
             rev: String,
