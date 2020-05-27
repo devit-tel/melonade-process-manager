@@ -38,6 +38,7 @@
         "--config",
         "jest.config.js"
       ],
+      "runtimeVersion": "10.16.3",
       "console": "integratedTerminal",
       "disableOptimisticBPs": true,
       "windows": {
