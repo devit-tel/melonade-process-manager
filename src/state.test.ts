@@ -10,7 +10,7 @@ import * as state from './state';
 // We have to test those on integate test
 
 jest.mock('./kafka');
-jest.mock('./store');
+jest.mock('./store', jest.fn());
 
 describe('getNextPath', () => {
   test('return next path', () => {
