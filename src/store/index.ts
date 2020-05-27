@@ -802,7 +802,7 @@ export class TaskInstanceStore {
             );
             break;
           case Task.TaskTypes.DynamicTask:
-            if (!taskData.input?.tasks) {
+            if (!Array.isArray(taskData.input?.tasks)) {
               throw new Error(`Missing input.tasks array for dynamictask`);
             }
 
@@ -836,14 +836,14 @@ export class TaskInstanceStore {
               return task;
             }
 
-            const workerTask = taskData.dynamicTasks.filter(
+            const workerTasks = taskData.dynamicTasks.filter(
               (task) => task.type == Task.TaskTypes.Task,
             );
 
             //Validate if tasks definition not exists
             const missingTask = [];
             await Promise.all(
-              workerTask.map(async (_tasks: ITaskTask) => {
+              workerTasks.map(async (_tasks: ITaskTask) => {
                 return new Promise<void>((resolve) => {
                   const result = taskDefinitionStore.get(_tasks.name);
                   if (!result) missingTask.push(_tasks.name);
