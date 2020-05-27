@@ -823,16 +823,14 @@ export class TaskInstanceStore {
               });
 
               //SendUpdate task completed status to run fail strategy handle
-              await state.processUpdateTasks([
-                {
-                  transactionId: workflow.transactionId,
-                  taskId: task.taskId,
-                  status: State.TaskStates.Completed,
-                  doNotRetry: true,
-                  isSystem: true,
-                  output: {},
-                },
-              ]);
+              await state.processUpdateTask({
+                transactionId: workflow.transactionId,
+                taskId: task.taskId,
+                status: State.TaskStates.Completed,
+                doNotRetry: true,
+                isSystem: true,
+                output: {},
+              });
               return task;
             }
 
@@ -922,18 +920,16 @@ export class TaskInstanceStore {
       });
 
       //SendUpdate task fail status to run fail strategy handle
-      await state.processUpdateTasks([
-        {
-          transactionId: workflow.transactionId,
-          taskId: task.taskId,
-          status: State.TaskStates.Failed,
-          doNotRetry: true,
-          isSystem: true,
-          output: {
-            error: error.toString(),
-          },
+      await state.processUpdateTask({
+        transactionId: workflow.transactionId,
+        taskId: task.taskId,
+        status: State.TaskStates.Failed,
+        doNotRetry: true,
+        isSystem: true,
+        output: {
+          error: error.toString(),
         },
-      ]);
+      });
 
       return task;
     }
