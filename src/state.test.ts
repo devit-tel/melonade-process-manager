@@ -1,4 +1,8 @@
-import { State, Task, WorkflowDefinition } from '@melonade/melonade-declaration';
+import {
+  State,
+  Task,
+  WorkflowDefinition,
+} from '@melonade/melonade-declaration';
 import * as R from 'ramda';
 import * as state from './state';
 
@@ -6,7 +10,7 @@ import * as state from './state';
 // We have to test those on integate test
 
 jest.mock('./kafka');
-jest.mock('./store');
+jest.mock('./store', jest.fn());
 
 describe('getNextPath', () => {
   test('return next path', () => {
@@ -343,6 +347,135 @@ describe('isChildOfDecisionCase', () => {
   });
 });
 
+describe('isChildOfDynamicTask', () => {
+  const exampleTasks: WorkflowDefinition.AllTaskType[] = [
+    {
+      name: 'name',
+      taskReferenceName: 'taskReferenceName',
+      inputParameters: {},
+      type: Task.TaskTypes.Task,
+    },
+    {
+      taskReferenceName: 'taskReferenceName',
+      inputParameters: {},
+      type: Task.TaskTypes.DynamicTask,
+      dynamicTasks: [
+        {
+          name: 'name',
+          taskReferenceName: 'taskReferenceName',
+          inputParameters: {},
+          type: Task.TaskTypes.Task,
+        },
+        {
+          name: 'name',
+          taskReferenceName: 'taskReferenceName',
+          inputParameters: {},
+          type: Task.TaskTypes.Task,
+        },
+        {
+          taskReferenceName: 'taskReferenceName',
+          inputParameters: {},
+          type: Task.TaskTypes.Parallel,
+          parallelTasks: [
+            [
+              {
+                name: 'name',
+                taskReferenceName: 'taskReferenceName',
+                inputParameters: {},
+                type: Task.TaskTypes.Task,
+              },
+            ],
+            [
+              {
+                name: 'name',
+                taskReferenceName: 'taskReferenceName',
+                inputParameters: {},
+                type: Task.TaskTypes.Task,
+              },
+            ],
+          ],
+        },
+      ],
+    },
+    {
+      taskReferenceName: 'taskReferenceName',
+      inputParameters: {},
+      type: Task.TaskTypes.Parallel,
+      parallelTasks: [
+        [
+          {
+            name: 'name',
+            taskReferenceName: 'taskReferenceName',
+            inputParameters: {},
+            type: Task.TaskTypes.Task,
+          },
+        ],
+        [
+          {
+            name: 'name',
+            taskReferenceName: 'taskReferenceName',
+            inputParameters: {},
+            type: Task.TaskTypes.Task,
+          },
+          {
+            taskReferenceName: 'taskReferenceName',
+            inputParameters: {},
+            type: Task.TaskTypes.DynamicTask,
+            dynamicTasks: [
+              {
+                name: 'name',
+                taskReferenceName: 'taskReferenceName',
+                inputParameters: {},
+                type: Task.TaskTypes.Task,
+              },
+            ],
+          },
+        ],
+      ],
+    },
+  ];
+
+  test('Child Of dynamicTasks', () => {
+    expect(
+      state.isChildOfDynamicTask(exampleTasks, [1, 'dynamicTasks', 0]),
+    ).toBe(true);
+
+    expect(
+      state.isChildOfDynamicTask(exampleTasks, [1, 'dynamicTasks', 1]),
+    ).toBe(true);
+  });
+
+  test('Root DynamicTasks', () => {
+    expect(state.isChildOfDynamicTask(exampleTasks, [1])).toBe(false);
+  });
+
+  test('ParallelTask inside DynamicTask', () => {
+    expect(
+      state.isChildOfDynamicTask(exampleTasks, [
+        1,
+        'dynamicTasks',
+        2,
+        'parallelTasks',
+        0,
+        0,
+      ]),
+    ).toBe(false);
+  });
+
+  test('DynamicTask inside ParallelTask', () => {
+    expect(
+      state.isChildOfDynamicTask(exampleTasks, [
+        2,
+        'parallelTasks',
+        1,
+        1,
+        'dynamicTasks',
+        0,
+      ]),
+    ).toBe(true);
+  });
+});
+
 describe('getNextTaskPath', () => {
   const exampleTasks: WorkflowDefinition.AllTaskType[] = [
     {
@@ -446,6 +579,44 @@ describe('getNextTaskPath', () => {
         ],
       ],
     },
+    {
+      taskReferenceName: 't15',
+      inputParameters: {},
+      type: Task.TaskTypes.DynamicTask,
+      dynamicTasks: [
+        {
+          name: 'name',
+          taskReferenceName: 't16',
+          inputParameters: {},
+          type: Task.TaskTypes.Task,
+        },
+        {
+          name: 'name',
+          taskReferenceName: 't17',
+          inputParameters: {},
+          type: Task.TaskTypes.Task,
+        },
+        {
+          taskReferenceName: 't18',
+          inputParameters: {},
+          type: Task.TaskTypes.DynamicTask,
+          dynamicTasks: [
+            {
+              name: 'name',
+              taskReferenceName: 't19',
+              inputParameters: {},
+              type: Task.TaskTypes.Task,
+            },
+          ],
+        },
+        {
+          name: 'name',
+          taskReferenceName: 't20',
+          inputParameters: {},
+          type: Task.TaskTypes.Task,
+        },
+      ],
+    },
   ];
 
   const getTaskData = (
@@ -501,6 +672,18 @@ describe('getNextTaskPath', () => {
     t12: getTaskData('t12', Task.TaskTypes.Parallel, [2]),
     t13: getTaskData('t13', Task.TaskTypes.Task, [2, 'parallelTasks', 0]),
     t14: getTaskData('t14', Task.TaskTypes.Task, [2, 'parallelTasks', 1]),
+    t15: getTaskData('t15', Task.TaskTypes.DynamicTask, [3]),
+    t16: getTaskData('t16', Task.TaskTypes.Task, [3, 'dynamicTasks', 0]),
+    t17: getTaskData('t17', Task.TaskTypes.Task, [3, 'dynamicTasks', 1]),
+    t18: getTaskData('t17', Task.TaskTypes.DynamicTask, [3, 'dynamicTasks', 2]),
+    t19: getTaskData('t19', Task.TaskTypes.Task, [
+      3,
+      'dynamicTasks',
+      2,
+      'dynamicTasks',
+      0,
+    ]),
+    t20: getTaskData('t20', Task.TaskTypes.Task, [3, 'dynamicTasks', 3]),
   };
 
   test('First task finished', () => {
@@ -600,6 +783,59 @@ describe('getNextTaskPath', () => {
       parentTask: expect.objectContaining({
         taskReferenceName: 't12',
       }),
+      isLastChild: true,
+    });
+  });
+
+  test('Child of Dynamic task', () => {
+    expect(
+      state.getNextTaskPath(
+        exampleTasks,
+        [3, 'dynamicTasks', 0],
+        R.pick(
+          ['t1', 't2', 't3', 't12', 't13', 't14', 't15', 't16'],
+          mockTasksData,
+        ),
+      ),
+    ).toEqual({
+      isCompleted: false,
+      parentTask: expect.objectContaining({
+        taskReferenceName: 't15',
+      }),
+      taskPath: [3, 'dynamicTasks', 1],
+      isLastChild: false,
+    });
+  });
+
+  test('Child of Dynamic task (last task)', () => {
+    expect(
+      state.getNextTaskPath(
+        exampleTasks,
+        [3, 'dynamicTasks', 3],
+        R.pick(
+          [
+            't1',
+            't2',
+            't3',
+            't12',
+            't13',
+            't14',
+            't15',
+            't16',
+            't17',
+            't18',
+            't19',
+            't20',
+          ],
+          mockTasksData,
+        ),
+      ),
+    ).toEqual({
+      isCompleted: false,
+      parentTask: expect.objectContaining({
+        taskReferenceName: 't15',
+      }),
+      taskPath: null,
       isLastChild: true,
     });
   });

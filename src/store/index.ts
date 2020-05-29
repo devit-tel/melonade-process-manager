@@ -9,9 +9,11 @@ import {
   Workflow,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
+import { ITaskTask } from '@melonade/melonade-declaration/build/workflowDefinition';
 import debug from 'debug';
 import * as R from 'ramda';
 import { dispatch, sendEvent, sendTimer, sendUpdate } from '../kafka';
+import * as state from '../state';
 import { toObjectByKey } from '../utils/common';
 import { getCompltedAt, mapParametersToValue } from '../utils/task';
 
@@ -70,6 +72,9 @@ export interface IWorkflowInstanceStore extends IStore {
   get(workflowId: string): Promise<Workflow.IWorkflow>;
   getByTransactionId(transactionId: string): Promise<Workflow.IWorkflow>;
   create(workflowData: Workflow.IWorkflow): Promise<Workflow.IWorkflow>;
+  updateWorkflowDefinition(
+    workflowDefinitionUpdate: Event.IWorkflowDefinitionUpdate,
+  ): Promise<Workflow.IWorkflow>;
   update(workflowUpdate: Event.IWorkflowUpdate): Promise<Workflow.IWorkflow>;
   delete(workflowId: string, keepSubTransaction?: boolean): Promise<void>;
   deleteAll(transactionId: string, keepSubTransaction?: boolean): Promise<void>;
@@ -409,6 +414,19 @@ export class WorkflowInstanceStore {
     return workflow;
   };
 
+  updateWorkflowDefinition = async (
+    workflowDefinitionUpdate: Event.IWorkflowDefinitionUpdate,
+  ) => {
+    try {
+      const workflow = await this.client.updateWorkflowDefinition(
+        workflowDefinitionUpdate,
+      );
+      return workflow;
+    } catch (error) {
+      return null;
+    }
+  };
+
   update = async (workflowUpdate: Event.IWorkflowUpdate) => {
     try {
       const timestamp = Date.now();
@@ -608,7 +626,8 @@ export class TaskInstanceStore {
       | WorkflowDefinition.IDecisionTask
       | WorkflowDefinition.IParallelTask
       | WorkflowDefinition.IScheduleTask
-      | WorkflowDefinition.ISubTransactionTask = R.path(
+      | WorkflowDefinition.ISubTransactionTask
+      | WorkflowDefinition.IDynamicTask = R.path(
       ['workflowDefinition', 'tasks', ...taskPath],
       workflow,
     );
@@ -642,6 +661,7 @@ export class TaskInstanceStore {
         workflowTask.type === Task.TaskTypes.Decision
           ? workflowTask.defaultDecision
           : undefined,
+      dynamicTasks: [],
       retries: 0,
       retryDelay: 0,
       ackTimeout: 0,
@@ -781,6 +801,80 @@ export class TaskInstanceStore {
               ),
             );
             break;
+          case Task.TaskTypes.DynamicTask:
+            if (!Array.isArray(taskData.input?.tasks)) {
+              throw new Error(`Missing input.tasks array for dynamictask`);
+            }
+
+            taskData.dynamicTasks = taskData.input?.tasks;
+
+            if (taskData.dynamicTasks.length <= 0) {
+              const task = await this.client.create({
+                ...taskData,
+                status: State.TaskStates.Inprogress,
+              });
+
+              sendEvent({
+                transactionId: workflow.transactionId,
+                type: 'TASK',
+                isError: false,
+                timestamp: Date.now(),
+                details: task,
+              });
+
+              //SendUpdate task completed status to run fail strategy handle
+              await state.processUpdateTask({
+                transactionId: workflow.transactionId,
+                taskId: task.taskId,
+                status: State.TaskStates.Completed,
+                doNotRetry: true,
+                isSystem: true,
+                output: {},
+              });
+              return task;
+            }
+
+            const workerTasks = taskData.dynamicTasks.filter(
+              (task) => task.type == Task.TaskTypes.Task,
+            );
+
+            //Validate if tasks definition not exists
+            const missingTask = [];
+            await Promise.all(
+              workerTasks.map(async (_tasks: ITaskTask) => {
+                return new Promise<void>((resolve) => {
+                  const result = taskDefinitionStore.get(_tasks.name);
+                  if (!result) missingTask.push(_tasks.name);
+                  resolve();
+                });
+              }),
+            );
+
+            if (missingTask.length > 0) {
+              throw new Error(
+                `The following task definition not found ${missingTask.join(
+                  ',',
+                )}`,
+              );
+            }
+
+            workflowTask.dynamicTasks = taskData.input?.tasks;
+            WorkflowDefinition.validateAllTaskReferenceName(
+              workflow.workflowDefinition.tasks,
+            );
+
+            await workflowInstanceStore.updateWorkflowDefinition({
+              transactionId: workflow.transactionId,
+              workflowId: workflow.workflowId,
+              workflowDefinition: workflow.workflowDefinition,
+            });
+
+            await this.create(
+              workflow,
+              [...taskPath, 'dynamicTasks', 0],
+              tasksData,
+            );
+            break;
         }
         // Create task instance
 
@@ -811,12 +905,10 @@ export class TaskInstanceStore {
         return task;
       }
     } catch (error) {
+      //Create SystemTask with in-progress state first
       const task = await this.client.create({
         ...taskData,
-        status: State.TaskStates.Failed,
-        output: {
-          error: error.toString(),
-        },
+        status: State.TaskStates.Inprogress,
       });
 
       sendEvent({
@@ -825,6 +917,18 @@ export class TaskInstanceStore {
         isError: false,
         timestamp: Date.now(),
         details: task,
+      });
+
+      //SendUpdate task fail status to run fail strategy handle
+      await state.processUpdateTask({
+        transactionId: workflow.transactionId,
+        taskId: task.taskId,
+        status: State.TaskStates.Failed,
+        doNotRetry: true,
+        isSystem: true,
+        output: {
+          error: error.toString(),
+        },
       });
 
       return task;
@@ -911,6 +1015,7 @@ export class TaskInstanceStore {
       case Task.TaskTypes.Parallel:
       case Task.TaskTypes.Schedule:
       case Task.TaskTypes.SubTransaction:
+      case Task.TaskTypes.DynamicTask:
         return this.createSystemTask(
           workflow,
           taskPath,

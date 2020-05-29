@@ -50,6 +50,26 @@ export class WorkflowInstanceRedisStore extends RedisStore
     return workflow;
   };
 
+  updateWorkflowDefinition = async (
+    workflowDefinitionUpdate: Event.IWorkflowDefinitionUpdate,
+  ): Promise<Workflow.IWorkflow> => {
+    const key = `${prefix}.workflow.${workflowDefinitionUpdate.workflowId}`;
+    const workflowString = await this.client.get(key);
+    if (!workflowString) {
+      throw new Error(
+        `Workflow "${workflowDefinitionUpdate.workflowId}" not found`,
+      );
+    }
+    const workflow = JSON.parse(workflowString);
+    const updatedWorkflow = {
+      ...workflow,
+      workflowDefinition: workflowDefinitionUpdate.workflowDefinition,
+    };
+    await this.client.set(key, JSON.stringify(updatedWorkflow));
+
+    return updatedWorkflow;
+  };
+
   update = async (
     workflowUpdate: Event.IWorkflowUpdate,
   ): Promise<Workflow.IWorkflow> => {

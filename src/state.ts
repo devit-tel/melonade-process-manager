@@ -69,6 +69,16 @@ const isChildOfParallelTask = (
     tasks,
   );
 
+export const isChildOfDynamicTask = (
+  tasks: WorkflowDefinition.AllTaskType[],
+  currentPath: (string | number)[],
+): boolean =>
+  R.pathEq(
+    [...R.dropLast(2, currentPath), 'type'],
+    Task.TaskTypes.DynamicTask,
+    tasks,
+  );
+
 const getNextParallelTask = (
   tasks: WorkflowDefinition.AllTaskType[],
   currentPath: (string | number)[],
@@ -190,6 +200,56 @@ const getNextDecisionTask = (
   };
 };
 
+const getNextDynamicTask = (
+  tasks: WorkflowDefinition.AllTaskType[],
+  currentPath: (string | number)[],
+  taskData: { [taskReferenceName: string]: Task.ITask },
+): {
+  isCompleted: boolean;
+  taskPath: (string | number)[];
+  parentTask: Task.ITask;
+  isLastChild: boolean;
+} => {
+  const taskReferenceName: string = R.path(
+    [...R.dropLast<string | number>(2, currentPath), 'taskReferenceName'],
+    tasks,
+  );
+
+  const childTasks = R.pathOr<WorkflowDefinition.AllTaskType[]>(
+    [],
+    R.dropLast(1, currentPath),
+    tasks,
+  );
+
+  let lastFoundTask: Task.ITask;
+  for (const task of childTasks) {
+    if (taskData[task.taskReferenceName]) {
+      lastFoundTask = taskData[task.taskReferenceName];
+    }
+  }
+
+  // If it's have next task and no any child task failed
+  if (
+    !isAnyTasksFailed([lastFoundTask]) &&
+    R.path(getNextPath(currentPath), tasks)
+  ) {
+    return {
+      isCompleted: false,
+      taskPath: getNextPath(currentPath),
+      parentTask: taskData[taskReferenceName],
+      isLastChild: false,
+    };
+  }
+
+  // No next task
+  return {
+    isCompleted: false,
+    taskPath: null,
+    parentTask: taskData[taskReferenceName],
+    isLastChild: true,
+  };
+};
+
 // Check if it's system task\
 // isCompleted: is workflow completed
 // taskPath: path of next task to exec
@@ -225,6 +285,10 @@ export const getNextTaskPath = (
   ) {
     return getNextDecisionTask(tasks, currentPath, taskData);
   }
+
+  // Case of current task is dynamic's child
+  if (isChildOfDynamicTask(tasks, currentPath))
+    return getNextDynamicTask(tasks, currentPath, taskData);
 
   // Otherwise get go to next task (last index + 1)
   return {
