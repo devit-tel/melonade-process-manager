@@ -1079,11 +1079,10 @@ export const taskInstanceStore = new TaskInstanceStore();
 export const workflowInstanceStore = new WorkflowInstanceStore();
 export const transactionInstanceStore = new TransactionInstanceStore();
 
-export const isHealthy = () =>
-  R.all(R.equals(true), [
-    transactionInstanceStore.isHealthy(),
-    workflowInstanceStore.isHealthy(),
-    taskInstanceStore.isHealthy(),
-    workflowDefinitionStore.isHealthy(),
-    taskDefinitionStore.isHealthy(),
-  ]);
+export const isHealthy = () => ({
+  transactionInstanceStore: transactionInstanceStore.isHealthy(),
+  workflowInstanceStore: workflowInstanceStore.isHealthy(),
+  taskInstanceStore: taskInstanceStore.isHealthy(),
+  workflowDefinitionStore: workflowDefinitionStore.isHealthy(),
+  taskDefinitionStore: taskDefinitionStore.isHealthy(),
+});
