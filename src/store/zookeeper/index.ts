@@ -15,6 +15,9 @@ export class ZookeeperStore implements IStore {
   ) {
     this.root = root;
     this.client = nodeZookeeperClient.createClient(connectionString, options);
+    this.client.on('state', (state: nodeZookeeperClient.State) => {
+      console.log(`zookeeper: ${root} changed to ${state.name}`);
+    });
     this.client.connect();
   }
 
