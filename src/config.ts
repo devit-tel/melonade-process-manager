@@ -119,7 +119,7 @@ export const taskDefinitionStoreConfig = {
     options: {
       sessionTimeout: 30000,
       spinDelay: 1000,
-      retries: 0,
+      retries: 6000,
     },
   },
 };
@@ -132,7 +132,7 @@ export const workflowDefinitionStoreConfig = {
     options: {
       sessionTimeout: 30000,
       spinDelay: 1000,
-      retries: 0,
+      retries: 6000,
     },
   },
 };
