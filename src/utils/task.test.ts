@@ -835,32 +835,4 @@ describe('mapParametersToValue', () => {
       c: NaN,
     });
   });
-
-  test('Datetime incorrect will result in NaN', () => {
-    expect(
-      task.mapParametersToValue('${workflow.input.custom_timeout} + 10', {
-        workflow: {
-          taskName: 'taskName',
-          taskReferenceName: 't1',
-          taskId: 'taskId',
-          workflowId: 'workflowId',
-          transactionId: 'transactionId',
-          type: Task.TaskTypes.Task,
-          status: State.TaskStates.Completed,
-          output: {},
-          input: {},
-          ackTimeout: 0,
-          createTime: 0,
-          endTime: 0,
-          logs: [],
-          retries: 0,
-          isRetried: false,
-          retryDelay: 0,
-          timeout: 0,
-          startTime: 0,
-          taskPath: [0],
-        },
-      }),
-    ).toEqual(510);
-  });
 });
