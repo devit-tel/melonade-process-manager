@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@koa/cors": "^3.0.0",
-    "@melonade/melonade-declaration": "^0.18.3",
+    "@melonade/melonade-declaration": "^0.19.2",
     "cron-parser": "^2.13.0",
     "debug": "^4.1.1",
     "dotenv": "^8.2.0",
