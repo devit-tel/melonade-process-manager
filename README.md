@@ -2,6 +2,42 @@
 
 Workflow manager that implemented SAGA, written in typescript
 
+## To start
+
+```bash
+  nvm install v10.16.3
+  nvm use
+
+  npm install
+  npm run start:watch
+```
+
+# Docker .env
+
+```bash
+melonade.namespace=docker-compose
+runners.max=1
+kafka.conf.bootstrap.servers=localhost:29092
+server.hostname=0.0.0.0
+server.port=8080
+server.enabled=true
+topic.kafka.number_partitions=10
+topic.kafka.replication_factor=1
+task-definition.type=ZOOKEEPER
+task-definition.zookeeper.connections=localhost:2181
+workflow-definition.type=ZOOKEEPER
+workflow-definition.zookeeper.connections=localhost:2181
+task-instance.type=REDIS
+task-instance.redis.host=localhost
+task-instance.redis.port=16379
+workflow-instance.type=REDIS
+workflow-instance.redis.host=localhost
+workflow-instance.redis.port=16379
+transaction-instance.type=REDIS
+transaction-instance.redis.host=localhost
+transaction-instance.redis.port=16379
+```
+
 ## Recomended kafka's brokers config
 
 offsets.topic.replication.factor=3

@@ -967,26 +967,34 @@ export class TaskInstanceStore {
       createTime: timestamp,
       startTime: timestamp,
       endTime: null,
-      retries: R.pathOr(
-        R.pathOr(0, ['retry', 'limit'], taskDefinition),
-        ['retry', 'limit'],
-        workflowTask,
-      ),
-      retryDelay: R.pathOr(
-        R.pathOr(0, ['retry', 'delay'], taskDefinition),
-        ['retry', 'delay'],
-        workflowTask,
-      ),
-      ackTimeout: R.pathOr(
-        R.propOr(0, 'ackTimeout', taskDefinition),
-        ['ackTimeout'],
-        workflowTask,
-      ),
-      timeout: R.pathOr(
-        R.propOr(0, 'timeout', taskDefinition),
-        ['timeout'],
-        workflowTask,
-      ),
+      retries:
+        +mapParametersToValue(workflowTask?.retry?.limit, {
+          ...tasksData,
+          workflow,
+        }) ||
+        taskDefinition?.retry?.limit ||
+        0,
+      retryDelay:
+        +mapParametersToValue(workflowTask?.retry?.delay, {
+          ...tasksData,
+          workflow,
+        }) ||
+        taskDefinition?.retry?.delay ||
+        0,
+      ackTimeout:
+        +mapParametersToValue(workflowTask?.ackTimeout, {
+          ...tasksData,
+          workflow,
+        }) ||
+        taskDefinition?.ackTimeout ||
+        0,
+      timeout:
+        +mapParametersToValue(workflowTask?.timeout, {
+          ...tasksData,
+          workflow,
+        }) ||
+        taskDefinition?.timeout ||
+        0,
       taskPath,
       ...overideTask,
     });
