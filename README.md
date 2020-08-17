@@ -2,6 +2,16 @@
 
 Workflow manager that implemented SAGA, written in typescript
 
+## To start
+
+```bash
+  nvm install v10.16.3
+  nvm use
+
+  npm install
+  npm run start:watch
+```
+
 ## Recomended kafka's brokers config
 
 offsets.topic.replication.factor=3
