@@ -93,6 +93,11 @@ const parseTemplate = (template: string, values: any) => {
     return dateParse(template.replace(/(^date\()(.+)(\)$)/i, '$2'), values);
   }
 
+  const dateFromNowMatch = /(^fromNow\()(.+)(\)$)/i.exec(template);
+  if (dateFromNowMatch?.length) {
+    return +dateParse(dateFromNowMatch[2], values) - Date.now();
+  }
+
   // string append template
   // ${parcel[0].driverId} ${parcel[0].driverId} => "driver_1 driver_1"
   if (/\${[a-z0-9-_.\[\]]+}/gi.test(template)) {
