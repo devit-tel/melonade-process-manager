@@ -306,7 +306,7 @@ describe('Run simple Dynamic Tasks workflow', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(0);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       cleanMock();
 
       await updateTask(currentTasks[0]);
@@ -389,7 +389,7 @@ describe('Run simple Dynamic Tasks workflow', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(2);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       const d1_subt1 = getEventsTaskByTaskRef('subt1');
       cleanMock();
 
@@ -449,7 +449,7 @@ describe('Run simple Dynamic Tasks workflow', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(2);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       const d1_subt2 = getEventsTaskByTaskRef('subt2');
       cleanMock();
 
@@ -509,7 +509,7 @@ describe('Run simple Dynamic Tasks workflow', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(2);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       const d1_subt3 = getEventsTaskByTaskRef('subt3');
       cleanMock();
 
@@ -582,7 +582,7 @@ describe('Run simple Dynamic Tasks workflow', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(3);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       const t3 = getEventsTaskByTaskRef('t3');
       cleanMock();
 
@@ -858,7 +858,7 @@ describe('Dynamic of dynamic tasks', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(0);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       cleanMock();
 
       await updateTask(currentTasks[0]);
@@ -941,7 +941,7 @@ describe('Dynamic of dynamic tasks', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(2);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       const d1_subt1 = getEventsTaskByTaskRef('subt1');
       cleanMock();
 
@@ -1025,7 +1025,7 @@ describe('Dynamic of dynamic tasks', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(2);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       const d1_subd1_subt21 = getEventsTaskByTaskRef('subt21');
       cleanMock();
 
@@ -1097,7 +1097,7 @@ describe('Dynamic of dynamic tasks', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(3);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       const d1_subt3 = getEventsTaskByTaskRef('subt3');
       cleanMock();
 
@@ -1170,7 +1170,7 @@ describe('Dynamic of dynamic tasks', () => {
       expect(taskInstanceStore.update).toBeCalledTimes(3);
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       const t3 = getEventsTaskByTaskRef('t3');
       cleanMock();
 
