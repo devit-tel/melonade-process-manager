@@ -321,7 +321,7 @@ describe('Run parallel decision workflow', () => {
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
       // ----------------------------------------------------------------
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       cleanMock();
       // ----------------------------------------------------------------
 
@@ -442,7 +442,7 @@ describe('Run parallel decision workflow', () => {
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
       // ----------------------------------------------------------------
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       const p2_2_d1_default_t1 = getEventsTaskByTaskRef('p2_2_d1_default_t1');
       const p2_1_t1 = getEventsTaskByTaskRef('p2_1_t1');
       cleanMock();
@@ -554,7 +554,7 @@ describe('Run parallel decision workflow', () => {
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
       // ----------------------------------------------------------------
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       cleanMock();
       // ----------------------------------------------------------------
 
@@ -624,7 +624,7 @@ describe('Run parallel decision workflow', () => {
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
       // ----------------------------------------------------------------
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       cleanMock();
       // ----------------------------------------------------------------
 
@@ -751,7 +751,7 @@ describe('Run parallel decision workflow', () => {
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
       // ----------------------------------------------------------------
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       cleanMock();
       // ----------------------------------------------------------------
 
@@ -872,7 +872,7 @@ describe('Run parallel decision workflow', () => {
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
       // ----------------------------------------------------------------
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       cleanMock();
       // ----------------------------------------------------------------
 
@@ -990,7 +990,7 @@ describe('Run parallel decision workflow', () => {
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
       // ----------------------------------------------------------------
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       cleanMock();
       // ----------------------------------------------------------------
 
@@ -1060,7 +1060,7 @@ describe('Run parallel decision workflow', () => {
       expect(taskInstanceStore.reload).toBeCalledTimes(0);
 
       // ----------------------------------------------------------------
-      currentTasks = mockedDispatch.mock.calls.map(R.head);
+      currentTasks = mockedDispatch.mock.calls.map<Task.ITask>(R.head);
       cleanMock();
       // ----------------------------------------------------------------
 
