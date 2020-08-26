@@ -98,16 +98,17 @@ const processCommands = async (
 };
 
 export const executor = async () => {
-  try {
-    const commands: Command.AllCommand[] = await poll(commandConsumerClient);
-    if (commands.length) {
-      await processCommands(commands);
-      commandConsumerClient.commit();
+  while (true) {
+    try {
+      const commands: Command.AllCommand[] = await poll(commandConsumerClient);
+      if (commands.length) {
+        await processCommands(commands);
+        commandConsumerClient.commit();
+      }
+    } catch (error) {
+      // Handle consume error
+      console.warn('command', error);
+      await sleep(1000);
     }
-  } catch (error) {
-    // Handle consume error
-    console.warn(error);
-    await sleep(1000);
   }
-  setImmediate(executor);
 };
