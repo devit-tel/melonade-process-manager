@@ -716,30 +716,30 @@ export const processUpdateTasks = async (
 };
 
 export const executor = async () => {
-  try {
-    const tasksUpdate: Event.ITaskUpdate[] = await poll(
-      stateConsumerClient,
-      200,
-    );
-    if (tasksUpdate.length) {
-      // Grouped by workflowId, so it can execute parallely, but same workflowId have to run sequential bacause it can effect each other
-      const groupedTasks = R.values(
-        R.groupBy(R.path(['workflowId']), tasksUpdate),
+  while (true) {
+    try {
+      const tasksUpdate: Event.ITaskUpdate[] = await poll(
+        stateConsumerClient,
+        200,
       );
+      if (tasksUpdate.length) {
+        // Grouped by workflowId, so it can execute parallely, but same workflowId have to run sequential bacause it can effect each other
+        const groupedTasks = R.values(
+          R.groupBy(R.path(['workflowId']), tasksUpdate),
+        );
 
-      await Promise.all(
-        groupedTasks.map((workflowTasksUpdate: Event.ITaskUpdate[]) =>
-          processUpdateTasks(workflowTasksUpdate),
-        ),
-      );
+        await Promise.all(
+          groupedTasks.map((workflowTasksUpdate: Event.ITaskUpdate[]) =>
+            processUpdateTasks(workflowTasksUpdate),
+          ),
+        );
 
-      stateConsumerClient.commit();
+        stateConsumerClient.commit();
+      }
+    } catch (error) {
+      // Handle error here
+      console.warn('state', error);
+      await sleep(1000);
     }
-  } catch (error) {
-    // Handle error here
-    console.warn(error);
-    await sleep(1000);
-  } finally {
-    setImmediate(executor);
   }
 };
