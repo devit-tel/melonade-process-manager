@@ -9,6 +9,7 @@ import {
 import * as kafka from '../kafka';
 import * as state from '../state';
 import {
+  distributedLockStore,
   ITaskDefinitionStore,
   ITaskInstanceStore,
   ITransactionInstanceStore,
@@ -58,6 +59,11 @@ const storeSpies = [
   jest.spyOn(taskInstanceStore, 'create'),
   jest.spyOn(taskInstanceStore, 'update'),
   jest.spyOn(taskInstanceStore, 'reload'),
+  jest.spyOn(distributedLockStore, 'lock').mockImplementation(() =>
+    Promise.resolve({
+      unlock: async () => {},
+    }),
+  ),
 ];
 
 const mockedDispatch = <jest.Mock<typeof kafka.dispatch>>kafka.dispatch;
