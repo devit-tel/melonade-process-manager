@@ -45,6 +45,5 @@ router.get('/', (ctx: koaRouter.IRouterContext) => {
 });
 
 router.post('/update', (ctx: koaRouter.IRouterContext) => {
-  console.log(ctx.request.body);
   return processUpdateTasks([ctx.request.body]);
 });
