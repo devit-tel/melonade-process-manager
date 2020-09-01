@@ -406,7 +406,7 @@ const handleCancelWorkflow = async (
   }
 };
 
-const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
+export const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow has cancelled
   if (workflow.status === State.WorkflowStates.Cancelled) {
@@ -619,7 +619,7 @@ const handleWorkflowFailureStrategy = async (
   }
 };
 
-const handleFailedTask = async (
+export const handleFailedTask = async (
   task: Task.ITask,
   doNotRetry: boolean = false,
 ) => {
