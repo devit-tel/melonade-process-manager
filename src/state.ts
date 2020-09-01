@@ -9,6 +9,7 @@ import debug from 'debug';
 import * as R from 'ramda';
 import { poll, sendEvent, stateConsumerClient } from './kafka';
 import {
+  distributedLockStore,
   taskInstanceStore,
   transactionInstanceStore,
   workflowInstanceStore,
@@ -703,15 +704,23 @@ export const processUpdateTask = async (
 export const processUpdateTasks = async (
   tasksUpdate: Event.ITaskUpdate[],
 ): Promise<any> => {
-  for (const taskUpdate of tasksUpdate) {
-    const hrStart = process.hrtime();
-    await processUpdateTask(taskUpdate);
-    const hrEnd = process.hrtime(hrStart);
-    dg(
-      `Updated ${taskUpdate.transactionId}:${taskUpdate.taskId} to ${
-        taskUpdate.status
-      } take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`,
+  try {
+    const locker = await distributedLockStore.lock(
+      tasksUpdate[0].transactionId,
     );
+    for (const taskUpdate of tasksUpdate) {
+      const hrStart = process.hrtime();
+      await processUpdateTask(taskUpdate);
+      const hrEnd = process.hrtime(hrStart);
+      dg(
+        `Updated ${taskUpdate.transactionId}:${taskUpdate.taskId} to ${
+          taskUpdate.status
+        } take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`,
+      );
+    }
+    await locker.unlock();
+  } catch (error) {
+    console.error('processUpdateTasks', error);
   }
 };
 
@@ -723,7 +732,8 @@ export const executor = async () => {
         200,
       );
       if (tasksUpdate.length) {
-        // Grouped by workflowId, so it can execute parallely, but same workflowId have to run sequential bacause it can effect each other
+        /** Grouped by workflowId, so it can execute parallely,
+         * but same workflowId have to run sequential bacause it can effect each other */
         const groupedTasks = R.values(
           R.groupBy(R.path(['workflowId']), tasksUpdate),
         );

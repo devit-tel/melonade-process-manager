@@ -9,6 +9,7 @@ import {
 import { Server } from './server';
 import { executor as stateExecutor } from './state';
 import {
+  distributedLockStore,
   taskDefinitionStore,
   taskInstanceStore,
   transactionInstanceStore,
@@ -18,6 +19,7 @@ import {
 import { TaskInstanceMongooseStore } from './store/mongoose/taskInstance';
 import { TransactionInstanceMongooseStore } from './store/mongoose/transactionInstance';
 import { WorkflowInstanceMongooseStore } from './store/mongoose/workflowInstance';
+import { DistributedLockRedisStore } from './store/redis/distributedLock';
 import { TaskInstanceRedisStore } from './store/redis/taskInstance';
 import { TransactionInstanceRedisStore } from './store/redis/transactionInstance';
 import { WorkflowInstanceRedisStore } from './store/redis/workflowInstance';
@@ -131,6 +133,21 @@ switch (config.taskInstanceStoreConfig.type) {
   default:
     throw new Error(
       `TaskInstance Store: ${config.taskInstanceStoreConfig.type} is invalid`,
+    );
+}
+
+switch (config.distributedLockStoreConfig.type) {
+  case Store.StoreType.Redis:
+    distributedLockStore.setClient(
+      new DistributedLockRedisStore(
+        config.distributedLockStoreConfig.redisConfig,
+        config.melonade.namespace,
+      ),
+    );
+    break;
+  default:
+    throw new Error(
+      `TaskInstance Store: ${config.distributedLockStoreConfig.type} is invalid`,
     );
 }
 

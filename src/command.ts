@@ -6,6 +6,7 @@ import {
 } from '@melonade/melonade-declaration';
 import { commandConsumerClient, dispatch, poll, sendEvent } from './kafka';
 import {
+  distributedLockStore,
   transactionInstanceStore,
   workflowDefinitionStore,
   workflowInstanceStore,
@@ -24,12 +25,14 @@ const processStartTransactionCommand = async (
 
   if (!workflowDefinition) throw new Error(`Workflow definition is not exists`);
 
+  const locker = await distributedLockStore.lock(command.transactionId);
   await transactionInstanceStore.create(
     command.transactionId,
     workflowDefinition,
     command.input,
     command.tags,
   );
+  await locker.unlock();
 };
 
 export const processCancelTransactionCommand = async (
@@ -38,6 +41,8 @@ export const processCancelTransactionCommand = async (
   const workflow = await workflowInstanceStore.getByTransactionId(
     command.transactionId,
   );
+
+  const locker = await distributedLockStore.lock(command.transactionId);
   await workflowInstanceStore.update({
     transactionId: command.transactionId,
     status: State.WorkflowStates.Cancelled,
@@ -46,6 +51,7 @@ export const processCancelTransactionCommand = async (
       reason: command.reason,
     },
   });
+  await locker.unlock();
 };
 
 const processReloadTaskCommand = (
