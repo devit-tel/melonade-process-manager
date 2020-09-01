@@ -9,6 +9,7 @@ import debug from 'debug';
 import * as R from 'ramda';
 import { poll, sendEvent, stateConsumerClient } from './kafka';
 import {
+  distributedLockStore,
   taskInstanceStore,
   transactionInstanceStore,
   workflowInstanceStore,
@@ -703,6 +704,7 @@ export const processUpdateTask = async (
 export const processUpdateTasks = async (
   tasksUpdate: Event.ITaskUpdate[],
 ): Promise<any> => {
+  const locker = await distributedLockStore.lock(tasksUpdate[0].transactionId);
   for (const taskUpdate of tasksUpdate) {
     const hrStart = process.hrtime();
     await processUpdateTask(taskUpdate);
@@ -713,6 +715,7 @@ export const processUpdateTasks = async (
       } take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`,
     );
   }
+  await locker.unlock();
 };
 
 export const executor = async () => {
@@ -723,7 +726,8 @@ export const executor = async () => {
         200,
       );
       if (tasksUpdate.length) {
-        // Grouped by workflowId, so it can execute parallely, but same workflowId have to run sequential bacause it can effect each other
+        /** Grouped by workflowId, so it can execute parallely,
+         * but same workflowId have to run sequential bacause it can effect each other */
         const groupedTasks = R.values(
           R.groupBy(R.path(['workflowId']), tasksUpdate),
         );

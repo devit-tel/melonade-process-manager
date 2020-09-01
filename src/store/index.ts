@@ -91,6 +91,14 @@ export interface ITaskInstanceStore extends IStore {
   isHealthy(): boolean;
 }
 
+export interface IDistributedLockInstance {
+  unlock(): Promise<void>;
+}
+
+export interface IDistributedLockStore extends IStore {
+  lock(transactionId: string): Promise<IDistributedLockInstance>;
+}
+
 export class WorkflowDefinitionStore {
   client: IWorkflowDefinitionStore;
 
@@ -1080,12 +1088,26 @@ export class TaskInstanceStore {
   }
 }
 
+export class DistributedLockStore {
+  client: IDistributedLockStore;
+
+  setClient(client: IDistributedLockStore) {
+    // if (this.client) throw new Error('Already set client');
+    this.client = client;
+  }
+
+  lock(transactionId: string): Promise<IDistributedLockInstance> {
+    return this.client.lock(transactionId);
+  }
+}
+
 // This's global instance
 export const taskDefinitionStore = new TaskDefinitionStore();
 export const workflowDefinitionStore = new WorkflowDefinitionStore();
 export const taskInstanceStore = new TaskInstanceStore();
 export const workflowInstanceStore = new WorkflowInstanceStore();
 export const transactionInstanceStore = new TransactionInstanceStore();
+export const distributedLockStore = new DistributedLockStore();
 
 export const isHealthy = () => ({
   transactionInstanceStore: transactionInstanceStore.isHealthy(),

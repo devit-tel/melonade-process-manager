@@ -193,3 +193,11 @@ export const transactionInstanceStoreConfig = {
     ...pickAndReplaceFromENV('^transaction-instance\\.redis\\.'),
   },
 };
+
+export const distributedLockStoreConfig = {
+  type: process.env['distributed-lock.type'],
+  redisConfig: {
+    db: '6',
+    ...pickAndReplaceFromENV('^distributed-lock\\.redis\\.'),
+  },
+};
