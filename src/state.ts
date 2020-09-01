@@ -704,18 +704,24 @@ export const processUpdateTask = async (
 export const processUpdateTasks = async (
   tasksUpdate: Event.ITaskUpdate[],
 ): Promise<any> => {
-  const locker = await distributedLockStore.lock(tasksUpdate[0].transactionId);
-  for (const taskUpdate of tasksUpdate) {
-    const hrStart = process.hrtime();
-    await processUpdateTask(taskUpdate);
-    const hrEnd = process.hrtime(hrStart);
-    dg(
-      `Updated ${taskUpdate.transactionId}:${taskUpdate.taskId} to ${
-        taskUpdate.status
-      } take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`,
+  try {
+    const locker = await distributedLockStore.lock(
+      tasksUpdate[0].transactionId,
     );
+    for (const taskUpdate of tasksUpdate) {
+      const hrStart = process.hrtime();
+      await processUpdateTask(taskUpdate);
+      const hrEnd = process.hrtime(hrStart);
+      dg(
+        `Updated ${taskUpdate.transactionId}:${taskUpdate.taskId} to ${
+          taskUpdate.status
+        } take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`,
+      );
+    }
+    await locker.unlock();
+  } catch (error) {
+    console.error('processUpdateTasks', error);
   }
-  await locker.unlock();
 };
 
 export const executor = async () => {

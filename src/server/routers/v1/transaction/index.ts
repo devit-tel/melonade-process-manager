@@ -3,6 +3,7 @@ import { WorkflowDefinition } from '@melonade/melonade-declaration';
 import { CommandTypes } from '@melonade/melonade-declaration/build/command';
 import * as uuid from 'uuid/v4';
 import { processCancelTransactionCommand } from '../../../../command';
+import { processUpdateTasks } from '../../../../state';
 import {
   transactionInstanceStore,
   workflowDefinitionStore,
@@ -10,7 +11,7 @@ import {
 
 export const router = new koaRouter();
 
-router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext & any) => {
+router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext) => {
   const { name, rev } = ctx.params;
   const { transactionId, tags } = ctx.query;
   const workflowDefinition: WorkflowDefinition.IWorkflowDefinition = await workflowDefinitionStore.get(
@@ -41,4 +42,9 @@ router.delete('/cancel/:transactionId', (ctx: koaRouter.IRouterContext) => {
 router.get('/', (ctx: koaRouter.IRouterContext) => {
   const { from = 0, size = 50 } = ctx.query;
   return transactionInstanceStore.list(+from, +size);
+});
+
+router.post('/update', (ctx: koaRouter.IRouterContext) => {
+  console.log(ctx.request.body);
+  return processUpdateTasks([ctx.request.body]);
 });
