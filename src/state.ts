@@ -377,7 +377,7 @@ const handleCompletedCompensateThenRetryWorkflow = async (
   }
 };
 
-const handleCancelWorkflow = async (
+export const handleCancelWorkflow = async (
   workflow: Workflow.IWorkflow,
   tasksData: { [taskReferenceName: string]: Task.ITask },
 ) => {
@@ -690,6 +690,7 @@ export const processUpdateTask = async (
         break;
     }
   } catch (error) {
+    console.log(error, taskUpdate);
     sendEvent({
       transactionId: taskUpdate.transactionId,
       type: 'SYSTEM',
