@@ -57,7 +57,8 @@ export const processCancelTransactionCommand = async (
   try {
     const tasksData = await getTaskData(workflow);
     const syncWorkerTasks = R.values(tasksData).filter(
-      (t: Task.ITask) => t.syncWorker === true,
+      (t: Task.ITask) =>
+        t.syncWorker === true || [Task.TaskTypes.Schedule].includes(t.type),
     );
 
     await syncWorkerTasks.map((t: Task.ITask) =>

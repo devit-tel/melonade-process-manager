@@ -10,6 +10,7 @@ import * as R from 'ramda';
 import { poll, sendEvent, stateConsumerClient } from './kafka';
 import {
   distributedLockStore,
+  IDistributedLockInstance,
   taskInstanceStore,
   transactionInstanceStore,
   workflowInstanceStore,
@@ -383,8 +384,15 @@ export const handleCancelWorkflow = async (
 ) => {
   const tasksDataList = R.values(tasksData);
   const runningTasks = tasksDataList.filter((taskData: Task.ITask) => {
-    return [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
-      taskData.status,
+    return (
+      [State.TaskStates.Inprogress, State.TaskStates.Scheduled].includes(
+        taskData.status,
+      ) &&
+      [
+        Task.TaskTypes.Task,
+        Task.TaskTypes.Compensate,
+        Task.TaskTypes.SubTransaction,
+      ].includes(taskData.type)
     );
   });
 
@@ -410,13 +418,15 @@ export const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow has cancelled
   if (workflow.status === State.WorkflowStates.Cancelled) {
-    if (nextTaskPath.parentTask) {
+    if (nextTaskPath.parentTask && nextTaskPath.isLastChild) {
       await processUpdateTask({
         taskId: nextTaskPath.parentTask.taskId,
         transactionId: nextTaskPath.parentTask.transactionId,
         status: State.TaskStates.Completed,
         isSystem: true,
       });
+    } else if (nextTaskPath.parentTask && !nextTaskPath.isLastChild) {
+      console.log('Wait for sibling task');
     } else {
       await handleCancelWorkflow(workflow, tasksData);
     }
@@ -626,16 +636,18 @@ export const handleFailedTask = async (
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow oncancle do not retry or anything
   if (workflow.status === State.WorkflowStates.Cancelled) {
-    if (nextTaskPath.parentTask) {
+    if (nextTaskPath.parentTask && nextTaskPath.isLastChild) {
       await processUpdateTask({
         taskId: nextTaskPath.parentTask.taskId,
         transactionId: nextTaskPath.parentTask.transactionId,
         status: State.TaskStates.Completed,
         isSystem: true,
       });
+    } else if (nextTaskPath.parentTask && !nextTaskPath.isLastChild) {
+      console.log('Wait for sibling task');
+    } else {
+      await handleCancelWorkflow(workflow, tasksData);
     }
-
-    await handleCancelWorkflow(workflow, tasksData);
     return;
   }
 
@@ -705,10 +717,9 @@ export const processUpdateTask = async (
 export const processUpdateTasks = async (
   tasksUpdate: Event.ITaskUpdate[],
 ): Promise<any> => {
+  var locker: IDistributedLockInstance;
   try {
-    const locker = await distributedLockStore.lock(
-      tasksUpdate[0].transactionId,
-    );
+    locker = await distributedLockStore.lock(tasksUpdate[0].transactionId);
     for (const taskUpdate of tasksUpdate) {
       const hrStart = process.hrtime();
       await processUpdateTask(taskUpdate);
@@ -719,9 +730,10 @@ export const processUpdateTasks = async (
         } take ${hrEnd[0]}s ${hrEnd[1] / 1000000}ms`,
       );
     }
-    await locker.unlock();
   } catch (error) {
     console.error('processUpdateTasks', error);
+  } finally {
+    await locker?.unlock();
   }
 };
 
