@@ -837,6 +837,37 @@ describe('mapParametersToValue', () => {
   });
 
   test('Date from now', () => {
+    const timeAppend = 10000;
+    const fromNow = task.mapParametersToValue('fromNow(${t1.output.a})', {
+      t1: {
+        taskName: 'taskName',
+        taskReferenceName: 't1',
+        taskId: 'taskId',
+        workflowId: 'workflowId',
+        transactionId: 'transactionId',
+        type: Task.TaskTypes.Task,
+        status: State.TaskStates.Completed,
+        output: {
+          a: new Date(Date.now() + timeAppend).toString(),
+        },
+        input: {},
+        ackTimeout: 0,
+        createTime: 0,
+        endTime: 0,
+        logs: [],
+        retries: 0,
+        isRetried: false,
+        retryDelay: 0,
+        timeout: 0,
+        startTime: 0,
+        taskPath: [0],
+      },
+    });
+    expect(fromNow).toBeGreaterThanOrEqual(timeAppend - 2000);
+    expect(fromNow).toBeLessThan(timeAppend);
+  });
+
+  test('Date from now min value (100)', () => {
     expect(
       task.mapParametersToValue('fromNow(${t1.output.a})', {
         t1: {
@@ -863,6 +894,6 @@ describe('mapParametersToValue', () => {
           taskPath: [0],
         },
       }),
-    ).toBeLessThanOrEqual(0);
+    ).toBe(100);
   });
 });
