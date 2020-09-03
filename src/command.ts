@@ -61,8 +61,8 @@ export const processCancelTransactionCommand = async (
         t.syncWorker === true || [Task.TaskTypes.Schedule].includes(t.type),
     );
 
-    await syncWorkerTasks.map((t: Task.ITask) =>
-      processUpdateTask({
+    for (const t of syncWorkerTasks) {
+      await processUpdateTask({
         status: State.TaskStates.Failed,
         taskId: t.taskId,
         transactionId: t.transactionId,
@@ -71,8 +71,9 @@ export const processCancelTransactionCommand = async (
         output: {
           reason: 'Workflow has been cancelled',
         },
-      }),
-    );
+      });
+    }
+
     await handleCancelWorkflow(workflow, tasksData);
   } catch (error) {
     console.log(error);
