@@ -95,7 +95,7 @@ const parseTemplate = (template: string, values: any) => {
 
   const dateFromNowMatch = /(^fromNow\()(.+)(\)$)/i.exec(template);
   if (dateFromNowMatch?.length) {
-    return +dateParse(dateFromNowMatch[2], values) - Date.now();
+    return Math.max(+dateParse(dateFromNowMatch[2], values) - Date.now(), 100);
   }
 
   // string append template

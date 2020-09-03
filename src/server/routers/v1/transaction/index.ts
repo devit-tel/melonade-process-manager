@@ -51,25 +51,31 @@ router.post('/update', async (ctx: koaRouter.IRouterContext) => {
   const taskUpdate: ITaskUpdate = ctx.request.body;
 
   const locker = await distributedLockStore.lock(taskUpdate.transactionId);
-  const task = await taskInstanceStore.update(taskUpdate);
-  if (!task) {
-    throw new Error('Cannot update');
-  }
+  try {
+    const task = await taskInstanceStore.update(taskUpdate);
+    if (!task) {
+      throw new Error('Cannot update');
+    }
 
-  switch (taskUpdate.status) {
-    case State.TaskStates.Completed:
-      await handleCompletedTask(task);
-      break;
-    case State.TaskStates.Failed:
-    case State.TaskStates.Timeout:
-    case State.TaskStates.AckTimeOut:
-      await handleFailedTask(task, taskUpdate.doNotRetry);
-      break;
-    default:
-      // Case Inprogress we did't need to do anything except update the status
-      break;
-  }
+    switch (taskUpdate.status) {
+      case State.TaskStates.Completed:
+        await handleCompletedTask(task);
+        break;
+      case State.TaskStates.Failed:
+      case State.TaskStates.Timeout:
+      case State.TaskStates.AckTimeOut:
+        await handleFailedTask(task, taskUpdate.doNotRetry);
+        break;
+      default:
+        // Case Inprogress we did't need to do anything except update the status
+        break;
+    }
 
-  await locker.unlock();
-  return task;
+    await locker.unlock();
+    return task;
+  } catch (error) {
+    console.log(error);
+    await locker.unlock();
+    throw error;
+  }
 });

@@ -976,34 +976,38 @@ export class TaskInstanceStore {
       startTime: timestamp,
       endTime: null,
       retries:
-        +mapParametersToValue(workflowTask?.retry?.limit, {
+        mapParametersToNumber(workflowTask?.retry?.limit, {
           ...tasksData,
           workflow,
-        }) ||
-        taskDefinition?.retry?.limit ||
+        }) ??
+        taskDefinition?.retry?.limit ??
         0,
       retryDelay:
-        +mapParametersToValue(workflowTask?.retry?.delay, {
+        mapParametersToNumber(workflowTask?.retry?.delay, {
           ...tasksData,
           workflow,
-        }) ||
-        taskDefinition?.retry?.delay ||
+        }) ??
+        taskDefinition?.retry?.delay ??
         0,
       ackTimeout:
-        +mapParametersToValue(workflowTask?.ackTimeout, {
+        mapParametersToNumber(workflowTask?.ackTimeout, {
           ...tasksData,
           workflow,
-        }) ||
-        taskDefinition?.ackTimeout ||
+        }) ??
+        taskDefinition?.ackTimeout ??
         0,
       timeout:
-        +mapParametersToValue(workflowTask?.timeout, {
+        mapParametersToNumber(workflowTask?.timeout, {
           ...tasksData,
           workflow,
-        }) ||
-        taskDefinition?.timeout ||
+        }) ??
+        taskDefinition?.timeout ??
         0,
       taskPath,
+      syncWorker:
+        (<WorkflowDefinition.ITaskTask>workflowTask)?.syncWorker ??
+        taskDefinition?.syncWorker ??
+        false,
       ...overideTask,
     });
 
@@ -1100,6 +1104,22 @@ export class DistributedLockStore {
     return this.client.lock(transactionId);
   }
 }
+
+const mapParametersToNumber = (
+  parameters: any,
+  tasksData: {
+    [taskReferenceName: string]: Workflow.IWorkflow | Task.ITask;
+  },
+): number | undefined => {
+  if (parameters === undefined) {
+    return undefined;
+  }
+  const val = mapParametersToValue(parameters, tasksData);
+  if (Number.isNaN(+val)) {
+    return undefined;
+  }
+  return +val;
+};
 
 // This's global instance
 export const taskDefinitionStore = new TaskDefinitionStore();

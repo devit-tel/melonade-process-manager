@@ -4,7 +4,9 @@ import {
   Task,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
+import * as R from 'ramda';
 import { commandConsumerClient, dispatch, poll, sendEvent } from './kafka';
+import { getTaskData, handleCancelWorkflow, processUpdateTask } from './state';
 import {
   distributedLockStore,
   transactionInstanceStore,
@@ -51,6 +53,31 @@ export const processCancelTransactionCommand = async (
       reason: command.reason,
     },
   });
+
+  try {
+    const tasksData = await getTaskData(workflow);
+    const syncWorkerTasks = R.values(tasksData).filter(
+      (t: Task.ITask) =>
+        t.syncWorker === true || [Task.TaskTypes.Schedule].includes(t.type),
+    );
+
+    for (const t of syncWorkerTasks) {
+      await processUpdateTask({
+        status: State.TaskStates.Failed,
+        taskId: t.taskId,
+        transactionId: t.transactionId,
+        isSystem: true,
+        doNotRetry: true,
+        output: {
+          reason: 'Workflow has been cancelled',
+        },
+      });
+    }
+
+    await handleCancelWorkflow(workflow, tasksData);
+  } catch (error) {
+    console.log(error);
+  }
   await locker.unlock();
 };
 
