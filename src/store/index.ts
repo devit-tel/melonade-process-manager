@@ -789,10 +789,11 @@ export class TaskInstanceStore {
         // Dispatch child task(s)
         switch (workflowTask.type) {
           case Task.TaskTypes.Decision:
+            const decisionCase = taskData.input?.case ?? 'undefined';
             await this.create(
               workflow,
               workflowTask.decisions?.[taskData.input?.case]
-                ? [...taskPath, 'decisions', taskData.input?.case, 0]
+                ? [...taskPath, 'decisions', decisionCase, 0]
                 : [...taskPath, 'defaultDecision', 0],
               tasksData,
             );
