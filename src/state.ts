@@ -418,15 +418,21 @@ export const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow has cancelled
   if (workflow.status === State.WorkflowStates.Cancelled) {
-    if (nextTaskPath.parentTask && nextTaskPath.isLastChild) {
-      await processUpdateTask({
-        taskId: nextTaskPath.parentTask.taskId,
-        transactionId: nextTaskPath.parentTask.transactionId,
-        status: State.TaskStates.Completed,
-        isSystem: true,
-      });
-    } else if (nextTaskPath.parentTask && !nextTaskPath.isLastChild) {
-      console.log('Wait for sibling task');
+    if (nextTaskPath.parentTask) {
+      if (
+        (nextTaskPath.parentTask.type === Task.TaskTypes.Parallel &&
+          nextTaskPath.isLastChild) ||
+        nextTaskPath.parentTask.type === Task.TaskTypes.Decision
+      ) {
+        await processUpdateTask({
+          taskId: nextTaskPath.parentTask.taskId,
+          transactionId: nextTaskPath.parentTask.transactionId,
+          status: State.TaskStates.Completed,
+          isSystem: true,
+        });
+      } else {
+        console.log('Wait for sibling task');
+      }
     } else {
       await handleCancelWorkflow(workflow, tasksData);
     }
@@ -636,15 +642,21 @@ export const handleFailedTask = async (
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
   // If workflow oncancle do not retry or anything
   if (workflow.status === State.WorkflowStates.Cancelled) {
-    if (nextTaskPath.parentTask && nextTaskPath.isLastChild) {
-      await processUpdateTask({
-        taskId: nextTaskPath.parentTask.taskId,
-        transactionId: nextTaskPath.parentTask.transactionId,
-        status: State.TaskStates.Completed,
-        isSystem: true,
-      });
-    } else if (nextTaskPath.parentTask && !nextTaskPath.isLastChild) {
-      console.log('Wait for sibling task');
+    if (nextTaskPath.parentTask) {
+      if (
+        (nextTaskPath.parentTask.type === Task.TaskTypes.Parallel &&
+          nextTaskPath.isLastChild) ||
+        nextTaskPath.parentTask.type === Task.TaskTypes.Decision
+      ) {
+        await processUpdateTask({
+          taskId: nextTaskPath.parentTask.taskId,
+          transactionId: nextTaskPath.parentTask.transactionId,
+          status: State.TaskStates.Completed,
+          isSystem: true,
+        });
+      } else {
+        console.log('Wait for sibling task');
+      }
     } else {
       await handleCancelWorkflow(workflow, tasksData);
     }
