@@ -127,7 +127,7 @@ const getNextParallelTask = (
   }
 
   // All of lines are completed
-  // If no next task, so this mean this parellel task will completed aswell
+  // If no next task, so this mean this parallel task will completed as well
   if (isAllTasksFinished(lastTaskOfEachLine)) {
     return {
       isCompleted: false,
@@ -193,7 +193,7 @@ const getNextDecisionTask = (
     };
   }
 
-  // If no next task, so this mean this desision task will completed aswell
+  // If no next task, so this mean this decision task will completed as well
   return {
     isCompleted: false,
     taskPath: null,
@@ -450,7 +450,7 @@ export const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
   // If any task in workflow failed, mean this workflow is going to failed
   // Don't dispatch another task, and wait for all task to finish then do Workflow Failure Strategy
   if (failedTasks.length) {
-    // If it have parent so make their parent failed aswell, parent of parent... so on
+    // If it have parent so make their parent failed as well, parent of parent... so on
     if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
       await processUpdateTask({
         taskId: nextTaskPath.parentTask.taskId,
@@ -464,7 +464,7 @@ export const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
     return;
   }
 
-  // For all childs of parallel/decision task has completed => update parent to completed aswell
+  // For all child of parallel/decision task has completed => update parent to completed as well
   // This will cause chain reaction to parent of parent so on...
   if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
     await processUpdateTask({
@@ -476,13 +476,13 @@ export const handleCompletedTask = async (task: Task.ITask): Promise<void> => {
     return;
   }
 
-  // For child of system task completed but have next siblin to run
+  // For child of system task completed but have next sibling to run
   if (!nextTaskPath.isCompleted && nextTaskPath.taskPath) {
     await taskInstanceStore.create(workflow, nextTaskPath.taskPath, tasksData);
     return;
   }
 
-  // All tasks's complated update workflow
+  // All tasks are completed update workflow
   if (nextTaskPath.isCompleted) {
     // When workflow is completed
     const completedWorkflow = await workflowInstanceStore.update({
@@ -536,7 +536,7 @@ const handleCompensateWorkflow = async (
   workflow: Workflow.IWorkflow,
   isCancel: boolean = false,
 ): Promise<void> => {
-  const tasksTocompensate = await workflowInstanceStore.compensate(
+  const tasksToCompensate = await workflowInstanceStore.compensate(
     workflow,
     isCancel
       ? Workflow.WorkflowTypes.CancelWorkflow
@@ -544,7 +544,7 @@ const handleCompensateWorkflow = async (
     true,
   );
 
-  if (tasksTocompensate === 0) {
+  if (tasksToCompensate === 0) {
     if (isCancel) {
       await handleCompletedCancelWorkflow(workflow);
     } else {
@@ -640,7 +640,7 @@ export const handleFailedTask = async (
   doNotRetry: boolean = false,
 ) => {
   const { workflow, tasksData, nextTaskPath } = await getTaskInfo(task);
-  // If workflow oncancle do not retry or anything
+  // If workflow on cancel do not retry or anything
   if (workflow.status === State.WorkflowStates.Cancelled) {
     if (nextTaskPath.parentTask) {
       if (
@@ -678,7 +678,7 @@ export const handleFailedTask = async (
       task.retryDelay <= 0,
     );
   } else {
-    // For all childs task failed => update parent task to failed aswell
+    // For all child task failed => update parent task to failed as well
     if (nextTaskPath.isLastChild && nextTaskPath.parentTask) {
       await processUpdateTask({
         taskId: nextTaskPath.parentTask.taskId,
@@ -710,7 +710,7 @@ export const processUpdateTask = async (
         await handleFailedTask(task, taskUpdate.doNotRetry);
         break;
       default:
-        // Case Inprogress we did't need to do anything except update the status
+        // Case Inprogress we didn't need to do anything except update the status
         break;
     }
   } catch (error) {
@@ -757,8 +757,8 @@ export const executor = async () => {
         200,
       );
       if (tasksUpdate.length) {
-        /** Grouped by workflowId, so it can execute parallely,
-         * but same workflowId have to run sequential bacause it can effect each other */
+        /** Grouped by workflowId, so it can execute parallelly,
+         * but same workflowId have to run sequential because it can effect each other */
         const groupedTasks = R.values(
           R.groupBy(R.path(['workflowId']), tasksUpdate),
         );
