@@ -72,7 +72,7 @@ producerClient.on('ready', () => {
 });
 
 export const createTopic = (
-  tipicName: string,
+  topicName: string,
   numPartitions: number,
   replicationFactor: number,
   config?: any,
@@ -80,7 +80,7 @@ export const createTopic = (
   new Promise((resolve: Function, reject: Function) => {
     adminClient.createTopic(
       {
-        topic: tipicName,
+        topic: topicName,
         num_partitions: numPartitions,
         replication_factor: replicationFactor,
         config: {

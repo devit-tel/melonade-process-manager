@@ -131,7 +131,7 @@ export const mapParametersToValue = (
   return parameters;
 };
 
-export const getCompltedAt = (task: Task.ITask): number => {
+export const getCompletedAt = (task: Task.ITask): number => {
   try {
     const completedAfter = R.path(['input', 'completedAfter'], task) as number;
     if (Number.isFinite(completedAfter)) {

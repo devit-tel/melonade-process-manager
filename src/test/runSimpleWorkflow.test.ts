@@ -136,7 +136,7 @@ describe('Run simple workflow', () => {
         {},
       ),
     },
-  ])('Integate test store (%p)', (allStores: IAllStoreType): void => {
+  ])('Integrate test store (%p)', (allStores: IAllStoreType): void => {
     // Change store type for each test
     beforeAll(() => {
       taskDefinitionStore.setClient(allStores.taskDefinitionStoreClient);

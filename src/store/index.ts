@@ -15,7 +15,7 @@ import * as R from 'ramda';
 import { dispatch, sendEvent, sendTimer, sendUpdate } from '../kafka';
 import * as state from '../state';
 import { toObjectByKey } from '../utils/common';
-import { getCompltedAt, mapParametersToValue } from '../utils/task';
+import { getCompletedAt, mapParametersToValue } from '../utils/task';
 
 const dg = debug('melonade:store');
 
@@ -286,7 +286,7 @@ export class TransactionInstanceStore {
       }
 
       // Clean up instance store when transaction finished
-      // If it have parent let parent clean by themself
+      // If it have parent let parent clean by themselves
       if (parentTransactionId && parentTaskId) {
         if (
           [
@@ -391,7 +391,7 @@ export class WorkflowInstanceStore {
     type: Workflow.WorkflowTypes,
     workflowDefinition: WorkflowDefinition.IWorkflowDefinition,
     input: any,
-    overideWorkflow?: Workflow.IWorkflow | object,
+    overrideWorkflow?: Workflow.IWorkflow | object,
   ): Promise<Workflow.IWorkflow> => {
     const timestamp = Date.now();
     const workflow = await this.client.create({
@@ -407,7 +407,7 @@ export class WorkflowInstanceStore {
       endTime: null,
       workflowDefinition,
       transactionDepth: 0,
-      ...overideWorkflow,
+      ...overrideWorkflow,
     });
     sendEvent({
       transactionId: workflow.transactionId,
@@ -476,7 +476,7 @@ export class WorkflowInstanceStore {
     });
   };
 
-  private getCompenstateTasks = (
+  private getCompensatedTasks = (
     tasks: Task.ITask[],
     includeWorkers: boolean,
   ): WorkflowDefinition.Tasks => {
@@ -515,7 +515,7 @@ export class WorkflowInstanceStore {
       );
   };
 
-  // Delete current workflow and create oposite one
+  // Delete current workflow and create opposite one
   // Return number of tasks to compensate
   compensate = async (
     workflow: Workflow.IWorkflow,
@@ -531,21 +531,18 @@ export class WorkflowInstanceStore {
 
     if (isHaveRunningTask) throw new Error(`Have running task`);
 
-    const compenstateTasks = this.getCompenstateTasks(
-      tasksData,
-      includeWorkers,
-    );
+    const compensateTasks = this.getCompensatedTasks(tasksData, includeWorkers);
 
     await this.client.delete(workflow.workflowId, true);
 
-    if (compenstateTasks.length) {
+    if (compensateTasks.length) {
       await this.create(
         workflow.transactionId,
         workflowType,
         {
           name: workflow.workflowDefinition.name,
           rev: `${workflow.workflowDefinition.rev}_compensation`,
-          tasks: compenstateTasks,
+          tasks: compensateTasks,
           failureStrategy: State.WorkflowFailureStrategies.Failed,
           outputParameters: {},
           retry: {
@@ -556,7 +553,7 @@ export class WorkflowInstanceStore {
       );
     }
 
-    return compenstateTasks.length;
+    return compensateTasks.length;
   };
 
   isHealthy(): boolean {
@@ -627,7 +624,7 @@ export class TaskInstanceStore {
     workflow: Workflow.IWorkflow,
     taskPath: (string | number)[],
     tasksData: { [taskReferenceName: string]: Task.ITask },
-    overideTask: Task.ITask | object = {},
+    overrideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
     // Modeling task instance data
     const workflowTask:
@@ -675,7 +672,7 @@ export class TaskInstanceStore {
       ackTimeout: 0,
       timeout: 0,
       taskPath,
-      ...overideTask,
+      ...overrideTask,
     };
 
     try {
@@ -696,7 +693,7 @@ export class TaskInstanceStore {
           type: Timer.TimerTypes.scheduleTask,
           taskId: task.taskId,
           transactionId: task.transactionId,
-          completedAt: getCompltedAt(task),
+          completedAt: getCompletedAt(task),
         });
 
         return task;
@@ -812,7 +809,7 @@ export class TaskInstanceStore {
             break;
           case Task.TaskTypes.DynamicTask:
             if (!Array.isArray(taskData.input?.tasks)) {
-              throw new Error(`Missing input.tasks array for dynamictask`);
+              throw new Error(`Missing input.tasks array for dynamic task`);
             }
 
             taskData.dynamicTasks = taskData.input?.tasks;
@@ -948,7 +945,7 @@ export class TaskInstanceStore {
     workflow: Workflow.IWorkflow,
     taskPath: (string | number)[],
     tasksData: { [taskReferenceName: string]: Task.ITask },
-    overideTask: Task.ITask | object = {},
+    overrideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
     const workflowTask:
       | WorkflowDefinition.ICompensateTask
@@ -1009,7 +1006,7 @@ export class TaskInstanceStore {
         (<WorkflowDefinition.ITaskTask>workflowTask)?.syncWorker ??
         taskDefinition?.syncWorker ??
         false,
-      ...overideTask,
+      ...overrideTask,
     });
 
     dispatch(task);
@@ -1027,7 +1024,7 @@ export class TaskInstanceStore {
     workflow: Workflow.IWorkflow,
     taskPath: (string | number)[],
     tasksData: { [taskReferenceName: string]: Task.ITask },
-    overideTask: Task.ITask | object = {},
+    overrideTask: Task.ITask | object = {},
   ): Promise<Task.ITask> => {
     switch (
       R.path(['workflowDefinition', 'tasks', ...taskPath, 'type'], workflow)
@@ -1041,7 +1038,7 @@ export class TaskInstanceStore {
           workflow,
           taskPath,
           tasksData,
-          overideTask,
+          overrideTask,
         );
       case Task.TaskTypes.Task:
       case Task.TaskTypes.Compensate:
@@ -1050,7 +1047,7 @@ export class TaskInstanceStore {
           workflow,
           taskPath,
           tasksData,
-          overideTask,
+          overrideTask,
         );
     }
   };
@@ -1122,7 +1119,7 @@ const mapParametersToNumber = (
   return +val;
 };
 
-// This's global instance
+// Global instance
 export const taskDefinitionStore = new TaskDefinitionStore();
 export const workflowDefinitionStore = new WorkflowDefinitionStore();
 export const taskInstanceStore = new TaskInstanceStore();
