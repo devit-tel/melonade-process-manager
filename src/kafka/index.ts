@@ -145,6 +145,7 @@ export const dispatch = (task: Task.ITask) =>
     Date.now(),
   );
 
+// TODO Since we have distributed lock, this need to rewrite using state.processTask instead !!
 // Use to send update event to another PM or itself to make sure ordering
 export const sendUpdate = (taskUpdate: Event.ITaskUpdate) =>
   producerClient.produce(
@@ -156,14 +157,33 @@ export const sendUpdate = (taskUpdate: Event.ITaskUpdate) =>
   );
 
 // Use to send Retry, Failed, Reject event, Completed workflow, Dispatch task
-export const sendEvent = (event: Event.AllEvent) =>
-  producerClient.produce(
-    config.kafkaTopicName.store,
-    null,
-    Buffer.from(JSON.stringify(event)),
-    event.transactionId,
-    Date.now(),
-  );
+export const sendEvent = (event: Event.AllEvent) => {
+  try {
+    return producerClient.produce(
+      config.kafkaTopicName.store,
+      null,
+      Buffer.from(JSON.stringify(event)),
+      event.transactionId,
+      Date.now(),
+    );
+  } catch (error) {
+    const errEvn: Event.ISystemErrorEvent = {
+      transactionId: event.transactionId,
+      details: {},
+      error: `${error}`,
+      timestamp: Date.now(),
+      type: 'SYSTEM',
+      isError: true,
+    };
+    return producerClient.produce(
+      config.kafkaTopicName.store,
+      null,
+      Buffer.from(JSON.stringify(errEvn)),
+      event.transactionId,
+      Date.now(),
+    );
+  }
+};
 
 export const flush = (timeout: number = 1000) =>
   new Promise((resolve: Function, reject: Function) => {
