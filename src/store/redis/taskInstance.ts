@@ -101,7 +101,7 @@ export class TaskInstanceRedisStore extends RedisStore
       ...taskKeys.map((taskId: string) => `${prefix}.task.${taskId}`),
     );
 
-    return tasksString.map(JSON.parse);
+    return tasksString.map((t) => JSON.parse(t));
   };
 
   delete = async (
