@@ -1,15 +1,17 @@
 import koaRouter = require('koa-router');
-import { State, WorkflowDefinition } from '@melonade/melonade-declaration';
+import { State } from '@melonade/melonade-declaration';
 import { CommandTypes } from '@melonade/melonade-declaration/build/command';
 import { ITaskUpdate } from '@melonade/melonade-declaration/build/event';
 import * as uuid from 'uuid/v4';
-import { processCancelTransactionCommand } from '../../../../command';
+import {
+  processCancelTransactionCommand,
+  processStartTransactionCommand,
+} from '../../../../command';
 import { handleCompletedTask, handleFailedTask } from '../../../../state';
 import {
   distributedLockStore,
   taskInstanceStore,
   transactionInstanceStore,
-  workflowDefinitionStore,
 } from '../../../../store';
 
 export const router = new koaRouter();
@@ -17,19 +19,17 @@ export const router = new koaRouter();
 router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext) => {
   const { name, rev } = ctx.params;
   const { transactionId, tags } = ctx.query;
-  const workflowDefinition: WorkflowDefinition.IWorkflowDefinition = await workflowDefinitionStore.get(
-    name,
-    rev,
-  );
-  if (!workflowDefinition) {
-    throw new Error('Workflow not found');
-  }
-  return transactionInstanceStore.create(
-    transactionId || uuid(),
-    workflowDefinition,
-    ctx.request.body,
-    tags ? JSON.parse(tags) : [],
-  );
+
+  return processStartTransactionCommand({
+    transactionId: transactionId || uuid(),
+    workflowRef: {
+      name,
+      rev,
+    },
+    input: ctx.request.body,
+    type: CommandTypes.StartTransaction,
+    tags: tags ? JSON.parse(tags) : [],
+  });
 });
 
 router.delete('/cancel/:transactionId', (ctx: koaRouter.IRouterContext) => {
