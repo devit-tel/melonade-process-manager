@@ -42,7 +42,11 @@ export class DistributedLockRedisInstance implements IDistributedLockInstance {
     this.locker = locker;
   }
 
-  unlock(): Promise<void> {
-    return this.locker.release();
+  async unlock(): Promise<void> {
+    try {
+      return this.locker.release();
+    } catch (error) {
+      console.log('DistributedLockRedisInstance.unlock', error);
+    }
   }
 }

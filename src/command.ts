@@ -2,6 +2,7 @@ import {
   Command,
   State,
   Task,
+  Transaction,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
@@ -15,9 +16,9 @@ import {
 } from './store';
 import { sleep } from './utils/common';
 
-const processStartTransactionCommand = async (
+export const processStartTransactionCommand = async (
   command: Command.IStartTransactionCommand,
-): Promise<void> => {
+): Promise<Transaction.ITransaction> => {
   const workflowDefinition = command.workflowDefinition
     ? new WorkflowDefinition.WorkflowDefinition(command.workflowDefinition)
     : await workflowDefinitionStore.get(
@@ -28,13 +29,19 @@ const processStartTransactionCommand = async (
   if (!workflowDefinition) throw new Error(`Workflow definition is not exists`);
 
   const locker = await distributedLockStore.lock(command.transactionId);
-  await transactionInstanceStore.create(
-    command.transactionId,
-    workflowDefinition,
-    command.input,
-    command.tags,
-  );
-  await locker.unlock();
+  try {
+    const t = await transactionInstanceStore.create(
+      command.transactionId,
+      workflowDefinition,
+      command.input,
+      command.tags,
+    );
+    await locker.unlock();
+    return t;
+  } catch (error) {
+    await locker.unlock();
+    throw error;
+  }
 };
 
 export const processCancelTransactionCommand = async (
@@ -45,16 +52,16 @@ export const processCancelTransactionCommand = async (
   );
 
   const locker = await distributedLockStore.lock(command.transactionId);
-  await workflowInstanceStore.update({
-    transactionId: command.transactionId,
-    status: State.WorkflowStates.Cancelled,
-    workflowId: workflow.workflowId,
-    output: {
-      reason: command.reason,
-    },
-  });
 
   try {
+    await workflowInstanceStore.update({
+      transactionId: command.transactionId,
+      status: State.WorkflowStates.Cancelled,
+      workflowId: workflow.workflowId,
+      output: {
+        reason: command.reason,
+      },
+    });
     const tasksData = await getTaskData(workflow);
     const syncWorkerTasks = R.values(tasksData).filter(
       (t: Task.ITask) =>

@@ -157,16 +157,17 @@ export class WorkflowInstanceRedisStore extends RedisStore
   ): Promise<void> => {
     const key = `${prefix}.transaction-workflow.${transactionId}`;
     const workflowKeys = await this.client.lrange(key, 0, -1);
-    await Promise.all([
-      this.client.del(
-        ...workflowKeys.map(
-          (workflowId: string) => `${prefix}.workflow.${workflowId}`,
-        ),
-        key,
+
+    await this.client.del(
+      ...workflowKeys.map(
+        (workflowId: string) => `${prefix}.workflow.${workflowId}`,
       ),
-      ...workflowKeys.map((workflowId: string) =>
+      key,
+    );
+    await Promise.all(
+      workflowKeys.map((workflowId: string) =>
         taskInstanceStore.deleteAll(workflowId, keepSubTransaction),
       ),
-    ]);
+    );
   };
 }
