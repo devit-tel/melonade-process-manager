@@ -32,6 +32,18 @@ router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext) => {
   });
 });
 
+router.post('/start', async (ctx: koaRouter.IRouterContext) => {
+  const { transactionId, tags } = ctx.query;
+
+  return processStartTransactionCommand({
+    transactionId: transactionId || uuid(),
+    workflowDefinition: ctx.request.body.workflowDefinition,
+    input: ctx.request.body.input,
+    type: CommandTypes.StartTransaction,
+    tags: tags ? JSON.parse(tags) : [],
+  });
+});
+
 router.delete('/cancel/:transactionId', (ctx: koaRouter.IRouterContext) => {
   const { transactionId, reason } = ctx.params;
 
