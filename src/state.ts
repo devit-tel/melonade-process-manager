@@ -752,7 +752,7 @@ export const processUpdateTasks = async (
 export const executor = async () => {
   while (true) {
     try {
-      const [tasksUpdate, message] = await pollWithMessage<Event.ITaskUpdate>(
+      const [tasksUpdate] = await pollWithMessage<Event.ITaskUpdate>(
         stateConsumerClient,
         200,
       );

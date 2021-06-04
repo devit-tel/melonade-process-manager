@@ -148,18 +148,13 @@ const processCommands = async (
 export const executor = async () => {
   while (true) {
     try {
-      const [commands, message] = await pollWithMessage<Command.AllCommand>(
+      const [commands] = await pollWithMessage<Command.AllCommand>(
         commandConsumerClient,
       );
       if (commands.length) {
         await processCommands(commands);
         // @ts-ignore
         commandConsumerClient.commitSync();
-        console.log(
-          `committed ${message
-            .map((m) => `${m.topic}-${m.partition}-${m.offset}`)
-            .join('\n')}`,
-        );
       }
     } catch (error) {
       // Handle consume error
