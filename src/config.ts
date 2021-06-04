@@ -1,6 +1,10 @@
 import { Kafka } from '@melonade/melonade-declaration';
 import * as dotenv from 'dotenv';
-import { ConsumerGlobalConfig, ConsumerTopicConfig } from 'node-rdkafka';
+import {
+  ConsumerGlobalConfig,
+  ConsumerTopicConfig,
+  ProducerGlobalConfig,
+} from 'node-rdkafka';
 
 dotenv.config();
 
@@ -53,30 +57,21 @@ export const kafkaAdminConfig = {
 
 export const kafkaTaskConfig = {
   config: {
-    'enable.auto.commit': 'false',
+    'enable.auto.commit': false,
     'group.id': `melonade-${melonade.namespace}-state`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^task\\.kafka\\.conf\\.'),
-  },
+    offset_commit_cb: (err: any, tp: any) => {
+      if (err) {
+        console.log('state: offset_commit_cb: error', err, tp);
+      }
+    },
+  } as ConsumerGlobalConfig,
   topic: {
     'auto.offset.reset': 'earliest',
     ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
     ...pickAndReplaceFromENV('^task\\.kafka\\.topic-conf\\.'),
-  },
-};
-
-export const kafkaSystemTaskConfig = {
-  config: {
-    'enable.auto.commit': 'false',
-    'group.id': `melonade-${melonade.namespace}-system`,
-    ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
-    ...pickAndReplaceFromENV('^system-task\\.kafka\\.conf\\.'),
-  },
-  topic: {
-    'auto.offset.reset': 'earliest',
-    ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
-    ...pickAndReplaceFromENV('^system-task\\.kafka\\.topic-conf\\.'),
-  },
+  } as ConsumerTopicConfig,
 };
 
 export const kafkaCommandConfig = {
@@ -85,6 +80,11 @@ export const kafkaCommandConfig = {
     'group.id': `melonade-${melonade.namespace}-command`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^command\\.kafka\\.conf\\.'),
+    offset_commit_cb: (err: any, tp: any) => {
+      if (err) {
+        console.log('command: offset_commit_cb: error', err, tp);
+      }
+    },
   } as ConsumerGlobalConfig,
   topic: {
     'auto.offset.reset': 'earliest',
@@ -96,20 +96,20 @@ export const kafkaCommandConfig = {
 export const kafkaProducerConfig = {
   config: {
     'compression.type': 'snappy',
-    'enable.idempotence': 'true',
-    retries: '10000000',
-    'socket.keepalive.enable': 'true',
-    'queue.buffering.max.messages': '100000',
-    'queue.buffering.max.ms': '10',
-    'batch.num.messages': '10000',
+    'enable.idempotence': true,
+    retries: 1000,
+    'socket.keepalive.enable': true,
+    'queue.buffering.max.messages': 100000,
+    'queue.buffering.max.ms': 10,
+    'batch.num.messages': 10000,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^producer\\.kafka\\.conf\\.'),
-  },
+  } as ProducerGlobalConfig,
   topic: {
     acks: 'all',
     ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
     ...pickAndReplaceFromENV('^producer\\.kafka\\.topic-conf\\.'),
-  },
+  } as ConsumerTopicConfig,
 };
 
 export const taskDefinitionStoreConfig = {
