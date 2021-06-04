@@ -38,3 +38,15 @@ export const toObjectByKey = (targets: object[], key: string) => {
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+export const appendArray = <T = any>(target: T[], data: T[] | T): T[] => {
+  if (!data) {
+    return target;
+  }
+
+  if (Array.isArray(data)) {
+    return [...target, ...data];
+  }
+
+  return [...target, data];
+};
