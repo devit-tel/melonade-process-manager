@@ -1,5 +1,6 @@
 import { Kafka } from '@melonade/melonade-declaration';
 import * as dotenv from 'dotenv';
+import { ConsumerGlobalConfig, ConsumerTopicConfig } from 'node-rdkafka';
 
 dotenv.config();
 
@@ -80,16 +81,16 @@ export const kafkaSystemTaskConfig = {
 
 export const kafkaCommandConfig = {
   config: {
-    'enable.auto.commit': 'false',
+    'enable.auto.commit': false,
     'group.id': `melonade-${melonade.namespace}-command`,
     ...pickAndReplaceFromENV('^kafka\\.conf\\.'),
     ...pickAndReplaceFromENV('^command\\.kafka\\.conf\\.'),
-  },
+  } as ConsumerGlobalConfig,
   topic: {
     'auto.offset.reset': 'earliest',
     ...pickAndReplaceFromENV('^kafka\\.topic-conf\\.'),
     ...pickAndReplaceFromENV('^system-task\\.kafka\\.topic-conf\\.'),
-  },
+  } as ConsumerTopicConfig,
 };
 
 export const kafkaProducerConfig = {

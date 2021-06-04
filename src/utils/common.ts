@@ -10,10 +10,7 @@ export const isValidName = (name: string): boolean =>
 export const isValidRev = (rev: string): boolean =>
   isString(rev) && /^[a-zA-Z0-9-_]{1,64}$/.test(rev);
 
-export const enumToList = R.compose(
-  R.map(R.prop('1')),
-  R.toPairs,
-);
+export const enumToList = R.compose(R.map(R.prop('1')), R.toPairs);
 
 export const concatArray = (target: any[] = [], items: any[] | any): any[] => {
   if (R.isNil(items)) return target;
@@ -21,7 +18,10 @@ export const concatArray = (target: any[] = [], items: any[] | any): any[] => {
   return [...target, items];
 };
 
-export const jsonTryParse = (jsonString: string, defaultValue: any = {}) => {
+export const jsonTryParse = <T = any>(
+  jsonString: string,
+  defaultValue?: T,
+): T => {
   try {
     return JSON.parse(jsonString);
   } catch (error) {
@@ -37,4 +37,4 @@ export const toObjectByKey = (targets: object[], key: string) => {
 };
 
 export const sleep = (ms: number) =>
-  new Promise(resolve => setTimeout(resolve, ms));
+  new Promise((resolve) => setTimeout(resolve, ms));

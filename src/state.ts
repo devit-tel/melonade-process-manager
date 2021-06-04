@@ -7,7 +7,7 @@ import {
 } from '@melonade/melonade-declaration';
 import debug from 'debug';
 import * as R from 'ramda';
-import { poll, sendEvent, stateConsumerClient } from './kafka';
+import { pollWithMessage, sendEvent, stateConsumerClient } from './kafka';
 import {
   distributedLockStore,
   IDistributedLockInstance,
@@ -752,7 +752,7 @@ export const processUpdateTasks = async (
 export const executor = async () => {
   while (true) {
     try {
-      const tasksUpdate: Event.ITaskUpdate[] = await poll(
+      const [tasksUpdate, message] = await pollWithMessage<Event.ITaskUpdate>(
         stateConsumerClient,
         200,
       );
@@ -769,7 +769,7 @@ export const executor = async () => {
           ),
         );
 
-        stateConsumerClient.commit();
+        stateConsumerClient.commitSync(message);
       }
     } catch (error) {
       // Handle error here

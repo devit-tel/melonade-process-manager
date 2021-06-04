@@ -185,6 +185,6 @@ export class WorkflowInstanceMongooseStore extends MongooseStore
       ...workflows.map((workflow: Workflow.IWorkflow) =>
         taskInstanceStore.deleteAll(workflow.workflowId),
       ),
-    ]);
+    ] as Promise<any>[]);
   };
 }

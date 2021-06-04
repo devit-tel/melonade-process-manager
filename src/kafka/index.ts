@@ -1,5 +1,12 @@
-import { Event, Kafka, Task, Timer } from '@melonade/melonade-declaration';
-import { AdminClient, KafkaConsumer, Producer } from 'node-rdkafka';
+import { Event, Task, Timer } from '@melonade/melonade-declaration';
+import {
+  AdminClient,
+  KafkaConsumer,
+  LibrdKafkaError,
+  Message,
+  Producer,
+  TopicPartitionOffset,
+} from 'node-rdkafka';
 import * as R from 'ramda';
 import * as config from '../config';
 import { jsonTryParse } from '../utils/common';
@@ -91,9 +98,9 @@ export const createTopic = (
           ...config,
         },
       },
-      (error: Error, data: any) => {
+      (error: LibrdKafkaError) => {
         if (error) return reject(error);
-        resolve(data);
+        resolve();
       },
     );
   });
@@ -105,19 +112,20 @@ export const createTaskTopic = (taskName: string): Promise<any> =>
     config.kafkaTopic.replication_factor,
   );
 
-export const poll = (
+export const pollWithMessage = <T = any>(
   consumer: KafkaConsumer,
   messageNumber: number = 100,
-): Promise<any[]> =>
+): Promise<[T[], TopicPartitionOffset[]]> =>
   new Promise((resolve: Function, reject: Function) => {
     consumer.consume(
       messageNumber,
-      (error: Error, messages: Kafka.kafkaConsumerMessage[]) => {
+      (error: LibrdKafkaError, messages: Message[]) => {
         if (error) return reject(error);
+        consumer.commitMessageSync;
         resolve(
-          messages.map((message: Kafka.kafkaConsumerMessage) =>
-            jsonTryParse(message.value.toString(), {}),
-          ),
+          messages.map((message: Message) => {
+            return [jsonTryParse<T>(message.value.toString()), message];
+          }),
         );
       },
     );
@@ -187,7 +195,7 @@ export const sendEvent = (event: Event.AllEvent) => {
 
 export const flush = (timeout: number = 1000) =>
   new Promise((resolve: Function, reject: Function) => {
-    producerClient.flush(timeout, (error: Error) => {
+    producerClient.flush(timeout, (error: LibrdKafkaError) => {
       if (error) return reject(error);
       resolve();
     });
