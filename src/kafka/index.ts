@@ -122,11 +122,12 @@ export const pollWithMessage = <T = any>(
       (error: LibrdKafkaError, messages: Message[]) => {
         if (error) return reject(error);
         consumer.commitMessageSync;
-        resolve(
+        resolve([
           messages.map((message: Message) => {
-            return [jsonTryParse<T>(message.value.toString()), message];
+            return jsonTryParse<T>(message.value.toString());
           }),
-        );
+          messages,
+        ]);
       },
     );
   });
