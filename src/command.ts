@@ -153,7 +153,8 @@ export const executor = async () => {
       );
       if (commands.length) {
         await processCommands(commands);
-        commandConsumerClient.commitSync(message);
+        // @ts-ignore
+        commandConsumerClient.commitSync();
         console.log(
           `committed ${message
             .map((m) => `${m.topic}-${m.partition}-${m.offset}`)

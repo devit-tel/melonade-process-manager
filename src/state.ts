@@ -768,8 +768,8 @@ export const executor = async () => {
             processUpdateTasks(workflowTasksUpdate),
           ),
         );
-
-        stateConsumerClient.commitSync(message);
+        // @ts-ignore
+        stateConsumerClient.commitSync();
       }
     } catch (error) {
       // Handle error here
