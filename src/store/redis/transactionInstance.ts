@@ -120,9 +120,9 @@ export class TransactionInstanceRedisStore extends RedisStore
 
     return {
       total: R.pathOr(0, [0, 1], results),
-      transactions: transactionStrings.map(
-        jsonTryParse,
-      ) as Transaction.ITransaction[],
+      transactions: transactionStrings.map((d) =>
+        jsonTryParse<Transaction.ITransaction>(d),
+      ),
     };
   };
 

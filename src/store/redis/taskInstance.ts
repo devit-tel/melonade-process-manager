@@ -4,6 +4,7 @@ import * as uuid from 'uuid/v4';
 import { RedisStore } from '.';
 import { ITaskInstanceStore, transactionInstanceStore } from '..';
 import { prefix } from '../../config';
+import { appendArray } from '../../utils/common';
 
 export class TaskInstanceRedisStore extends RedisStore
   implements ITaskInstanceStore {
@@ -46,7 +47,7 @@ export class TaskInstanceRedisStore extends RedisStore
       throw new Error(`Task "${taskUpdate.taskId}" not found`);
     }
 
-    const task = JSON.parse(taskString);
+    const task: Task.ITask = JSON.parse(taskString);
     if (taskUpdate.isSystem) {
       if (
         !State.TaskNextStatesSystem[task.status].includes(taskUpdate.status)
@@ -75,9 +76,7 @@ export class TaskInstanceRedisStore extends RedisStore
       ].includes(taskUpdate.status)
         ? Date.now()
         : null,
-      logs: taskUpdate.logs
-        ? [...(task.logs ? task.logs : []), taskUpdate.logs]
-        : task.logs,
+      logs: appendArray(taskUpdate.logs ?? [], taskUpdate.logs),
     };
 
     await this.client.set(key, JSON.stringify(updatedTask));

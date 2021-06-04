@@ -6,7 +6,12 @@ import {
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
 import * as R from 'ramda';
-import { commandConsumerClient, dispatch, poll, sendEvent } from './kafka';
+import {
+  commandConsumerClient,
+  dispatch,
+  pollWithMessage,
+  sendEvent,
+} from './kafka';
 import { getTaskData, handleCancelWorkflow, processUpdateTask } from './state';
 import {
   distributedLockStore,
@@ -111,12 +116,15 @@ const processCommands = async (
       if (!command.transactionId) throw new Error('TransactionId is required');
       switch (command.type) {
         case Command.CommandTypes.StartTransaction:
+          console.log(`command start transaction: ${command.transactionId}`);
           await processStartTransactionCommand(command);
           break;
         case Command.CommandTypes.CancelTransaction:
+          console.log(`command cancel transaction: ${command.transactionId}`);
           await processCancelTransactionCommand(command);
           break;
         case Command.CommandTypes.ReloadTask:
+          console.log(`command reload transaction: ${command.transactionId}`);
           await processReloadTaskCommand(command);
           break;
         default:
@@ -140,10 +148,12 @@ const processCommands = async (
 export const executor = async () => {
   while (true) {
     try {
-      const commands: Command.AllCommand[] = await poll(commandConsumerClient);
+      const [commands, message] = await pollWithMessage<Command.AllCommand>(
+        commandConsumerClient,
+      );
       if (commands.length) {
         await processCommands(commands);
-        commandConsumerClient.commit();
+        commandConsumerClient.commitSync(message);
       }
     } catch (error) {
       // Handle consume error
