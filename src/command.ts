@@ -154,6 +154,11 @@ export const executor = async () => {
       if (commands.length) {
         await processCommands(commands);
         commandConsumerClient.commitSync(message);
+        console.log(
+          `committed ${message
+            .map((m) => `${m.topic}-${m.partition}-${m.offset}`)
+            .join('\n')}`,
+        );
       }
     } catch (error) {
       // Handle consume error
