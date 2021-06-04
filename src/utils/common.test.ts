@@ -105,8 +105,8 @@ describe('jsonTryParse', () => {
   });
 
   test('Invalid json', () => {
-    expect(CommonUtils.jsonTryParse('123{1"a": "b"}')).toEqual({});
-    expect(CommonUtils.jsonTryParse('312312[1,2,3]')).toEqual({});
+    expect(CommonUtils.jsonTryParse('123{1"a": "b"}')).toEqual(undefined);
+    expect(CommonUtils.jsonTryParse('312312[1,2,3]')).toEqual(undefined);
   });
 
   test('Invalid json (with default)', () => {
