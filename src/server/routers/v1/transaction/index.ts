@@ -20,6 +20,10 @@ router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext) => {
   const { name, rev } = ctx.params;
   const { transactionId, tags } = ctx.query;
 
+  console.log(
+    `rest name/rev start transaction: ${transactionId} | ${ctx.request.url}`,
+  );
+
   return processStartTransactionCommand({
     transactionId: transactionId || uuid(),
     workflowRef: {
@@ -34,6 +38,10 @@ router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext) => {
 
 router.post('/start', async (ctx: koaRouter.IRouterContext) => {
   const { transactionId, tags } = ctx.query;
+
+  console.log(
+    `rest body start transaction: ${transactionId} | ${ctx.request.url}`,
+  );
 
   return processStartTransactionCommand({
     transactionId: transactionId || uuid(),
