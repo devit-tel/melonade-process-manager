@@ -36,6 +36,11 @@ router.post('/:name/:rev', async (ctx: koaRouter.IRouterContext) => {
   });
 });
 
+router.get('/:transactionId', (ctx: koaRouter.IRouterContext) => {
+  const { transactionId } = ctx.params;
+  return transactionInstanceStore.get(transactionId);
+});
+
 router.post('/start', async (ctx: koaRouter.IRouterContext) => {
   const { transactionId, tags } = ctx.query;
 
