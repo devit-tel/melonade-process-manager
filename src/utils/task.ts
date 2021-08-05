@@ -4,6 +4,7 @@ import { Parser } from 'expr-eval';
 import * as jsonpath from 'jsonpath';
 import * as _ from 'lodash/fp'; // use lodash just for "get" thing XD
 import * as R from 'ramda';
+import * as vm from 'vm';
 
 export const getPathByInputTemplate = R.compose(
   R.split(/[[\].]/),
@@ -102,6 +103,18 @@ const parseTemplate = (template: string, values: any) => {
   // ${parcel[0].driverId} ${parcel[0].driverId} => "driver_1 driver_1"
   if (/\${[a-z0-9-_.\[\]]+}/gi.test(template)) {
     return resolveVars(template, values);
+  }
+
+  const vmTemplate = /^(```javascript\n)([\S\s]+)(```)$/gm.exec(template);
+
+  if (vmTemplate && vmTemplate.length >= 3) {
+    try {
+      return vm.runInNewContext(vmTemplate[2] || '', values, {
+        timeout: 5000,
+      });
+    } catch {
+      return null;
+    }
   }
 
   return template;
