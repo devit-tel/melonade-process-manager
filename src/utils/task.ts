@@ -105,7 +105,9 @@ const parseTemplate = (template: string, values: any) => {
     return resolveVars(template, values);
   }
 
-  const vmTemplate = /^(```javascript\n)([\S\s]+)(```)$/gm.exec(template);
+  const vmTemplate = /^(```javascript\n)([\S\s]+)(```)$/gm.exec(
+    template.trim(),
+  );
 
   if (vmTemplate && vmTemplate.length >= 3) {
     try {
