@@ -657,10 +657,7 @@ export class TaskInstanceStore {
       type: workflowTask.type,
       status: State.TaskStates.Scheduled,
       isRetried: false,
-      input: mapParametersToValue(workflowTask.inputParameters, {
-        ...tasksData,
-        workflow,
-      }),
+      input: {},
       output: {},
       createTime: timestampCreate,
       startTime: timestampCreate,
@@ -685,6 +682,12 @@ export class TaskInstanceStore {
       taskPath,
       ...overrideTask,
     };
+
+    taskData.input = mapParametersToValue(workflowTask.inputParameters, {
+      ...tasksData,
+      workflow,
+      [taskData.taskReferenceName]: taskData,
+    });
 
     try {
       if (workflowTask.type === Task.TaskTypes.Schedule) {
@@ -976,10 +979,7 @@ export class TaskInstanceStore {
       type: workflowTask.type,
       status: State.TaskStates.Scheduled,
       isRetried: false,
-      input: mapParametersToValue(workflowTask.inputParameters, {
-        ...tasksData,
-        workflow,
-      }),
+      input: {},
       output: {},
       createTime: timestamp,
       startTime: timestamp,
@@ -1018,6 +1018,12 @@ export class TaskInstanceStore {
         taskDefinition?.syncWorker ??
         false,
       ...overrideTask,
+    });
+
+    task.input = mapParametersToValue(workflowTask.inputParameters, {
+      ...tasksData,
+      workflow,
+      [task.taskReferenceName]: task,
     });
 
     dispatch(task);
