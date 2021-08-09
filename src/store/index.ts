@@ -1050,7 +1050,7 @@ export class TaskInstanceStore {
     const taskDefinition = await taskDefinitionStore.get(workflowTask.name);
 
     const timestamp = Date.now();
-    const task = await this.client.create({
+    let taskData = {
       taskId: undefined,
       taskName: workflowTask.name,
       taskReferenceName: workflowTask.taskReferenceName,
@@ -1098,13 +1098,15 @@ export class TaskInstanceStore {
         taskDefinition?.syncWorker ??
         false,
       ...overrideTask,
-    });
+    };
 
-    task.input = mapParametersToValue(workflowTask.inputParameters, {
+    taskData.input = mapParametersToValue(workflowTask.inputParameters, {
       ...tasksData,
       workflow,
-      [task.taskReferenceName]: task,
+      [taskData.taskReferenceName]: taskData,
     });
+
+    const task = await this.client.create(taskData);
 
     dispatch(task);
     sendEvent({
