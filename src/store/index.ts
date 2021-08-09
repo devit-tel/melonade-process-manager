@@ -588,18 +588,98 @@ export class TaskInstanceStore {
 
     await this.delete(taskData.taskId);
 
+    const workflowTask:
+      | WorkflowDefinition.IDecisionTask
+      | WorkflowDefinition.IParallelTask
+      | WorkflowDefinition.IScheduleTask
+      | WorkflowDefinition.ISubTransactionTask
+      | WorkflowDefinition.IDynamicTask = R.path(
+      ['workflowDefinition', 'tasks', ...taskData.taskPath],
+      workflow,
+    );
+
+    const tasks = await taskInstanceStore.getAll(workflow.workflowId);
+    const tasksData = tasks.reduce(
+      (result: { [ref: string]: Task.ITask }, task: Task.ITask) => {
+        result[task.taskReferenceName] = task;
+        return result;
+      },
+      {},
+    );
+
     const timestamp = Date.now() + (taskData.retryDelay || 0);
     const task = await this.client.create(
       R.omit(['_id'], {
         ...taskData,
         taskId: undefined,
         status: State.TaskStates.Scheduled,
+        input: mapParametersToValue(workflowTask.inputParameters, {
+          ...tasksData,
+          workflow,
+          [taskData.taskReferenceName]: taskData,
+        }),
         output: {},
         createTime: timestamp,
         startTime: timestamp,
         endTime: null,
       }),
     );
+
+    if (task.type === TaskTypes.SubTransaction) {
+      const workflowDefinition = await workflowDefinitionStore.get(
+        task.input?.workflowName,
+        task.input?.workflowRev,
+      );
+
+      if (workflow.transactionDepth >= 7) {
+        // Maximum level of sub transaction is 7 (for now)
+        sendUpdate({
+          transactionId: task.transactionId,
+          taskId: task.taskId,
+          status: State.TaskStates.Failed,
+          doNotRetry: true,
+          isSystem: true,
+          output: {
+            error: `Maximum level of sub transaction exceeded`,
+          },
+        });
+        return task;
+      }
+
+      if (workflowDefinition) {
+        await transactionInstanceStore.create(
+          `${workflow.transactionId}-${task.taskReferenceName}`,
+          workflowDefinition,
+          task.input?.input,
+          [Task.TaskTypes.SubTransaction],
+          {
+            transactionId: workflow.transactionId,
+            taskId: task.taskId,
+            isCompensate: false,
+            depth: workflow.transactionDepth + 1, // increase depth by 1
+          },
+        );
+
+        return this.update({
+          transactionId: task.transactionId,
+          taskId: task.taskId,
+          status: State.TaskStates.Inprogress,
+          isSystem: true,
+        });
+      } else {
+        sendUpdate({
+          transactionId: task.transactionId,
+          taskId: task.taskId,
+          status: State.TaskStates.Failed,
+          doNotRetry: true,
+          isSystem: true,
+          output: {
+            error: `Workflow definition not found`,
+          },
+        });
+        return task;
+      }
+    }
 
     if (willDispatch) {
       dispatch(task);
@@ -730,8 +810,8 @@ export class TaskInstanceStore {
             task.input?.workflowRev,
           );
 
-          if (workflow.transactionDepth >= 5) {
-            // Maximum level of sub transaction is 5 (for now)
+          if (workflow.transactionDepth >= 7) {
+            // Maximum level of sub transaction is 7 (for now)
             sendUpdate({
               transactionId: task.transactionId,
               taskId: task.taskId,
