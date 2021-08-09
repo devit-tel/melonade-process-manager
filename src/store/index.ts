@@ -9,6 +9,7 @@ import {
   Workflow,
   WorkflowDefinition,
 } from '@melonade/melonade-declaration';
+import { TaskTypes } from '@melonade/melonade-declaration/build/task';
 import { ITaskTask } from '@melonade/melonade-declaration/build/workflowDefinition';
 import debug from 'debug';
 import * as R from 'ramda';
@@ -636,6 +637,16 @@ export class TaskInstanceStore {
       ['workflowDefinition', 'tasks', ...taskPath],
       workflow,
     );
+
+    let retries = 0;
+    if (workflowTask.type === TaskTypes.SubTransaction) {
+      retries =
+        mapParametersToNumber(workflowTask?.retry?.limit, {
+          ...tasksData,
+          workflow,
+        }) ?? 0;
+    }
+
     const timestampCreate = Date.now();
     const taskData: Task.ITask = {
       taskId: undefined,
@@ -667,7 +678,7 @@ export class TaskInstanceStore {
           ? workflowTask.defaultDecision
           : undefined,
       dynamicTasks: [],
-      retries: 0,
+      retries: retries,
       retryDelay: 0,
       ackTimeout: 0,
       timeout: 0,
