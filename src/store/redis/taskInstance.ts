@@ -96,6 +96,10 @@ export class TaskInstanceRedisStore extends RedisStore
       `${prefix}.workflow-task.${workflowId}`,
     );
 
+    if (!taskKeys.length) {
+      return [];
+    }
+
     const tasksString = await this.client.mget(
       ...taskKeys.map((taskId: string) => `${prefix}.task.${taskId}`),
     );

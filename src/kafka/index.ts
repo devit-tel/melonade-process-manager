@@ -124,7 +124,6 @@ export const pollWithMessage = <T = any>(
       messageNumber,
       (error: LibrdKafkaError, messages: Message[]) => {
         if (error) return reject(error);
-        consumer.commitMessageSync;
         resolve([
           messages.map((message: Message) => {
             return jsonTryParse<T>(message.value.toString());
