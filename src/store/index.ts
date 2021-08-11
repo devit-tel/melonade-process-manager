@@ -626,6 +626,14 @@ export class TaskInstanceStore {
     );
 
     if (task.type === TaskTypes.SubTransaction) {
+      sendEvent({
+        transactionId: task.transactionId,
+        type: 'TASK',
+        isError: false,
+        timestamp,
+        details: task,
+      });
+
       const workflowDefinition = await workflowDefinitionStore.get(
         task.input?.workflowName,
         task.input?.workflowRev,

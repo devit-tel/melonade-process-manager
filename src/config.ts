@@ -43,6 +43,7 @@ export const kafkaTopicName = {
   command: `${prefix}.${Kafka.topicSuffix.command}`,
   // Timer event (Cron, Delay task)
   timer: `${prefix}.${Kafka.topicSuffix.timer}`,
+  reminder: process.env['reminder_topic'],
 };
 
 export const kafkaTopic = {

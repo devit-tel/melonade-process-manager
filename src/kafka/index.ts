@@ -1,4 +1,7 @@
 import { Event, Task, Timer } from '@melonade/melonade-declaration';
+import { CommandTypes } from '@melonade/melonade-declaration/build/command';
+import { TaskStates } from '@melonade/melonade-declaration/build/state';
+import { TimerTypes } from '@melonade/melonade-declaration/build/timer';
 import {
   AdminClient,
   KafkaConsumer,
@@ -132,9 +135,63 @@ export const pollWithMessage = <T = any>(
     );
   });
 
+export interface IReminderRequest {
+  when: Number;
+  topic: string;
+  payload: any;
+}
+
+export const sendReminder = (payload: IReminderRequest) => {
+  producerClient.produce(
+    config.kafkaTopicName.reminder,
+    null,
+    Buffer.from(JSON.stringify(payload)),
+    '',
+    Date.now(),
+  );
+};
+
 export const sendTimer = (
   timer: Timer.IDelayTaskTimer | Timer.IScheduleTaskTimer,
-) =>
+) => {
+  switch (timer.type) {
+    case TimerTypes.delayTask:
+      sendReminder({
+        payload: {
+          type: CommandTypes.ReloadTask,
+          transactionId: timer.task.transactionId,
+          task: timer.task,
+        },
+        topic: config.kafkaTopicName.command,
+        when: timer.task.startTime,
+      });
+      break;
+
+    case TimerTypes.scheduleTask:
+      sendReminder({
+        payload: {
+          transactionId: timer.transactionId,
+          taskId: timer.taskId,
+          isSystem: true,
+          status: TaskStates.Inprogress,
+        },
+        topic: config.kafkaTopicName.event,
+        when: Date.now(),
+      });
+
+      sendReminder({
+        payload: {
+          transactionId: timer.transactionId,
+          taskId: timer.taskId,
+          isSystem: true,
+          status: TaskStates.Completed,
+        },
+        topic: config.kafkaTopicName.event,
+        when: timer.completedAt,
+      });
+      break;
+  }
+
   producerClient.produce(
     config.kafkaTopicName.timer,
     null,
@@ -144,8 +201,9 @@ export const sendTimer = (
       : timer.transactionId,
     Date.now(),
   );
+};
 
-export const dispatch = (task: Task.ITask) =>
+export const dispatch = (task: Task.ITask) => {
   producerClient.produce(
     `${config.kafkaTopicName.task}.${task.taskName}`,
     null,
@@ -153,6 +211,33 @@ export const dispatch = (task: Task.ITask) =>
     task.transactionId,
     Date.now(),
   );
+
+  if (task.ackTimeout > 0) {
+    sendReminder({
+      payload: {
+        transactionId: task.transactionId,
+        taskId: task.taskId,
+        isSystem: true,
+        status: TaskStates.AckTimeOut,
+      },
+      topic: config.kafkaTopicName.event,
+      when: task.ackTimeout + Date.now(),
+    });
+  }
+
+  if (task.timeout > 0) {
+    sendReminder({
+      payload: {
+        transactionId: task.transactionId,
+        taskId: task.taskId,
+        isSystem: true,
+        status: TaskStates.Timeout,
+      },
+      topic: config.kafkaTopicName.event,
+      when: task.timeout + Date.now(),
+    });
+  }
+};
 
 // TODO Since we have distributed lock, this need to rewrite using state.processTask instead !!
 // Use to send update event to another PM or itself to make sure ordering
