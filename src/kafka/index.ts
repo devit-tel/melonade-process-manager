@@ -136,7 +136,7 @@ export const pollWithMessage = <T = any>(
   });
 
 export interface IReminderRequest {
-  when: Number;
+  when: Date;
   topic: string;
   payload: any;
 }
@@ -163,7 +163,7 @@ export const sendTimer = (
           task: timer.task,
         },
         topic: config.kafkaTopicName.command,
-        when: timer.task.startTime,
+        when: new Date(timer.task.startTime),
       });
       break;
 
@@ -176,7 +176,7 @@ export const sendTimer = (
           status: TaskStates.Inprogress,
         },
         topic: config.kafkaTopicName.event,
-        when: Date.now(),
+        when: new Date(),
       });
 
       sendReminder({
@@ -187,7 +187,7 @@ export const sendTimer = (
           status: TaskStates.Completed,
         },
         topic: config.kafkaTopicName.event,
-        when: timer.completedAt,
+        when: new Date(timer.completedAt),
       });
       break;
   }
@@ -221,7 +221,7 @@ export const dispatch = (task: Task.ITask) => {
         status: TaskStates.AckTimeOut,
       },
       topic: config.kafkaTopicName.event,
-      when: task.ackTimeout + Date.now(),
+      when: new Date(task.ackTimeout + Date.now()),
     });
   }
 
@@ -234,7 +234,7 @@ export const dispatch = (task: Task.ITask) => {
         status: TaskStates.Timeout,
       },
       topic: config.kafkaTopicName.event,
-      when: task.timeout + Date.now(),
+      when: new Date(task.timeout + Date.now()),
     });
   }
 };
