@@ -780,7 +780,10 @@ export class TaskInstanceStore {
     try {
       if (workflowTask.type === Task.TaskTypes.Schedule) {
         // Send to time keeper
-        const task = await this.client.create(taskData);
+        const task = await this.client.create({
+          ...taskData,
+          status: State.TaskStates.Inprogress,
+        });
         sendEvent({
           transactionId: workflow.transactionId,
           type: 'TASK',
@@ -790,6 +793,13 @@ export class TaskInstanceStore {
             ...task,
             status: State.TaskStates.Scheduled,
           },
+        });
+        sendEvent({
+          transactionId: workflow.transactionId,
+          type: 'TASK',
+          isError: false,
+          timestamp: timestampCreate,
+          details: task,
         });
         sendTimer({
           type: Timer.TimerTypes.scheduleTask,

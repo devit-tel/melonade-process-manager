@@ -174,18 +174,6 @@ export const sendTimer = (
           transactionId: timer.transactionId,
           taskId: timer.taskId,
           isSystem: true,
-          status: TaskStates.Inprogress,
-        },
-        topic: config.kafkaTopicName.event,
-        key: timer.transactionId,
-        when: new Date(),
-      });
-
-      sendReminder({
-        payload: {
-          transactionId: timer.transactionId,
-          taskId: timer.taskId,
-          isSystem: true,
           status: TaskStates.Completed,
         },
         topic: config.kafkaTopicName.event,
