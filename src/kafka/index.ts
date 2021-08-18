@@ -138,6 +138,7 @@ export interface IReminderRequest {
   when: Date;
   topic: string;
   payload: any;
+  key: string;
 }
 
 export const sendReminder = (payload: IReminderRequest) => {
@@ -162,6 +163,7 @@ export const sendTimer = (
           task: timer.task,
         },
         topic: config.kafkaTopicName.command,
+        key: timer.task.transactionId,
         when: new Date(timer.task.startTime),
       });
       break;
@@ -175,6 +177,7 @@ export const sendTimer = (
           status: TaskStates.Inprogress,
         },
         topic: config.kafkaTopicName.event,
+        key: timer.transactionId,
         when: new Date(),
       });
 
@@ -186,6 +189,7 @@ export const sendTimer = (
           status: TaskStates.Completed,
         },
         topic: config.kafkaTopicName.event,
+        key: timer.transactionId,
         when: new Date(timer.completedAt),
       });
       break;
@@ -220,6 +224,7 @@ export const dispatch = (task: Task.ITask) => {
         status: TaskStates.AckTimeOut,
       },
       topic: config.kafkaTopicName.event,
+      key: task.transactionId,
       when: new Date(task.ackTimeout + Date.now()),
     });
   }
@@ -233,6 +238,7 @@ export const dispatch = (task: Task.ITask) => {
         status: TaskStates.Timeout,
       },
       topic: config.kafkaTopicName.event,
+      key: task.transactionId,
       when: new Date(task.timeout + Date.now()),
     });
   }
