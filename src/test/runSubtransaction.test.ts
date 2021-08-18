@@ -417,7 +417,7 @@ describe('Run transaction with sub transaction', () => {
       {
         await updateTask(currentTask);
 
-        expect(mockedSendEvent).toBeCalledTimes(11);
+        expect(mockedSendEvent).toBeCalledTimes(12);
         expect(mockedSendEvent).toBeCalledWith(
           expect.objectContaining({
             type: 'TASK',
@@ -461,6 +461,18 @@ describe('Run transaction with sub transaction', () => {
               transactionId: TRANSACTION_ID,
               taskReferenceName: 'w1',
               status: State.TaskStates.Scheduled,
+              type: Task.TaskTypes.Schedule,
+            }),
+            isError: false,
+          }),
+        );
+        expect(mockedSendEvent).toBeCalledWith(
+          expect.objectContaining({
+            type: 'TASK',
+            details: expect.objectContaining({
+              transactionId: TRANSACTION_ID,
+              taskReferenceName: 'w1',
+              status: State.TaskStates.Inprogress,
               type: Task.TaskTypes.Schedule,
             }),
             isError: false,
@@ -1274,7 +1286,7 @@ describe('Run transaction with sub transaction', () => {
             {
               await updateTask(currentTask);
 
-              expect(mockedSendEvent).toBeCalledTimes(3);
+              expect(mockedSendEvent).toBeCalledTimes(4);
               expect(mockedSendEvent).toBeCalledWith(
                 expect.objectContaining({
                   type: 'TASK',
@@ -1306,6 +1318,18 @@ describe('Run transaction with sub transaction', () => {
                     transactionId: SUB_TRANSACTION_1_ID,
                     taskReferenceName: 'www',
                     status: State.TaskStates.Scheduled,
+                    type: Task.TaskTypes.Schedule,
+                  }),
+                  isError: false,
+                }),
+              );
+              expect(mockedSendEvent).toBeCalledWith(
+                expect.objectContaining({
+                  type: 'TASK',
+                  details: expect.objectContaining({
+                    transactionId: SUB_TRANSACTION_1_ID,
+                    taskReferenceName: 'www',
+                    status: State.TaskStates.Inprogress,
                     type: Task.TaskTypes.Schedule,
                   }),
                   isError: false,
