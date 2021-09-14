@@ -50,7 +50,7 @@ router.get('/detail/:transactionId', async (ctx: koaRouter.IRouterContext) => {
   const workflow = await workflowInstanceStore.getByTransactionId(
     transactionId,
   );
-  const tasks = taskInstanceStore.getAll(workflow.workflowId);
+  const tasks = await taskInstanceStore.getAll(workflow.workflowId);
 
   return {
     transaction,
