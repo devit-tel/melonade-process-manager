@@ -2,16 +2,19 @@ import koaRouter = require('koa-router');
 import { State } from '@melonade/melonade-declaration';
 import { CommandTypes } from '@melonade/melonade-declaration/build/command';
 import { ITaskUpdate } from '@melonade/melonade-declaration/build/event';
+import { TaskStates } from '@melonade/melonade-declaration/build/state';
 import * as uuid from 'uuid/v4';
 import {
   processCancelTransactionCommand,
   processStartTransactionCommand,
 } from '../../../../command';
+import { dispatch } from '../../../../kafka';
 import { handleCompletedTask, handleFailedTask } from '../../../../state';
 import {
   distributedLockStore,
   taskInstanceStore,
   transactionInstanceStore,
+  workflowInstanceStore,
 } from '../../../../store';
 
 export const router = new koaRouter();
@@ -40,6 +43,48 @@ router.get('/:transactionId', (ctx: koaRouter.IRouterContext) => {
   const { transactionId } = ctx.params;
   return transactionInstanceStore.get(transactionId);
 });
+
+router.get('/detail/:transactionId', async (ctx: koaRouter.IRouterContext) => {
+  const { transactionId } = ctx.params;
+  const transaction = await transactionInstanceStore.get(transactionId);
+  const workflow = await workflowInstanceStore.getByTransactionId(
+    transactionId,
+  );
+  const tasks = taskInstanceStore.getAll(workflow.workflowId);
+
+  return {
+    transaction,
+    workflow,
+    tasks,
+  };
+});
+
+router.get(
+  '/re-dispatch/:transactionId',
+  async (ctx: koaRouter.IRouterContext) => {
+    const { transactionId } = ctx.params;
+    const transaction = await transactionInstanceStore.get(transactionId);
+    const workflow = await workflowInstanceStore.getByTransactionId(
+      transactionId,
+    );
+    const tasks = await taskInstanceStore.getAll(workflow.workflowId);
+
+    const reDispatchTasks = tasks.filter(
+      (t) => t.status === TaskStates.Scheduled,
+    );
+
+    for (const t of reDispatchTasks) {
+      dispatch(t);
+    }
+
+    return {
+      transaction,
+      workflow,
+      tasks,
+      reDispatchTasks,
+    };
+  },
+);
 
 router.post('/start', async (ctx: koaRouter.IRouterContext) => {
   const { transactionId, tags } = ctx.query;
