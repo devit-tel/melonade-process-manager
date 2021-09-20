@@ -76,7 +76,7 @@ export class TaskInstanceRedisStore extends RedisStore
       ].includes(taskUpdate.status)
         ? Date.now()
         : null,
-      logs: appendArray(taskUpdate.logs ?? [], taskUpdate.logs),
+      logs: appendArray(task.logs ?? [], taskUpdate.logs),
     };
 
     await this.client.set(key, JSON.stringify(updatedTask));
